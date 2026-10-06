@@ -32,8 +32,8 @@ Record each answer here and in `DECISIONS.md`.
 
 | # | Question | Rule | Settle in | Answer |
 |---|----------|------|-----------|--------|
-| Q1 | Is exactly $100 "over $100"? | R2 | Step 2 | _open_ |
-| Q2 | Is exactly 30 days "older than 30 days"? | R3 | Step 2 | _open_ |
-| Q3 | Does "3+ refunds in 90 days" count this one? | R4 | Step 2 | _open_ |
+| Q1 | Is exactly $100 "over $100"? | R2 | Step 2 | No. Exactly $100.00 doesn't need a human; $100.01 does. |
+| Q2 | Is exactly 30 days "older than 30 days"? | R3 | Step 2 | No. 31 days is. Age runs from the day the order was placed to the day the request arrived. |
+| Q3 | Does "3+ refunds in 90 days" count this one? | R4 | Step 2 | No. Only earlier refunds count, on any of the customer's orders, made 90 days or fewer before the request arrived. |
 | Q4 | Which result wins when several rules apply? | All | Step 3 | _open_ |
 | Q5 | What counts as the AI being "unsure"? | R6 | Step 3 | _open_ |

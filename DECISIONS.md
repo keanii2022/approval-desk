@@ -23,3 +23,18 @@ Template:
 - `.env`, `.env.*`, and `private/` were already excluded in `.gitignore`; checked with `git check-ignore`. `.env.example` stays tracked. Added Next.js build output and macOS `.DS_Store` files to the ignore list.
 - `"private": true` in `package.json` so the project can't be published to npm by accident.
 **Left for later:** No linter or formatter; neither is in the stack list.
+
+## Step 2: Shop data, Inbox, and policy (2026-10-05)
+
+**Built:** An invented shop (22 customers, 35 orders, 15 past refunds), a 14-line refund policy, and an Inbox of 22 customer requests, all loaded into SQLite by `npm run seed`. Tests prove that seeding twice gives identical data, that every hard rule (R1 to R7) appears word for word in the policy, and that each Inbox example really sits where it claims (over a limit, under it, or exactly on the edge).
+**Decided:**
+- Q1: exactly $100.00 is not "over $100"; $100.01 is.
+- Q2: exactly 30 days is not "older than 30 days"; 31 days is. Age runs from the day the order was placed to the day the request arrived.
+- Q3: the refund being asked for doesn't count. Only earlier refunds count, on any of the customer's orders, made 90 days or fewer before the request arrived (so one exactly 90 days before counts). A partial refund counts as one.
+- All three follow the rules' plain wording, rather than the stricter reading.
+- Used the SQLite built into Node instead of adding a database package, so nothing new was installed.
+- Money is stored in cents so sums are exact. All dates are fixed, never "today", so the data never changes between runs.
+- Inbox examples cover each rule and both sides of each edge, plus two requests that hit two rules at once (for Q4 in step 3). R7 has no Inbox example: it's about the logbook failing, tested in step 4.
+- Added policy line P06: a refund can only be made on the customer's own order. It's guidance for the agent, not a hard rule. REQ-022 tests it.
+- The database file is `data/approval-desk.db`, kept out of git. Added `"type": "module"` to `package.json` and allowed `.ts` import paths in `tsconfig.json` so Node can run the seed script directly.
+**Left for later:** Nothing stops a refund on someone else's order except the agent following P06. Whether that should become a hard rule (checked by the gate) is the owner's call.

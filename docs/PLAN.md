@@ -3,11 +3,11 @@
 One step per session. Tick a box only when its "done when" is true.
 Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
 
-- [ ] **Step 1: Skeleton**
+- [x] **Step 1: Skeleton**
   - **Goal:** Start the project: git, Next.js with TypeScript, Vitest, one sample test. Nothing else.
   - **Done when:** the test passes; `.env` and `private/` are excluded from uploads.
 
-- [ ] **Step 2: Shop data, Inbox, and policy** (parts 1 and 2)
+- [x] **Step 2: Shop data, Inbox, and policy** (parts 1 and 2)
   - **Goal:** Invented orders, customers, refund history, and a written refund policy, plus invented customer requests (the Inbox), loaded into SQLite by a seed script. Include examples that hit each rule and the edge cases. Settle open questions Q1 to Q3 in `docs/RULES.md`.
   - **Done when:** running the seed script twice gives identical data (shop data and Inbox); every hard rule (R1 to R7) appears in the policy.
 
