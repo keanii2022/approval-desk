@@ -9,7 +9,7 @@ change an order. Every step is written down.
 |---|------|--------------|----------|-----------------|---------------|
 | 1 | Shop data | Invented orders, customers, refund history, policy | No | No | 2 |
 | 2 | Inbox | Invented customer requests | No | No | 2 |
-| 3 | Agent | Fills a fixed form: action, amount, reason, policy line | Yes | No | 5 |
+| 3 | Agent | Fills a fixed form: action, order, amount, reason, policy line | Yes | No | 5 |
 | 4 | Gate | Returns allow / send to human / block, and names the rule | No | No | 3 |
 | 5 | Approval screen | Human approves, rejects (note required), or changes the amount | No | No | 7 |
 | 6 | Executor | The only part that changes an order. Accepts only gate-allowed or human-approved proposals | No | **Yes** | 4 |
@@ -25,7 +25,7 @@ practice cases, 10 writes the README and demo.
 Inbox request
      │
      ▼
-   Agent (AI) ──► form: action, amount, reason, policy line
+   Agent (AI) ──► form: action, order, amount, reason, policy line
      │
      ▼
    Gate (plain code) ── names the rule (R1 to R6)

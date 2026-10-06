@@ -11,7 +11,7 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
   - **Goal:** Invented orders, customers, refund history, and a written refund policy, plus invented customer requests (the Inbox), loaded into SQLite by a seed script. Include examples that hit each rule and the edge cases. Settle open questions Q1 to Q3 in `docs/RULES.md`.
   - **Done when:** running the seed script twice gives identical data (shop data and Inbox); every hard rule (R1 to R7) appears in the policy.
 
-- [ ] **Step 3: Gate** (part 4)
+- [x] **Step 3: Gate** (part 4)
   - **Goal:** Plain code, no AI. Takes a filled form and the shop data, returns allow / send to human / block, and names the rule ID. Settle open questions Q4 and Q5.
   - **Done when:** one test per rule the gate checks (R1 to R6; R7 is tested in step 4); 1,000 bad proposals are fed in and none is allowed.
 
@@ -20,7 +20,7 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
   - **Done when:** a proposal that skipped the gate is refused; a broken log means no refund (R7).
 
 - [ ] **Step 5: Agent** (part 3)
-  - **Goal:** Claude reads a request and the shop data and fills the fixed form: action, amount, reason, policy line. It cannot change data.
+  - **Goal:** Claude reads a request and the shop data and fills the fixed form: action, order, amount, reason, policy line. It cannot change data.
   - **Done when:** five real outputs have been read by the owner; garbled output is blocked (R5).
 
 - [ ] **Step 6: Connect the path**
