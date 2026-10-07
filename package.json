@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
-    "seed": "node scripts/seed.ts"
+    "seed": "node scripts/seed.ts",
+    "try-agent": "node --env-file=.env scripts/try-agent.ts"
   },
   "dependencies": {
     "next": "^16.3.8",
