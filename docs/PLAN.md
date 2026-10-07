@@ -15,7 +15,7 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
   - **Goal:** Plain code, no AI. Takes a filled form and the shop data, returns allow / send to human / block, and names the rule ID. Settle open questions Q4 and Q5.
   - **Done when:** one test per rule the gate checks (R1 to R6; R7 is tested in step 4); 1,000 bad proposals are fed in and none is allowed.
 
-- [ ] **Step 4: Executor and logbook** (parts 6 and 7)
+- [x] **Step 4: Executor and logbook** (parts 6 and 7)
   - **Goal:** The executor, the only part that changes an order, accepting only gate-allowed or human-approved proposals. The logbook, add-only.
   - **Done when:** a proposal that skipped the gate is refused; a broken log means no refund (R7).
 
@@ -28,7 +28,7 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
   - **Done when:** a small refund passes; a $150 refund waits for a human; an impossible one is blocked; all three are in the logbook.
 
 - [ ] **Step 7: Approval screen** (part 5)
-  - **Goal:** A screen where a human approves, rejects (note required), or changes the amount. R1 applies to the human too.
+  - **Goal:** A screen where a human approves, rejects (note required), or changes the amount. If the agent's form named no order (the AI was down or unsure), the human picks the order. R1 applies to the human too.
   - **Done when:** Playwright tests pass for: approve; reject without a note (refused); amount over the limit (refused).
 
 - [ ] **Step 8: Practice cases**

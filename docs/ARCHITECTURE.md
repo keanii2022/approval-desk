@@ -11,7 +11,7 @@ change an order. Every step is written down.
 | 2 | Inbox | Invented customer requests | No | No | 2 |
 | 3 | Agent | Fills a fixed form: action, order, amount, reason, policy line | Yes | No | 5 |
 | 4 | Gate | Returns allow / send to human / block, and names the rule | No | No | 3 |
-| 5 | Approval screen | Human approves, rejects (note required), or changes the amount | No | No | 7 |
+| 5 | Approval screen | Human approves, rejects (note required), or changes the amount; picks the order if the form named none | No | No | 7 |
 | 6 | Executor | The only part that changes an order. Accepts only gate-allowed or human-approved proposals | No | **Yes** | 4 |
 | 7 | Logbook | Add-only record of every step | No | No (only adds log lines) | 4 |
 | 8 | Eval runner | Runs practice cases through parts 3 and 4, writes a scorecard | Calls the agent | No | 9 |
@@ -45,8 +45,8 @@ Every step above writes to the Logbook first. If it can't write, the step doesn'
 2. The agent reads it with the shop data and fills the form. It changes nothing.
 3. The gate checks the form against the hard rules and returns one result plus the rule ID.
 4. Allowed goes to the executor. Send to human goes to the approval screen. Blocked stops.
-5. On the approval screen, the human approves, rejects with a note, or changes the amount. R1 still applies.
-6. The executor changes the order, but only for gate-allowed or human-approved proposals.
+5. On the approval screen, the human approves, rejects with a note, or changes the amount. If the form named no order, the human picks it. R1 still applies.
+6. The executor changes the order, but only for gate-allowed or human-approved proposals. It checks R1 again at that moment.
 7. The logbook records every step and is never edited or deleted.
 
 ## Test standards

@@ -6,7 +6,7 @@ can name it in its result and tests can point to it
 
 | ID | Rule | Result | Applies to | Checked by |
 |----|------|--------|------------|------------|
-| R1 | A refund never exceeds the amount paid, counting earlier refunds. | Block | Agent proposals **and** the human approver | Gate, approval screen |
+| R1 | A refund never exceeds the amount paid, counting earlier refunds. | Block | Agent proposals **and** the human approver | Gate, approval screen, executor |
 | R2 | A refund over $100 needs a human. | Send to human | Agent proposals | Gate |
 | R3 | An order older than 30 days needs a human. | Send to human | Agent proposals | Gate |
 | R4 | A customer with 3+ refunds in 90 days needs a human. | Send to human | Agent proposals | Gate |
@@ -18,7 +18,7 @@ can name it in its result and tests can point to it
 
 | ID | Tested in step |
 |----|----------------|
-| R1 | 3 (gate), 7 (approval screen) |
+| R1 | 3 (gate), 4 (executor), 7 (approval screen) |
 | R2 | 3, 6 |
 | R3 | 3 |
 | R4 | 3 |

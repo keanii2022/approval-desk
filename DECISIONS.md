@@ -55,3 +55,26 @@ Template:
 **Left for later:**
 - P06 is still not checked by the gate: a refund on another customer's order gets through if no other rule stops it. Still the owner's call (noted in step 2).
 - The gate stops with an error for a request ID that isn't in the Inbox, instead of returning a result. Step 6 decides how the path handles that.
+
+## Step 4: Executor and logbook (2026-10-07)
+
+**Built:** The logbook (`lib/logbook.ts`), a table that only grows: lines can't be changed, deleted, or overwritten. It writes down the gate's decisions and a person's approvals. The executor (`lib/executor.ts`), the only code that adds a refund. It takes a logbook line number, never a proposal, and pays only for a gate "allow" or a person's approval of something the gate sent to a person. It writes its "refund done" line and the refund in one all-or-nothing save. Tests prove that every way of skipping the gate is refused, and that a broken or full logbook means no refund (R7). Breaking the code on purpose in a copy (about 20 different ways) made the tests fail each time.
+**Decided:** (owner approved each of these)
+- The executor checks R1 again at the moment of paying. Two refunds that are each fine alone can add up to more than was paid. Added the executor to R1's "Checked by" and "Tested in" columns in `docs/RULES.md`. This makes R1 stricter, not looser.
+- One refund per Inbox request, so a retry or an old approval can't pay the same request twice.
+- Gate decisions are written to the logbook now (a small piece of Step 6). The executor can only tell "the gate allowed it" from "skipped the gate" by checking the log. The gate checks the exact copy that gets written, and the executor runs the gate again on it before paying, so a hand-written "allow" line gets nowhere.
+- A person picks the order only when the agent's form named none (the AI was down or unsure). Added to Step 7's goal in `docs/PLAN.md` and to `docs/ARCHITECTURE.md`.
+- Added `export` to one helper in `lib/gate.ts` (the "refunded so far" sum), so the gate and the executor can never disagree about what's left on an order. Nothing about how the gate works changed.
+- Tests that check no rule ID are labelled "Executor:" or "Logbook:" instead of adding a new rule.
+- A person's approval gets the fixed refund reason "Approved by a person (logbook line N)", since a request where the AI was down has no reason to copy.
+- Refund numbers continue from RF016 and never repeat, even after the shop data is reloaded.
+- Times are UTC, like 2026-10-05T14:03:11Z, and must be real dates. The refund date is the date part.
+- Refusals are not written to the logbook yet.
+**Left for later:**
+- What reloading the shop data (`npm run seed`) should do to the logbook. Today the logbook is kept, but the refunds it describes are wiped. Decide before the Step 10 demo.
+- Logging the executor's refusals, such as skipped-gate attempts: Step 6.
+- A person's reject (note required), holding the person to R1 when they decide, and recording who the person was: Step 7.
+- A wait time for a busy database, once the Step 7 server and scripts share the file. For now a busy database stops with nothing changed.
+- The Step 9 eval runner should call the gate directly on a copy of the data, so it never creates approvals.
+- Limit: anyone holding the database file can still drop the logbook table or add refunds directly. The guarantees hold for everything that goes through the app's code.
+- P06 (refund only on the customer's own order) is still not a hard rule, including for an order a person picks.

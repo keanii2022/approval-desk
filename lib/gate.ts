@@ -99,7 +99,7 @@ function readForm(db: DatabaseSync, raw: unknown): RefundForm | null {
 }
 
 // R1: every refund on the order so far, whenever it was made.
-function refundedCents(db: DatabaseSync, orderId: string): number {
+export function refundedCents(db: DatabaseSync, orderId: string): number {
   const row = db.prepare("SELECT COALESCE(SUM(amount_cents), 0) AS total FROM refunds WHERE order_id = ?").get(
     orderId,
   ) as { total: number };
