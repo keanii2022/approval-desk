@@ -42,3 +42,7 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
 - [ ] **Step 10: README and demo**
   - **Goal:** Replace every `[PLACEHOLDER]` in the README with real results, and add a demo.
   - **Done when:** a fresh copy runs from the README alone.
+
+- [ ] **Step 11: Dashboard** (added after Step 5; builds on steps 7 and 9)
+  - **Goal:** One app where the owner can see everything: the shop (customers, orders, refunds), the Inbox, the human queue (reusing the step 7 screen), the logbook, and the dated eval scorecards from step 9. Read-only apart from the step 7 actions. Invented data only.
+  - **Done when:** every section loads from the real data; Playwright tests open each section; the latest scorecard is shown with its date.
