@@ -43,6 +43,10 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
   - **Goal:** Replace every `[PLACEHOLDER]` in the README with real results, and add a demo.
   - **Done when:** a fresh copy runs from the README alone.
 
-- [ ] **Step 11: Dashboard** (added after Step 5; builds on steps 7 and 9)
+- [ ] **Step 11: Village** (added after Step 5; the owner chose to build it early, while step 5 waits for the API key)
+  - **Goal:** A bird's-eye, pixel-style village: the shop in the middle and a house for each part (Inbox, agent, gate, executor, logbook, approval desk, eval gym). Click a house to see what it does; a scripted request walks the path from Inbox to its outcome. Clicking the shop opens the dashboard (step 12). First version uses the stand-in agent and invented data, so it costs nothing; it connects to live data after step 6. Art is drawn in the project (no game library, nothing copied from any game). View only: nothing in the village can change an order.
+  - **Done when:** every house is clickable and reachable by keyboard; the scripted request walks Inbox, agent, gate, then its outcome; Playwright tests open each house and the shop.
+
+- [ ] **Step 12: Dashboard** (opened from the shop house; builds on steps 7 and 9)
   - **Goal:** One app where the owner can see everything: the shop (customers, orders, refunds), the Inbox, the human queue (reusing the step 7 screen), the logbook, and the dated eval scorecards from step 9. Read-only apart from the step 7 actions. Invented data only.
   - **Done when:** every section loads from the real data; Playwright tests open each section; the latest scorecard is shown with its date.
