@@ -78,3 +78,18 @@ Template:
 - The Step 9 eval runner should call the gate directly on a copy of the data, so it never creates approvals.
 - Limit: anyone holding the database file can still drop the logbook table or add refunds directly. The guarantees hold for everything that goes through the app's code.
 - P06 (refund only on the customer's own order) is still not a hard rule, including for an order a person picks.
+
+## Village prototype, built before Step 11 (2026-10-07)
+
+**Built:** A playable pixel-art village (`prototypes/village/index.html`) that shows the whole path: the robot agent fetches a request from the Inbox, the gate lights green, yellow or red, a person decides big refunds at the human desk, the factory pays, and a logbook window lists recent decisions with the agent's reason, the gate's verdict and the final outcome. It runs on scripted, invented data and no AI calls. Checked by simulating about eight minutes of play, including approving and rejecting at the desk.
+**Decided:** (owner approved each of these)
+- A person always decides at the human desk. There is no timer and no auto-approve, so nothing can be paid without a person saying yes.
+- Rules are shown in plain words ("over the $100 limit, needs a human"), never as rule numbers.
+- Walking speed stays the same; popups stay up longer, because time slows while the agent stands still. A speed button and a pause key were added.
+- The logbook is labelled "add-only record", because the agent only suggests; it never writes the record. It holds only what really happened during the visit, with numbers continuing from RF016.
+- The look is a calm dusk palette, with a day palette as an option.
+**Left for later:**
+- Step 11 rebuilds this in TypeScript and Next.js, on live data after Step 6. The prototype is plain HTML, outside the stack list, so it stays a reference only.
+- The agent's reasons in the logbook are written by hand for the demo. Real ones come from the form's reason field.
+- Playwright tests and a full accessibility check belong to Step 11.
+- Whether the village should also show R3 to R6 rules (old order, many refunds, garbled form, AI down).

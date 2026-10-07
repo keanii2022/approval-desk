@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Approval Desk Village</title>
+<style>
+:root{--s:2;color-scheme:dark}
+html,body{margin:0;background:#110b24}
+body{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--s)*4px);padding:calc(var(--s)*4px) 16px calc(var(--s)*6px);box-sizing:border-box;color:#f5efd6}
+#device{background:#2b2050;padding:calc(var(--s)*5px);border:calc(var(--s)*2px) solid #0a0618;box-shadow:inset 0 0 0 calc(var(--s)*1px) #4a3a86,0 0 0 calc(var(--s)*2px) #3b2d6e;display:flex;flex-direction:column;gap:calc(var(--s)*3px)}
+canvas{display:block;image-rendering:crisp-edges;image-rendering:pixelated}
+#screen,#logbook,#title{background:#15102e}
+#bar,#bar2{display:flex;flex-wrap:wrap;gap:calc(var(--s)*3px);justify-content:center;max-width:100%}
+#bar2{min-height:calc(var(--s)*17px);margin-top:calc(var(--s)*-1px)}
+button{font:inherit;background:#f5efd6;border:calc(var(--s)*1px) solid #15102e;border-radius:0;padding:calc(var(--s)*3px) calc(var(--s)*4px) calc(var(--s)*3px);cursor:pointer;box-shadow:0 calc(var(--s)*2px) 0 #15102e;color:#15102e;display:flex;align-items:center;justify-content:center;margin-bottom:calc(var(--s)*2px)}
+button:hover{background:#f2e8a8}
+button:active{transform:translateY(calc(var(--s)*1px));box-shadow:0 calc(var(--s)*1px) 0 #15102e}
+button[aria-pressed=true]{background:#e8806e}
+#bsound[aria-pressed=true],#bauto[aria-pressed=true]{background:#6cc48a}
+button[hidden]{visibility:hidden}
+#bA{background:#6cc48a}#bA:hover{background:#92d8a8}#bR{background:#e8988a}#bR:hover{background:#f0aca0}
+button:focus-visible{outline:calc(var(--s)*1px) solid #f2e8a8;outline-offset:calc(var(--s)*1px)}
+.bare body{padding:0;display:block}.bare #bar,.bare #bar2,.bare #logbook,.bare #title,.bare #keys{display:none}.bare #device{padding:0;border:0;box-shadow:none;background:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#err{color:#e8806e;font:12px monospace;white-space:pre-wrap;margin:0;max-width:640px}
+</style>
+</head>
+<body>
+<h1 class="sr">Approval Desk village: a refund agent, a gate, a human desk and a factory</h1>
+<div id="device">
+  <canvas id="title" width="320" height="28" aria-hidden="true"></canvas>
+  <canvas id="screen" width="320" height="240" role="img" aria-label="Pixel-art village at dusk. A small coral robot, the refund agent, walks between its house, the inbox stand, the gate with a three-colour light, the human desk screen and the factory that pays refunds. The shop stands in the middle and two empty houses are for sale."></canvas>
+  <canvas id="logbook" width="320" height="54" role="button" tabindex="0" aria-label="Logbook. Press to see recent decisions and the reasons behind them"></canvas>
+</div>
+<div id="bar">
+  <button id="b1" type="button" aria-label="Scene 1: small $24 refund, allowed"></button>
+  <button id="b2" type="button" aria-label="Scene 2: big $150 refund, needs a human"></button>
+  <button id="b3" type="button" aria-label="Scene 3: ridiculous $500 request, blocked"></button>
+  <button id="bauto" type="button" aria-pressed="true" aria-label="Auto-play"></button>
+  <button id="bday" type="button" aria-pressed="false" aria-label="Day palette"></button>
+  <button id="bsound" type="button" aria-pressed="true" aria-label="Sound effects"></button>
+  <button id="bspeed" type="button" aria-label="Playback speed"></button>
+</div>
+<canvas id="keys" width="320" height="9" aria-hidden="true"></canvas>
+<div id="bar2">
+  <button id="bA" type="button" hidden aria-label="Approve the refund"></button>
+  <button id="bR" type="button" hidden aria-label="Reject the refund"></button>
+</div>
+<div id="live" class="sr" aria-live="polite"></div>
+<pre id="err"></pre>
+<script>
+window.onerror=(m,s,l,c)=>{document.getElementById('err').textContent+=m+' @'+l+':'+c+'\n'};
+(()=>{
+'use strict';
+const SW=320,SH=240,LOGH=54;
+
+/* ================= PALETTE (25 named colours, dusk default + day toggle) ================= */
+const PALETTE={
+  K :['#1a1530','#2b2140'], // outline near-black
+  W :['#f5efd6','#fffbe8'], // cream / paper
+  G1:['#7a70b0','#6fc24e'], // ground
+  G2:['#6f65a8','#4a9e3a'], // ground dots / shade
+  G3:['#8a80be','#9ae068'], // ground light
+  TK:['#14282e','#145c2e'], // tree near-black
+  T1:['#1f4a52','#1f7a38'], // tree dark
+  T2:['#3a7378','#36a048'], // tree mid
+  T3:['#6aa6a0','#7ad060'], // tree light
+  D1:['#a89488','#dbb578'], // dirt
+  D2:['#8a7478','#b98c58'], // dirt dark
+  RG1:['#3a5e3a','#2c9a3c'],// green roof dark
+  RG2:['#4a7a4a','#52c452'],// green roof mid
+  R1:['#7a3040','#a8283c'], // dark red
+  R2:['#c4505a','#f0504c'], // red
+  WL:['#8a82c0','#f2e2b4'], // wall
+  WD:['#7a70ae','#d6bf8c'], // wall dots / trim
+  WH:['#a49cd6','#fff6d8'], // wall light
+  Y1:['#f2e8a8','#fff2a0'], // pale yellow
+  Y2:['#e0b84a','#f8bc20'], // gold
+  C1:['#e8806e','#ff6a54'], // coral
+  BL:['#7f8cb4','#5a86c8'], // blue-grey
+  GN:['#58d684','#3cd060'], // gate green
+  B1:['#9a7458','#b87c44'], // wood
+  B2:['#5a4048','#6e4630']  // dark wood
+};
+const NAMES=Object.keys(PALETTE);
+const C={};NAMES.forEach((n,i)=>C[n]=i);
+const {K,W,G1,G2,G3,TK,T1,T2,T3,D1,D2,RG1,RG2,R1,R2,WL,WD,WH,Y1,Y2,C1,BL,GN,B1,B2}=C;
+const LUT=[0,1].map(m=>{const a=new Uint32Array(NAMES.length);NAMES.forEach((n,i)=>{const h=PALETTE[n][m];a[i]=(0xff000000|(parseInt(h.slice(5,7),16)<<16)|(parseInt(h.slice(3,5),16)<<8)|parseInt(h.slice(1,3),16))>>>0});return a});
+
+/* ================= BITMAP FONT (5x7, own glyphs) ================= */
+const g=(...r)=>r.join('/');
+const FONT_SRC={
+A:'.###./#...#/#...#/#####/#...#/#...#/#...#',B:'####./#...#/#...#/####./#...#/#...#/####.',
+C:'.###./#...#/#..../#..../#..../#...#/.###.',D:'####./#...#/#...#/#...#/#...#/#...#/####.',
+E:'#####/#..../#..../####./#..../#..../#####',F:'#####/#..../#..../####./#..../#..../#....',
+G:'.###./#...#/#..../#.###/#...#/#...#/.####',H:'#...#/#...#/#...#/#####/#...#/#...#/#...#',
+I:'###/.#./.#./.#./.#./.#./###',J:'..###/...#./...#./...#./...#./#..#./.##..',
+K:'#...#/#..#./#.#../##.../#.#../#..#./#...#',L:'#..../#..../#..../#..../#..../#..../#####',
+M:'#...#/##.##/#.#.#/#.#.#/#...#/#...#/#...#',N:'#...#/##..#/#.#.#/#..##/#...#/#...#/#...#',
+O:'.###./#...#/#...#/#...#/#...#/#...#/.###.',P:'####./#...#/#...#/####./#..../#..../#....',
+Q:'.###./#...#/#...#/#...#/#.#.#/#..#./.##.#',R:'####./#...#/#...#/####./#.#../#..#./#...#',
+S:'.####/#..../#..../.###./....#/....#/####.',T:'#####/..#../..#../..#../..#../..#../..#..',
+U:'#...#/#...#/#...#/#...#/#...#/#...#/.###.',V:'#...#/#...#/#...#/#...#/#...#/.#.#./..#..',
+W:'#...#/#...#/#...#/#.#.#/#.#.#/##.##/#...#',X:'#...#/#...#/.#.#./..#../.#.#./#...#/#...#',
+Y:'#...#/#...#/.#.#./..#../..#../..#../..#..',Z:'#####/....#/...#./..#../.#.../#..../#####',
+0:'.###./#...#/#..##/#.#.#/##..#/#...#/.###.',1:'..#../.##../..#../..#../..#../..#../.###.',
+2:'.###./#...#/....#/...#./..#../.#.../#####',3:'.###./#...#/....#/..##./....#/#...#/.###.',
+4:'...#./..##./.#.#./#..#./#####/...#./...#.',5:'#####/#..../####./....#/....#/#...#/.###.',
+6:'.###./#..../#..../####./#...#/#...#/.###.',7:'#####/....#/...#./..#../.#.../.#.../.#...',
+8:'.###./#...#/#...#/.###./#...#/#...#/.###.',9:'.###./#...#/#...#/.####/....#/....#/.###.',
+'.':g('.','.','.','.','.','.','#'),',':g('..','..','..','..','..','.#','#.'),
+'!':g('#','#','#','#','#','.','#'),':':g('.','.','#','.','.','#','.'),
+'?':'.###./#...#/....#/...#./..#../...../..#..','-':g('...','...','...','###','...','...','...'),
+'+':'...../..#../..#../#####/..#../..#../.....','$':'..#../.####/#.#../.###./..#.#/####./..#..',
+'%':'##..#/##..#/...#./..#../.#.../#..##/#..##','/':'....#/....#/...#./..#../.#.../#..../#....',
+"'":g('#','#','.','.','.','.','.'),'(':g('.#','#.','#.','#.','#.','#.','.#'),')':g('#.','.#','.#','.#','.#','.#','#.'),
+'#':'.#.#./#####/.#.#./.#.#./#####/.#.#./.....','=':g('.....','.....','#####','.....','#####','.....','.....'),
+'>':'.#.../..#../...#./....#/...#./..#../.#...',' ':g('..','..','..','..','..','..','..')
+};
+const FONT={};for(const k in FONT_SRC){const r=FONT_SRC[k].split('/');FONT[k]={w:r[0].length,r}}
+const textW=(s,sc=1)=>{let w=0;for(const ch of String(s).toUpperCase()){w+=((FONT[ch]||FONT['?']).w+1)*sc}return Math.max(0,w-sc)};
+
+/* ================= buffer primitives (palette-index pixels) ================= */
+let B=null;               // current target buffer
+let OCC=new Uint8Array(SW*SH),TM=new Uint8Array(SW*SH); // occupancy / tree mask for the static build
+const P=(x,y,c)=>{if(x>=0&&y>=0&&x<SW&&y<SH)B[y*SW+x]=c};
+const Gt=(x,y)=>(x>=0&&y>=0&&x<SW&&y<SH)?B[y*SW+x]:-1;
+const R=(x,y,w,h,c)=>{for(let j=Math.max(0,y);j<Math.min(SH,y+h);j++)for(let i=Math.max(0,x);i<Math.min(SW,x+w);i++)B[j*SW+i]=c};
+const FR=(x,y,w,h,c)=>{R(x,y,w,1,c);R(x,y+h-1,w,1,c);R(x,y,1,h,c);R(x+w-1,y,1,h,c)};
+const RR=(x,y,w,h,c)=>{R(x+1,y,w-2,1,c);R(x,y+1,w,h-2,c);R(x+1,y+h-1,w-2,1,c)}; // rect without corner pixels
+const D2K=(x,y,w,h,a,b,ph=0)=>{for(let j=0;j<h;j++)for(let i=0;i<w;i++){const X=x+i,Y=y+j;const c=(((X>>1)+(Y>>1)+ph)&1)?a:b;if(c>=0)P(X,Y,c)}}; // coarse 2px checker
+const D1K=(x,y,w,h,a,b,ph=0)=>{for(let j=0;j<h;j++)for(let i=0;i<w;i++){const X=x+i,Y=y+j;const c=((X+Y+ph)&1)?a:b;if(c>=0)P(X,Y,c)}}; // fine 1px checker
+const occ=(x,y,w,h,v=2)=>{for(let j=Math.max(0,y);j<Math.min(SH,y+h);j++)for(let i=Math.max(0,x);i<Math.min(SW,x+w);i++)OCC[j*SW+i]=v};
+const hs=(x,y,s=0)=>{let h=(Math.imul(x,374761393)+Math.imul(y,668265263)+Math.imul(s,2147483647))|0;h=Math.imul(h^(h>>>13),1274126177);return(((h^(h>>>16))>>>0)/4294967296)};
+function text(s,x,y,c,sc=1){s=String(s).toUpperCase();let cx=x;for(const ch of s){const gl=FONT[ch]||FONT['?'];for(let j=0;j<7;j++){const row=gl.r[j];for(let i=0;i<gl.w;i++)if(row[i]==='#')R(cx+i*sc,y+j*sc,sc,sc,c)}cx+=(gl.w+1)*sc}return cx}
+function textO(s,x,y,c,o,sc=1){for(const[dx,dy]of[[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]])text(s,x+dx*sc,y+dy*sc,o,sc);text(s,x,y,c,sc)}
+const textC=(s,cx,y,c,sc=1,o=-1)=>{const x=Math.round(cx-textW(s,sc)/2);o>=0?textO(s,x,y,c,o,sc):text(s,x,y,c,sc)};
+const shade=(x,y,w,h)=>{for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++){if((((i>>1)+(j>>1))&1)===0)continue;const c=Gt(i,j);if(c===G1)P(i,j,G2);else if(c===G3)P(i,j,G1);else if(c===D1)P(i,j,D2)}};
+
+/* ================= static art: ground, paths, trees ================= */
+const PATHS=[ // x,y,w,h
+ [48,150,16,44],[48,176,60,16],[90,84,16,108],[34,86,72,16],      // home door path, home row, corridor, inbox front
+ [96,116,112,34],[100,114,104,2],[100,150,104,2],                   // plaza
+ [206,94,40,56],[214,0,24,94],[204,150,40,46],[134,148,28,50],     // gate road, road north, factory path, desk path
+ [138,108,24,8],[277,66,16,3],[277,117,16,3]                        // shop step, house door steps
+];
+function drawGround(night){
+  R(0,0,SW,SH,G1);
+  for(let y=0;y<SH;y+=4)for(let x=0;x<SW;x++)if(((x+(((y>>2)&1)*2))&3)===0)P(x,y,G2);
+  const pm=new Uint8Array(SW*SH);
+  for(const[x,y,w,h]of PATHS)for(let j=y;j<y+h;j++)for(let i=x;i<x+w;i++)if(i>=0&&i<SW&&j>=0&&j<SH)pm[j*SW+i]=1;
+  const isP=(x,y)=>x>=0&&y>=0&&x<SW&&y<SH&&pm[y*SW+x]===1;
+  for(let y=0;y<SH;y++)for(let x=0;x<SW;x++){
+    if(!pm[y*SW+x])continue;
+    let d=9;for(let r=1;r<=4&&d===9;r++){for(let j=-r;j<=r&&d===9;j++)for(let i=-r;i<=r;i++){if((Math.abs(i)===r||Math.abs(j)===r)&&!isP(x+i,y+j)){d=r;break}}}
+    let c=D1;const h=hs(x,y,1);
+    if(h<0.075)c=D2;else if(h>0.985)c=G3;
+    if(((x>>2)+(y>>2))%5===0&&(x&3)===1&&(y&3)===2)c=D2;
+    if(d===1)c=((x+y)&1)?G1:D2; else if(d===2)c=(((x>>1)+(y>>1))&1)?D1:D2; else if(d===3&&(x+y)%4===0)c=D2;
+    P(x,y,c);OCC[y*SW+x]=1;
+  }
+}
+const PH_=[1,2,4,6],PE_=[6,9,12,14];
+const pineHW=r=>{const t=r>>3;if(t>3||r<0)return -1;return Math.round(PH_[t]+(PE_[t]-PH_[t])*(r&7)/7)};
+function pine(cx,top){
+  const H=32,ins=(x,y)=>{const r=y-top;if(r<0||r>=H)return false;return Math.abs(x-cx)<=pineHW(r)};
+  for(let r=0;r<H;r++){const hw=pineHW(r),y=top+r;
+    for(let x=cx-hw;x<=cx+hw;x++){
+      const edge=!ins(x-1,y)||!ins(x+1,y)||!ins(x,y-1)||!ins(x,y+1);
+      let c;
+      if(edge)c=K;else{
+        const u=x-(cx-hw),v=r&7,w2=hw*2,ck=(x+y)&1;
+        c=ck?TK:T1;
+        if(u<=3)c=u===1?((y&1)?T2:T3):(ck?T1:T2);
+        else if(v<=1)c=ck?T1:T2;
+        else if(u>=w2-2)c=((x+y)&3)===0?T1:TK;
+        else if(v>=6)c=((x&1)&&!(y&1))?T1:TK;
+        else if(hs(x,y,5)<0.12)c=T2;
+        if(u<=5&&v<=4&&((x*7+y*13)%11===0))c=T3;
+      }
+      P(x,y,c);if(y>=0&&y<SH&&x>=0&&x<SW){TM[y*SW+x]=1;OCC[y*SW+x]=3}
+    }}
+  for(let r=H;r<H+3;r++){P(cx-1,top+r,K);P(cx,top+r,B2);P(cx+1,top+r,K)}
+}
+function drawForest(){
+  const trees=[];
+  for(let i=0;i<11;i++){ // top: two jagged rows, gap for the gate road
+    const cx1=8+i*32,cx2=24+i*32;
+    if(!(cx1>192&&cx1<258&&0))trees.push([cx1,-16]);
+  }
+  for(let j=0;j<9;j++){ // left & right columns
+    trees.push([-2,8+j*26]);
+    trees.push([322,12+j*26]);
+  }
+  for(let i=0;i<11;i++)trees.push([i*32+6,189]); // bottom treeline, jagged like the top
+  const skip=t=>t[0]>204&&t[0]<240&&t[1]<70&&t[1]>-30;      // keep the road open
+  trees.filter(t=>!skip(t)).sort((a,b)=>a[1]-b[1]||a[0]-b[0]).forEach(t=>pine(t[0],t[1]));
+  // grass/tree coarse checker dither where the lawn meets the trees
+  const dist=new Uint8Array(SW*SH).fill(9);
+  for(let y=0;y<SH;y++)for(let x=0;x<SW;x++){if(TM[y*SW+x]){dist[y*SW+x]=0;continue}
+    let d=9;for(let r=1;r<=6&&d===9;r++){for(let j=-r;j<=r&&d===9;j++)for(let i=-r;i<=r;i++){if((Math.abs(i)===r||Math.abs(j)===r)&&x+i>=0&&y+j>=0&&x+i<SW&&y+j<SH&&TM[(y+j)*SW+x+i]){d=r;break}}}
+    dist[y*SW+x]=d}
+  for(let y=0;y<SH;y++)for(let x=0;x<SW;x++){const d=dist[y*SW+x];if(d===0||d>6||OCC[y*SW+x]===1)continue;
+    const cell=(((x>>1)+(y>>1))&1);
+    if(d<=2){P(x,y,cell?T1:G1)}else if(d<=4){P(x,y,(cell&&(x&1)===(y&1))?T1:(cell?G1:G2))}else{if(cell===0&&(x&1)&&(y&1))P(x,y,T1)}
+  }
+}
+
+/* ================= static art: buildings & props ================= */
+function roof(x,y,w,h,a,b,sw=4,ow=2,d=K){ // thick outline + clear vertical stripes (a dark, b mid) + shingle seams
+  R(x,y,w,h,K);
+  for(let i=ow;i<w-ow;i++){const k=i-ow,st=((k/sw)|0)&1,c=st?b:a,dk=st?a:d;
+    for(let j=ow;j<h-ow;j++){const r=j-ow,fb=h-ow-1-j;let col=c;
+      if(h>20&&r%5===4&&fb>2)col=((i+(r/5|0))&1)?c:dk;       // shingle seam (big roofs only): 1px dither
+      if(fb===0)col=dk;else if(fb===1&&((i+j)&1))col=dk;       // eave shadow
+      P(x+i,y+j,col)}}
+  occ(x,y,w,h);
+}
+function wall(x,y,w,h){
+  R(x,y,w,h,WL);
+  for(let j=0;j<h;j++)for(let i=0;i<w;i++)if((j&1)===0&&(((i+(((j>>1)&1)*2))&3)===0))P(x+i,y+j,WD);
+  R(x,y,1,h,K);R(x+w-1,y,1,h,K);
+  R(x+1,y+h-5,w-2,1,K);D1K(x+1,y+h-4,w-2,2,WD,WL);R(x+1,y+h-2,w-2,1,WD);R(x,y+h-1,w,1,K);
+  D2K(x+1,y,w-2,4,WD,WL,1);R(x+1,y+4,w-2,1,WD); // roof shadow under the eaves
+  occ(x,y,w,h);
+}
+function door(x,y,w,h){
+  R(x-2,y-2,w+4,h+2,B2);R(x-1,y-1,w+2,h+1,K);R(x,y,w,h,K);
+  D1K(x+1,y+1,w-2,3,TK,K);D1K(x+1,y+h-4,w-2,4,B2,K);R(x+1,y+1,1,h-1,TK);
+  R(x-2,y+h,w+4,2,D2);R(x-3,y+h+2,w+6,1,K);
+  occ(x-3,y-2,w+6,h+5);
+}
+function mat(x,y,w){R(x,y,w,5,K);R(x+1,y+1,w-2,3,R1);for(let i=2;i<w-2;i+=2)R(x+i,y+1,1,3,BL);occ(x,y,w,5)}
+function winGlass(x,y,w,h,night,fl=0){ // 2-pane window; also called each frame for the glow
+  const pw=(w-3)>>1,ph=h-2;
+  R(x,y,w,h,K);
+  const lit=night?[Y1,Y2]:[BL,W];
+  for(let p=0;p<2;p++){const px0=x+1+p*(pw+1);
+    R(px0,y+1,pw,ph,fl&&p===fl-1?lit[1]:lit[0]);
+    R(px0,y+ph,pw,1,lit[1]);R(px0+pw-1,y+1,1,ph,lit[1]);
+    if(!night){P(px0,y+1,W);P(px0+1,y+1,W);P(px0,y+2,W)} else {P(px0,y+1,W)}
+  }
+  R(x+1+pw,y+1,1,ph,K);
+}
+function sillBox(x,y,w,flowers){R(x-1,y,w+2,4,K);R(x,y+1,w,2,B1);if(flowers)for(let i=1;i<w-1;i+=3){P(x+i,y-1,(i%2)?R2:Y2);P(x+i+1,y-1,G2);P(x+i,y-2,(i%2)?C1:W)}occ(x-1,y-2,w+2,6)}
+function mailbox(x,y){R(x+4,y+8,2,7,K);R(x+4,y+9,1,6,B2);R(x,y,10,8,K);R(x+1,y+1,8,6,WL);R(x+2,y+3,6,1,BL);R(x+2,y+5,4,1,BL);R(x+1,y+1,8,1,WH);R(x+9,y-2,2,5,R2);P(x+9,y-3,K);P(x+10,y-3,K);occ(x,y-3,12,19)}
+function sign(x,y,txt1,txt2,col,fg){const w=(txt2?Math.max(textW(txt1),textW(txt2)):textW(txt1))+5,h=txt2?17:10;
+  R(x+(w>>1)-1,y+h,2,7,K);R(x+(w>>1)-1,y+h,1,7,B2);R(x,y,w,h,K);R(x+1,y+1,w-2,h-2,col);text(txt1,x+3,y+2,fg);if(txt2)text(txt2,x+3,y+9,fg);R(x+1,y+1,w-2,1,WH);occ(x-1,y,w+2,h+8)}
+function lampPost(x,y,night){ // base at (x,y)
+  R(x-1,y-26,3,26,K);R(x,y-24,1,24,BL);R(x-3,y-2,7,3,K);R(x-2,y-1,5,1,BL);
+  R(x-4,y-34,9,9,K);R(x-3,y-33,7,7,night?Y1:BL);R(x-3,y-27,7,1,night?Y2:BL);R(x-5,y-36,11,3,K);R(x-4,y-35,9,1,BL);
+  occ(x-5,y-36,11,38);
+  if(night)glow(x,y+3,15,5);
+}
+function glow(cx,cy,rx,ry){ // lantern / window light: tiny solid core, fine checker, then sparse dots; only on ground & walls
+  for(let j=-ry;j<=ry;j++)for(let i=-rx;i<=rx;i++){const d=(i*i)/(rx*rx)+(j*j)/(ry*ry);if(d>1)continue;
+    const X=cx+i,Y=cy+j,c=Gt(X,Y);
+    const on=d<0.14||(d<0.5&&((X+Y)&1)===0)||(d>=0.5&&(X&1)===0&&(Y&1)===0&&(((X>>1)+(Y>>1))&1)===0);if(!on)continue;
+    if(c===G1||c===G2)P(X,Y,c===G2?G1:G3);else if(c===D1||c===D2)P(X,Y,Y1);else if(c===WL||c===WD)P(X,Y,WH)}
+}
+function crate(x,y,w,h,fruit){R(x,y,w,h,K);R(x+1,y+1,w-2,h-2,B1);R(x+1,y+h-3,w-2,1,B2);for(let i=3;i<w-1;i+=4)R(x+i,y+1,1,h-2,B2);
+  if(fruit)for(let i=1;i<w-2;i+=3){R(x+i,y-2,3,3,K);P(x+i+1,y-1,fruit[(i/3|0)%fruit.length]);P(x+i+1,y,fruit[(i/3|0)%fruit.length]);P(x+i,y-1,fruit[(i/3|0)%fruit.length])}occ(x,y-3,w,h+3)}
+function boardedWin(x,y,w,h){R(x,y,w,h,K);R(x+1,y+1,w-2,h-2,B1);R(x+1,y+(h>>1),w-2,1,K);for(let i=0;i<w-2;i++){P(x+1+i,y+1+((i*(h-3)/(w-3))|0),B2);P(x+w-2-i,y+1+((i*(h-3)/(w-3))|0),B2)}R(x+1,y+1,w-2,1,B2);R(x+1,y+h-2,w-2,1,B2)}
+function bush(x,y,w){R(x+1,y,w-2,1,K);R(x,y+1,w,6,K);R(x+1,y+1,w-2,5,T1);for(let j=1;j<6;j++)for(let i=1;i<w-1;i++)P(x+i,y+j,(i+j)&1?(j<3?T2:TK):T1);for(let i=2;i<w-3;i+=4)P(x+i,y+1,T3);R(x,y+7,w,1,K);occ(x-1,y,w+2,9)}
+
+const BELT_T=0.9,ARC_T=0.6,COIN_GAP=0.28,COIN_LAND=BELT_T+ARC_T;   // coin timing: ride the belt, arc out, land on the pile
+const PILE=[[194,185],[186,185],[178,185],[190,178],[182,178],[198,179],[186,171]]; // where the paid coins land
+const FX=244,FY=168,FW=52,FH=26;                         // factory
+const BELT_Y=176;                                         // conveyor top edge
+const WINS=[[112,90,21,11],[171,90,21,11],[33,135,11,9],[73,135,11,9]]; // glowing windows (re-lit each frame so they can flicker)
+function drawInbox(night){
+  shade(32,80,56,5);
+  for(const px of[36,80]){R(px,58,5,24,K);R(px+1,58,3,24,B1);R(px+1,58,1,24,B2)}       // posts
+  R(36,60,48,22,B2);D1K(41,60,38,12,K,B2);                                             // dark back panel
+  R(38,70,44,12,K);R(39,71,42,10,B1);for(let i=43;i<80;i+=6)R(i,72,1,9,B2);R(39,71,42,2,W);R(39,73,42,1,B2); // counter front, planks
+  R(34,69,52,3,K);R(35,69,50,2,B1);R(35,69,50,1,W);                                    // counter top
+  textO('INBOX',45,74,Y1,K);                                                           // lettering on the counter front
+  for(let k=0;k<3;k++){const lx=60+k*4,ly=64+(k===1?-2:0)+k;R(lx,ly,13,6,K);R(lx+1,ly+1,11,4,W);P(lx+5,ly+2,K);P(lx+6,ly+3,K);P(lx+7,ly+2,K);P(lx+6,ly+4,R2);R(lx+2,ly+4,3,1,BL)} // pile of letters
+  R(38,66,8,2,K);R(39,66,6,1,BL);P(46,66,R2);                                          // pen
+  const ax=29,aw=60;R(ax,44,aw,16,K);                                                  // striped awning
+  for(let i=1;i<aw-1;i++){const c=(((i-1)>>2)&1)?W:R2;for(let j=1;j<14;j++){let col=c;if(j>=11)col=(i&1)?(c===W?WL:R1):c;if(j===1)col=(i&1)?c:(c===W?WL:R1);P(ax+i,44+j,col)}}
+  for(let s=0;s<aw/8;s++){const sx=ax+s*8;R(sx,60,8,1,K);R(sx+1,58,6,3,K);R(sx+2,58,4,2,(s&1)?R2:W);R(sx+1,57,6,1,(s&1)?R1:WL)}
+  R(ax,44,aw,1,K);
+  // mail emblem pinned on the awning: blue plate, cream envelope, red seal
+  R(48,46,24,12,K);R(49,47,22,10,BL);R(49,47,22,1,WH);
+  R(52,48,16,8,K);R(53,49,14,6,W);for(let i=0;i<6;i++){P(53+i,49+i<55?49+i:54,K);P(66-i,49+i<55?49+i:54,K)}R(59,53,2,2,R2);R(53,54,14,1,BL);
+  shade(30,82,58,3);occ(29,44,60,40);
+}
+function drawShop(night){
+  const x=110,y=68,w=84;
+  shade(x,y+46,w+6,6);
+  wall(x,y,w,48);
+  roof(106,38,92,32,RG1,RG2,4,2);
+  R(176,26,10,16,K);R(177,27,8,14,WD);D1K(177,27,8,14,WD,BL);R(175,24,12,4,K);R(176,25,10,2,BL);occ(175,24,12,18);
+  for(const cx of[131,172])for(let yy=53;yy<60;yy++)P(cx,yy,(yy&1)?BL:K);
+  // SHOP sign: clean cream letters on a dark wooden plaque (no dither behind the letters, so every letter edge stays crisp)
+  R(121,58,62,24,K);R(122,59,60,22,B2);R(122,59,60,1,B1);R(122,80,60,1,TK);
+  for(let i=124;i<180;i+=1)if((i&3)===0)P(i,60,B1);
+  for(const[rx,ry]of[[124,61],[179,61],[124,78],[179,78]]){P(rx,ry,Y2)}
+  text('SHOP',133,64,K,2);text('SHOP',132,63,W,2);
+  door(144,92,16,24);mat(145,116,14);
+  sillBox(113,103,22,true);sillBox(169,103,22,true);
+  crate(117,108,13,8,[R2,Y2,C1]);crate(176,108,13,8,[Y2,GN,R2]);
+  occ(106,38,92,82);
+}
+function drawAgentHouse(night){
+  const x=30,y=122,w=56;
+  shade(x,y+30,w+6,6);
+  wall(x,y,w,30);roof(28,96,60,28,R1,R2,4,2);
+  R(70,86,9,14,K);R(71,87,7,12,WD);D1K(71,87,7,12,WD,BL);R(69,84,11,4,K);R(70,85,9,2,BL);occ(69,84,11,16);
+  door(48,136,16,16);mat(49,152,14);
+  R(38,120,36,10,K);R(39,121,34,8,B2);R(39,121,34,1,B1);P(40,122,Y2);P(71,122,Y2);text('AGENT',43,122,K);text('AGENT',42,121,W);
+  sillBox(32,145,13,true);sillBox(72,145,13,true);
+  mailbox(34,158);
+  occ(28,96,60,60);
+}
+function drawHouse(x,y){ // compact boarded cottage, red FOR SALE sign planted in front-left
+  shade(x-2,y+30,44,5);
+  wall(x,y+10,38,22);roof(x-2,y,42,13,RG1,T1,4,2);
+  door(x+25,y+19,9,13);
+  boardedWin(x+4,y+15,10,8);
+  for(let i=0;i<8;i++)P(x+2+((hs(i,y,3)*34)|0),y+9+((hs(i,x,4)*3)|0),T2);   // moss on the roof edge
+  occ(x-2,y,42,36);
+  sign(x-6,y+23,'FOR','SALE',R2,W);
+}
+function pillar(px,py,w,h){ // chunky stone post with a capstone
+  R(px,py,w,h,K);R(px+1,py+1,w-2,h-2,BL);D1K(px+1,py+3,w-2,h-6,BL,WH);
+  R(px+2,py+3,2,h-6,WH);R(px+w-4,py+3,3,h-6,WD);
+  R(px-1,py-3,w+2,6,K);R(px,py-2,w,4,WH);R(px,py+1,w,1,WD);
+  R(px-1,py+h-3,w+2,3,K);R(px,py+h-3,w,2,WD);
+  occ(px-1,py-3,w+2,h+3);
+}
+function drawGate(night){
+  shade(198,92,58,4);
+  pillar(202,50,12,44);pillar(237,36,14,58);              // left post, and the right post that holds the light
+  R(239,41,10,30,K);R(240,42,8,28,TK);                    // light housing
+  R(200,45,38,13,K);R(201,46,36,11,B2);R(201,46,36,1,B1);  // lintel board
+  text('GATE',207,48,Y1);P(203,51,Y2);P(234,51,Y2);
+  occ(200,34,52,62);
+}
+function gateLights(state,amb){
+  const lamps=[[R2,R1],[Y2,B1],[GN,RG1]],ids=['R','Y','G'];
+  const LIT=new Set([G1,G2,G3,D1,D2,BL,WH,WD,WL]);
+  for(let i=0;i<3;i++){const lx=241,ly=43+i*9,on=state===ids[i];
+    R(lx,ly,6,7,K);R(lx+1,ly+1,4,5,on?lamps[i][0]:lamps[i][1]);
+    if(on){
+      // coloured light spilling over the pillar, the road and the lintel: fine checker near, sparse dots far; pulses a little
+      const pul=((amb*5)|0)&1,cx=lx+2.5,cy=ly+3;
+      for(let j=-11;j<=18;j++)for(let q=-15;q<=20;q++){const X=lx+q,Y=ly+j;
+        if(q>=0&&q<=5&&j>=0&&j<=6)continue;
+        const d=((X-cx)*(X-cx))/(11*11+pul*10)+((Y-cy)*(Y-cy))/(9*9+pul*8);if(d>1)continue;
+        const c=Gt(X,Y);if(!LIT.has(c))continue;
+        if(d<0.3?((X+Y)&1)===0:(((X&1)===0&&(Y&1)===0)&&(((X>>1)+(Y>>1))&1)===0))P(X,Y,lamps[i][0])}
+      R(lx-1,ly-1,8,1,lamps[i][0]);R(lx-1,ly+7,8,1,lamps[i][0]);R(lx-1,ly,1,7,lamps[i][0]);R(lx+6,ly,1,7,lamps[i][0]); // bright rim round the lens
+      R(lx+1,ly+1,4,5,lamps[i][0]);P(lx+1,ly+1,W);P(lx+2,ly+1,W);P(lx+1,ly+2,W);
+    }
+    else P(lx+1,ly+1,lamps[i][0])}
+}
+function gateArm(f){ // f 0..1 -> arm rises from horizontal to vertical
+  const hx=214,hy=82,L=22,ang=f*Math.PI/2,n=L*2,pts=[];
+  for(let i=0;i<=n;i++){const d=i/n*L;pts.push([Math.round(hx+Math.cos(ang)*d),Math.round(hy-Math.sin(ang)*d),d])}
+  for(const[x,y]of pts)R(x-2,y-2,5,5,K);
+  for(const[x,y,d]of pts)R(x-1,y-1,3,3,(((d/4)|0)&1)?W:R2);
+  R(hx-3,hy-4,6,8,K);R(hx-2,hy-3,4,6,BL);P(hx-2,hy-3,WH);
+}
+function drawDesk(night){
+  shade(108,180,72,6);
+  for(const px of[122,160]){R(px,176,7,20,K);R(px+1,176,5,19,B1);R(px+1,176,1,19,B2);R(px+5,176,1,19,B2);R(px-1,194,9,3,K)}
+  R(122,186,45,3,K);R(123,187,43,1,B2);
+  R(110,146,68,34,K);R(111,147,66,32,BL);D1K(112,148,64,30,BL,WH);R(111,147,66,2,WH);R(111,178,66,1,WD);
+  R(115,152,58,22,K);R(116,153,56,20,TK);
+  R(120,143,3,4,K);R(165,143,3,4,K);R(118,141,52,3,K);R(119,142,50,1,night?Y1:BL);
+  occ(108,140,72,58);
+}
+function deskScreen(mode,amb){
+  R(116,153,56,20,TK);for(let j=154;j<172;j+=2)R(116,j,56,1,T1);
+  if(mode===0){textC('HUMAN',144,156,T3,1);textC('DESK',144,165,T3,1);if(((amb*2)|0)&1)R(158,172,3,1,T3)}
+  else{const on=((amb*4)|0)&1;R(116,153,56,20,on?R1:TK);D1K(117,154,54,18,on?R2:T1,on?R1:TK);textC('!',126,156,Y1,2,K);textC('ASK A',152,157,W,1,K);textC('HUMAN',152,165,W,1,K)}
+}
+function drawFactory(night){
+  const x=FX,y=FY,w=FW,h=FH;
+  shade(x-4,y+h,w+10,6);
+  // monitor roof: striped teal band with two glowing skylights
+  {const rx=x-2,rw=w+4,ry=y-9;R(rx,ry,rw,10,K);
+   for(let i=1;i<rw-1;i++){const st=((i-1)>>2)&1,c=st?T2:T1;
+     for(let j=1;j<8;j++){let col=c;if(j===1)col=st?T3:T2;else if(j===5&&((i+j)&1))col=st?T1:TK;else if(j===7)col=TK;P(rx+i,ry+j,col)}}
+   for(const vx of[x+18,x+36]){R(vx,y-18,16,10,K);R(vx+1,y-17,14,8,night?Y1:BL);R(vx+1,y-17,14,1,W);R(vx+1,y-10,14,1,night?Y2:WD);R(vx+8,y-17,1,8,K);
+     if(!night){P(vx+2,y-16,W);P(vx+3,y-16,W);P(vx+2,y-15,W);P(vx+10,y-16,W);P(vx+11,y-16,W)}else{P(vx+3,y-14,W);P(vx+10,y-14,W)}
+     R(vx-1,y-9,18,1,K);}}
+  // brick body with mortar lines
+  R(x,y,w,h,K);
+  for(let j=1;j<h-1;j++)for(let i=1;i<w-1;i++){const row=(j-1)>>2,off=(row&1)*4,m=((j-1)&3)===3||((i-1+off)&7)===7;P(x+i,y+j,m?K:(((j-1)&3)===0?C1:(hs(i>>3,row,7)<0.3?R1:R2)))}
+  R(x,y,w,2,K);R(x,y+h-3,w,3,K);R(x+1,y+h-3,w-2,2,B2);
+  R(x-2,y+8,6,13,K);R(x-1,y+9,4,11,TK);for(let j=10;j<19;j+=2)R(x-1,y+j,2,1,BL);           // conveyor mouth
+  R(x+5,y+3,45,11,K);R(x+6,y+4,43,9,W);R(x+6,y+12,43,1,BL);text('FACTORY',x+8,y+5,R1);   // name plate
+  R(x+35,y+15,14,8,K);R(x+36,y+16,12,6,TK);for(let j=17;j<22;j+=2)R(x+36,y+j,12,1,BL);    // roll-up door
+  // smokestack, drawn last so it stands in front of the roof
+  const sx=246,sy=133;
+  R(sx,sy,12,36,K);for(let j=1;j<35;j++)for(let i=1;i<11;i++){const m=(j&3)===3||(((i+((j>>2)&1)*3))%6)===5;P(sx+i,sy+j,m?R1:((i<4)?C1:R2))}
+  R(sx-2,sy-2,16,5,K);R(sx-1,sy-1,14,3,BL);D1K(sx-1,sy,14,1,WH,BL);R(sx,sy+9,12,4,K);R(sx+1,sy+10,10,2,W);R(sx+1,sy+10,10,1,WH);R(sx,sy+34,12,2,K);
+  occ(x-4,y-16,w+8,h+16);occ(sx-2,sy-2,16,40);
+}
+function drawBelt(running,amb){
+  const x=206,y=BELT_Y,w=38,h=9;
+  R(x-1,y-1,w+2,h+2,K);R(x,y,w,h,TK);R(x,y,w,1,BL);R(x,y+h-1,w,1,BL);
+  const off=running?(((amb*14)|0)%6):0;
+  for(let i=-6;i<w;i+=6){const px=x+i+off;for(let q=0;q<2;q++){const xx=px+q;if(xx>=x&&xx<x+w)R(xx,y+1,1,h-2,T1)}}
+  R(x-5,y-1,6,h+2,K);R(x-4,y,4,h,BL);R(x-4,y+h-1,4,1,WD);P(x-3,y+3,K);P(x-3,y+4,K);
+  for(const lx of[x+3,x+w-7]){R(lx,y+h+1,5,4,K);R(lx+1,y+h+1,3,3,B2)}
+}
+function drawLectern(){
+  shade(66,184,24,4);
+  R(77,170,4,12,K);R(78,170,2,12,B1);R(71,180,16,3,K);R(72,180,14,2,B2);R(70,182,18,1,K);
+  R(70,156,20,12,K);R(71,157,18,10,B1);R(71,157,18,1,WL);R(71,166,18,1,B2);
+  R(72,158,16,7,K);
+  occ(68,154,24,32);
+}
+function scatterDecor(night){
+  const free=(x,y,r)=>{for(let j=-r;j<=r;j+=2)for(let i=-r;i<=r;i+=2){const X=x+i,Y=y+j;if(X<0||Y<0||X>=SW||Y>=SH||OCC[Y*SW+X])return false}return true};
+  const flowers=[],items=[];
+  for(let n=0;n<1400;n++){const x=((hs(n,1,11)*(SW-8))|0)+3,y=((hs(n,2,11)*188)|0)+10;if(!free(x,y,4))continue;
+    const k=hs(n,3,11);
+    if(k<0.34){flowers.push([x,y,(hs(n,4,11)*4)|0]);OCC[y*SW+x]=4}
+    else if(k<0.9){items.push([x,y]);OCC[y*SW+x]=4}
+    if(flowers.length>36&&items.length>80)break}
+  for(const[x,y]of []){P(x,y,G2);P(x+2,y,G2);P(x+1,y+1,G2);P(x+1,y-1,G3);P(x-1,y-2,G2);P(x+3,y-2,G2);if(hs(x,y,2)<0.5)P(x+1,y-2,G2)}
+  return [];
+}
+const FLCOL=[[R2,Y2],[W,Y2],[C1,Y1],[Y2,R1]];
+function drawFlower(x,y,k,frame){const[pc,cc]=FLCOL[k],sw=frame?1:0;P(x+sw,y-2,G2);P(x,y-1,G2);P(x,y,G2);P(x+1+sw,y-3,pc);P(x-1+sw,y-3,pc);P(x+sw,y-4,pc);P(x+sw,y-2,pc);P(x+sw,y-3,cc)}
+
+const STATIC=[null,null],FLOWERS=[null,null];
+function buildStatic(night){
+  B=new Uint8Array(SW*SH);OCC.fill(0);TM.fill(0);
+  drawGround(night);drawForest();
+  drawInbox(night);drawShop(night);drawGate(night);
+  drawHouse(254,31);drawHouse(254,82);
+  drawAgentHouse(night);drawFactory(night);drawDesk(night);drawLectern();
+  lampPost(102,130,night);lampPost(202,140,night);
+  bush(98,104,10);
+  if(night)for(const w of WINS)glow(w[0]+(w[2]>>1),w[1]+(w[3]>>1),(w[2]>>1)+6,(w[3]>>1)+5);
+  const fl=scatterDecor(night);
+  STATIC[night?0:1]=B;FLOWERS[night?0:1]=fl;
+}
+
+/* ================= the agent (little coral robot), emotes, props ================= */
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const art=(x,y,rows,map)=>rows.forEach((r,j)=>{for(let i=0;i<r.length;i++){const c=map[r[i]];if(c!==undefined)P(x+i,y+j,c)}});
+function agentShadow(ax,ay){ // soft dither shadow under the feet so the little robot sits on the ground
+  for(let j=0;j<2;j++){const hw=j?5:7;for(let i=-hw;i<=hw;i++){const X=ax+i,Y=ay+j;if(j&&((X+Y)&1))continue;if(!j&&Math.abs(i)===hw&&((X&1)))continue;
+    const c=Gt(X,Y),m=(c===G1||c===G3)?G2:(c===D1?D2:(c===D2?K:-1));if(m>=0)P(X,Y,m)}}
+}
+function robot(ax,ay,dir,fr,o){ // 18 x 21 px chunky robot: antenna ball, big head with visor, tiny body, 2-frame walk
+  const fl=dir==='right',x=ax-9,y=ay-21+(fr===2?-1:0)+(o.dy||0);
+  const S=(rx,ry,w,h,c)=>R(fl?x+18-rx-w:x+rx,y+ry,w,h,c);
+  const SR=(rx,ry,w,h,c)=>{S(rx+1,ry,w-2,1,c);S(rx,ry+1,w,h-2,c);S(rx+1,ry+h-1,w-2,1,c)};
+  const letter=(rx)=>{S(rx,13,6,5,K);S(rx+1,14,4,3,W);S(rx+1,14,1,1,K);S(rx+2,15,1,1,K);S(rx+3,14,1,1,K);S(rx+2,16,1,1,R2)};
+  if(dir==='down'||dir==='up'){
+    const back=dir==='up';
+    S(7,0,4,4,K);S(8,1,2,2,Y2);S(8,1,1,1,Y1);S(8,4,2,1,K);                       // antenna
+    S(0,8,2,5,K);S(1,9,1,3,BL);S(16,8,2,5,K);S(16,9,1,3,BL);                     // ears
+    SR(2,5,14,10,K);SR(3,6,12,8,C1);S(4,13,10,1,R1);S(4,6,4,1,W);S(3,7,1,2,W);   // head
+    if(!back){S(4,7,10,5,K);
+      if(o.blink){S(5,9,3,1,Y1);S(10,9,3,1,Y1)}else{S(5,8,3,3,Y1);S(10,8,3,3,Y1);P(fl?x+12:x+5,y+8,W);P(fl?x+7:x+10,y+8,W)}
+      S(7,12,4,1,R1)}
+    else{S(4,7,10,5,R1);S(5,8,8,1,K);S(5,10,8,1,K);S(8,7,2,5,K)}
+    SR(4,14,10,5,K);SR(5,15,8,3,C1);S(5,17,8,1,R1);S(8,15,2,2,back?R1:Y2);if(!back)S(8,15,1,1,Y1);   // body + chest light
+    const a1=fr===1?-1:0,a2=fr===2?-1:0;
+    S(1,15+a1,3,4,K);S(2,16+a1,1,2,C1);S(14,15+a2,3,4,K);S(15,16+a2,1,2,C1);                          // arms
+    S(5,19,3,fr===1?1:2,K);S(10,19,3,fr===2?1:2,K);                                                   // feet
+    if(o.hold)letter(back?1:11);
+  }else{
+    S(8,0,4,4,K);S(9,1,2,2,Y2);S(9,1,1,1,Y1);S(9,4,2,1,K);
+    SR(2,5,13,10,K);SR(3,6,11,8,C1);S(4,13,9,1,R1);S(4,6,4,1,W);S(3,7,1,2,W);
+    S(3,7,8,5,K);o.blink?S(4,9,3,1,Y1):(S(4,8,3,3,Y1),P(fl?x+13:x+4,y+8,W));S(3,12,4,1,R1);
+    S(15,8,3,5,K);S(16,9,1,3,BL);
+    SR(5,14,9,5,K);SR(6,15,7,3,C1);S(6,17,7,1,R1);
+    const ar=fr===1?-2:(fr===2?2:0);S(7+ar,15,4,4,K);S(8+ar,16,2,2,C1);
+    if(fr===1){S(4,19,4,2,K);S(10,19,4,1,K)}else if(fr===2){S(6,19,4,1,K);S(9,19,4,2,K)}else{S(5,19,4,2,K);S(9,19,4,2,K)}
+    if(o.hold)letter(0);
+  }
+}
+function letterIcon(x,y){R(x,y,11,7,K);R(x+1,y+1,9,5,W);for(let i=0;i<4;i++){P(x+1+i,y+1+i,K);P(x+9-i,y+1+i,K)}P(x+5,y+4,R2);R(x+3,y+5,5,1,BL)}
+function bubble(cx,by,w,h){RR(cx-(w>>1),by,w,h,K);RR(cx-(w>>1)+1,by+1,w-2,h-2,W);R(cx-1,by+h-1,3,1,W);P(cx-2,by+h,K);R(cx-1,by+h,3,1,W);P(cx+2,by+h,K);P(cx-1,by+h+1,K);P(cx,by+h+1,W);P(cx+1,by+h+1,K);P(cx,by+h+2,K)}
+const THUMB=['.....KKK..........','....KYYYK.........','....KYYYK.........','....KYYYK.........','....KYYYK.........','....KYYYKKKKKK....','....KYYYYYYYYYK...','KKKKKYYYYYYYYYYK..','KYYYYYYYYYYYYYYYK.','KYWYYYYYYYYYYYYOK.','KYYYYYYYYYKKKKKOK.','KYYYYYYYYYYYYYYOK.','KYYYYYYYYYKKKKKOK.','KYYYYYYYYYYYYYYOK.','KYYYYYYYYYKKKKKOK.','KYYYYYYYYYYYYYOOK.','KKYYYYYYYYYYOOOKK.','.KKKKKKKKKKKKKKK..'];
+function emote(n,cx,ty,t,amb){ // ty = y of the agent's antenna tip
+  const bob=Math.sin(amb*9)>0?1:0,by=ty-17-bob;
+  if(n==='!'){bubble(cx,by,13,13);R(cx-1,by+2,3,6,R2);R(cx-1,by+9,3,2,R2)}
+  else if(n==='!!'){bubble(cx,by-1,21,14);const c=((t*8)|0)&1?R2:R1;for(const dx of[-6,3]){R(cx+dx,by+1,3,6,c);R(cx+dx,by+8,3,2,c)}}
+  else if(n==='think'){bubble(cx,by+2,19,11);const k=1+((amb*2.4)|0)%3;for(let i=0;i<3;i++)R(cx-6+i*5,by+7,3,3,i<k?K:BL)}
+  else if(n==='laugh'){const fy=by-4+(((t*9)|0)&1);RR(cx-7,fy,15,15,K);RR(cx-6,fy+1,13,13,Y1);R(cx-5,fy+12,11,1,Y2);
+    for(const dx of[-4,2]){P(cx+dx,fy+5,K);P(cx+dx+1,fy+4,K);P(cx+dx+2,fy+5,K)}
+    R(cx-4,fy+8,9,4,K);R(cx-3,fy+8,7,1,W);R(cx-2,fy+11,5,1,R2);P(cx-6,fy+8,BL);P(cx+6,fy+8,BL);P(cx-6,fy+10,BL);P(cx+6,fy+10,BL);
+    if(((t*6)|0)&1){textO('HA',cx+10,fy+3,Y1,K);textO('HA',cx-21,fy+7,Y1,K)}else{textO('HA',cx+10,fy+7,Y1,K);textO('HA',cx-21,fy+3,Y1,K)}}
+  else if(n==='thumb'){const k=Math.min(1,(t%100)),py=by-8-((Math.abs(Math.sin(amb*7))*3)|0);
+    art(cx-9,py,THUMB,{K:K,Y:Y1,O:Y2,W:W});
+    const sp=((amb*6)|0)&1;for(const[dx,dy,w,h]of[[-15,2,4,1],[-13,-3,1,3],[13,-3,1,3],[15,2,4,1],[0,-5,1,3]])R(cx+dx+(sp&&dx<0?-1:0)+(sp&&dx>0?1:0),py+dy+(sp&&dy<0?-1:0),w,h,Y2)}
+  else if(n==='sweat'){for(let i=0;i<3;i++){const ph=((amb*2.2+i*0.34)%1),x=cx+7+i*3+ph*3,y=ty+2+ph*10-i*2;if(ph<0.85){R(Math.round(x),Math.round(y),2,3,BL);P(Math.round(x),Math.round(y),W)}}}
+}
+function puffs(cx,cy,n,rise,amb,r0,spread,drift){ // round clouds: pale core, blue-grey rim, thinning to checker then dots
+  for(let k=0;k<n;k++){
+    const age=((amb*0.32+k/n)%1),r=Math.max(2,Math.round(r0*(0.8+age*1.4))),
+      x=Math.round(cx+Math.sin(amb*0.9+k*2.1)*spread*age+age*drift),y=Math.round(cy-age*rise);
+    for(let j=-r;j<=r;j++)for(let i=-r;i<=r;i++){
+      const d=i*i+j*j;if(d>r*r+r*0.6)continue;
+      const X=x+i,Y=y+j;
+      if(age>0.6&&((X+Y)&1))continue;
+      if(age>0.85&&((X&1)||(Y&1)))continue;
+      const rim=d>(r-1)*(r-1);
+      P(X,Y,(i+j<-r*0.5&&!rim)?WH:((i+j>r*0.4||(rim&&i+j>0))?BL:W));
+    }
+  }
+}
+function coin(x,y,ph){const w=[8,6,2,6][ph&3],cx=Math.round(x-w/2),cy=Math.round(y-4);
+  if(w===2){R(cx,cy+1,2,6,K);R(cx,cy+2,1,4,Y2);return}
+  RR(cx,cy,w,8,K);R(cx+1,cy+1,w-2,6,Y2);
+  R(cx+1,cy+1,1,3,Y1);P(cx+2,cy+1,Y1);
+  if(w===8){R(cx+3,cy+2,2,4,Y1);R(cx+4,cy+3,1,2,Y2)}else R(cx+2,cy+2,1,4,Y1);
+  P(cx+w-2,cy+6,B1)}
+function spark(x,y,c=Y1){R(x-1,y,3,1,c);R(x,y-1,1,3,c)}
+function stampTool(x,y){R(x-8,y-5,16,5,K);R(x-7,y-4,14,3,R2);R(x-7,y-4,14,1,C1);R(x-3,y-13,6,8,K);R(x-2,y-12,4,6,B1);R(x-5,y-18,10,6,K);R(x-4,y-17,8,4,B1);R(x-4,y-17,8,1,W)}
+function stampMark(kind,cx,cy){ // solid-filled so it reads over anything it lands on
+  const ok=kind==='ok',w=96,h=22,col=ok?RG1:R2,x=cx-(w>>1),y=cy-(h>>1);
+  R(x,y,w,h,W);FR(x,y,w,h,ok?RG1:R1);FR(x+2,y+2,w-4,h-4,col);
+  const t=ok?'ALLOWED':'BLOCKED',tx=cx-(textW(t,2)>>1),ty=cy-7;
+  if(!ok)text(t,tx+1,ty+1,R1,2);
+  text(t,tx,ty,col,2);
+  if(ok){R(x+3,y+3,w-6,1,GN)}else{for(let i=0;i<w-8;i+=6)R(x+4+i,y+h-4,3,1,R1)}
+}
+
+/* ================= timeline (every state is a pure function of scene time t) ================= */
+const SP=104,RUN=140,DOORP=[56,152];
+const GX=226;                                           // x where the agent stands at the gate / on the east road
+const RT={in:[[56,184],[92,184],[92,92],[36,92]],gate:[[92,92],[92,134],[GX,134],[GX,130]],fac:[[GX,164]],
+  desk:[[GX,134],[100,134],[100,176]],facFromDesk:[[100,134],[GX,134],[GX,164]],
+  homeFromFac:[[GX,134],[92,134],[92,186],[80,186]],homeFromDesk:[[100,186],[80,186]],homeFromGate:[[GX,134],[92,134],[92,186],[80,186]]};
+class TL{
+  constructor(sc){this.sc=sc;this.t=0;this.x=56;this.y=152;this.f='down';this.seg=[];this.ev={};this.em=[];this.dl=[];this.pay=false}
+  stand(d,f){if(f)this.f=f;this.seg.push({t0:this.t,t1:this.t+d,x0:this.x,y0:this.y,x1:this.x,y1:this.y,f:this.f});this.t+=d;return this}
+  go(pts,sp=SP){for(const[x,y]of pts){const dx=x-this.x,dy=y-this.y,d=Math.abs(dx)+Math.abs(dy);if(!d)continue;
+    const f=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'),dur=d/sp;
+    this.seg.push({t0:this.t,t1:this.t+dur,x0:this.x,y0:this.y,x1:x,y1:y,f,run:sp>100});this.f=f;this.x=x;this.y=y;this.t+=dur}return this}
+  say(t,a,b){this.dl.push({t,a,b:b||''})}
+  emo(n,a,b){this.em.push({n,a,b})}
+}
+const SC={1:{o:'O1001',tot:'$60.00',amt:'$24.00',id:'RF016',w:'ALLOWED'},2:{o:'O1002',tot:'$150.00',amt:'$150.00',id:'RF017'},3:{o:'O1003',tot:'$20.00',amt:'$500.00',id:'RF018',w:'BLOCKED'}};
+function build(sc,dec){
+  const T=new TL(sc),e=T.ev,I=SC[sc];
+  T.stand(0.5,'down');e.letter=0.2;T.emo('!',0.25,1.2);
+  e.walk1=T.t;T.go(RT.in);e.atInbox=T.t;T.stand(0.9,'up');e.grab=e.atInbox+0.3;e.grabDone=e.grab+0.45;
+  e.walk2=T.t;T.go(RT.gate);e.arrive=T.t;
+  const A=e.arrive;e.card=A+0.2;e.scan=A+0.8;
+  const factory=()=>{e.atFac=T.t;e.give=T.t+0.3;e.coins=T.t+0.8;e.tag=T.t+1.2;T.pay=true;T.stand(sc===2?4.3:5.2,'down');e.coinsEnd=T.t;T.say(e.coins,'$'+I.amt.slice(1)+' REFUNDED!')};
+  const home=(r,fromFac,word)=>{e.walkHome=T.t;T.go(r);e.atHome=T.t;if(!fromFac)e.giveHome=T.t+0.3;e.giveEnd=fromFac?e.give:e.giveHome+0.4;
+    T.stand(sc===1?5.5:(sc===3?6.2:(dec==='R'?6.6:3.2)),'up');e.write=e.atHome+0.5;e.log=e.atHome+1.9;e.word=word;
+    T.say(e.walkHome,'BACK HOME. THE LOGBOOK RECORDS IT.');T.say(e.log,'LOGBOOK: #RF# '+I.amt+' '+word)};
+  if(sc===1){
+    e.lightFix=A+1.45;e.result='G';e.arm=A+1.6;e.stamp=A+1.85;e.thumb=A+2.4;e.cardEnd=A+4.4;e.stampKind='ok';
+    T.emo('thumb',e.thumb,A+5.0);T.stand(2.7,'up');T.stand(3.1,'down');e.leave=T.t;e.lightOff=e.leave+0.8;
+    T.say(0,'A NEW LETTER ARRIVES AT THE INBOX!','ORDER O1001 ASKS FOR A $24.00 REFUND.');T.say(e.walk1,'THE REFUND AGENT GOES TO FETCH IT.');
+    T.say(e.grab,'AGENT: GOT IT! I ONLY SUGGEST.','THE GATE DECIDES. THE FACTORY PAYS.');T.say(e.walk2+0.3,'FIRST STOP: THE GATE.','IT IS PLAIN CODE. NO AI INSIDE.');
+    T.say(e.scan,'THE GATE CHECKS EVERY RULE...');T.say(e.lightFix,'GREEN LIGHT! $24.00 IS WITHIN EVERY RULE.');T.say(e.thumb,'AGENT: OK!');
+    T.say(e.leave,'NEXT: THE FACTORY. IT IS PLAIN CODE TOO.');
+    T.go(RT.fac);factory();home(RT.homeFromFac,true,'ALLOWED');
+  }else if(sc===2){
+    e.lightFix=A+1.5;e.result='Y';e.freak=A+1.8;e.freakEnd=A+5.0;e.cardEnd=A+4.4;
+    T.emo('!!',e.freak,e.freakEnd);T.emo('sweat',e.freak,e.freakEnd);T.stand(2.2,'up');T.stand(2.8,'down');e.run=T.t;e.lightOff=e.run+1.3;
+    T.go(RT.desk,RUN);T.stand(0.15,'right');e.atDesk=T.t;e.win=T.t+0.1;e.winOpen=e.win+0.6;e.decide=e.winOpen+HOLD_S;
+    T.emo('think',e.winOpen,e.decide);T.stand(e.decide-T.t,'right');
+    e.close=e.decide+0.55;e.closeEnd=e.close+0.4;
+    T.say(0,'ANOTHER LETTER! ORDER O1002 WANTS $150.00','BACK FOR A BROKEN LAMP.');T.say(e.walk1,'THE REFUND AGENT GOES TO FETCH IT.');
+    T.say(e.grab,'AGENT: THIS ONE IS BIG. TO THE GATE!');T.say(e.scan,'THE GATE CHECKS EVERY RULE...');
+    T.say(e.lightFix,'YELLOW! REFUNDS OVER $100 NEED A HUMAN.');T.say(e.freak,'AGENT: WHOA WHOA! I CANNOT DECIDE THIS!!');
+    T.say(e.run,'THE AGENT RUNS TO THE HUMAN DESK.');T.say(e.win,'A HUMAN MUST DECIDE: APPROVE OR REJECT?','NOTHING IS PAID UNTIL YOU CHOOSE.');
+    if(dec==='A'){T.emo('thumb',e.decide+0.55,e.decide+1.7);T.say(e.decide,'APPROVED! THE HUMAN SAID YES.');T.stand(1.2,'down');
+      T.say(e.close,'NOW THE FACTORY CAN PAY.');T.go(RT.facFromDesk);factory();home(RT.homeFromFac,true,'NEEDED A HUMAN - APPROVED')}
+    else{T.emo('sweat',e.decide+0.55,e.decide+1.7);T.say(e.decide,'REJECTED. THE HUMAN SAID NO.');T.stand(1.5,'down');
+      T.say(e.close,'NO MONEY MOVES.');home(RT.homeFromDesk,false,'NEEDED A HUMAN - REJECTED')}
+  }else{
+    e.lightFix=A+1.5;e.result='R';e.stamp=A+2.2;e.laugh=A+3.0;e.cardEnd=A+5.6;e.stampKind='block';
+    T.emo('laugh',e.laugh,A+10.0);T.stand(2.9,'up');T.stand(8.1,'down');e.leave=T.t;e.lightOff=e.leave+0.8;
+    T.say(0,'ORDER O1003 ASKS FOR $500.00 BACK...','BUT THE ORDER WAS ONLY $20.00!');T.say(e.walk1,'THE REFUND AGENT GOES TO FETCH IT.');
+    T.say(e.grab,'AGENT: HMM. THAT LOOKS VERY ODD.');T.say(e.scan,'THE GATE CHECKS EVERY RULE...');
+    T.say(e.lightFix,'RED! NEVER REFUND MORE THAN WAS PAID.');T.say(e.stamp,'BLOCKED! NOTHING GETS PAID.');T.say(e.laugh,'AGENT: LOL YA RIGHT!');
+    home(RT.homeFromGate,false,'BLOCKED');
+  }
+  e.red=e.lightFix;T.dur=T.t;T.dec=dec;return T;
+}
+const TLS={};
+const getTL=(sc,dec)=>{const k=sc===2?'2'+dec:''+sc;return TLS[k]||(TLS[k]=build(sc,dec))};
+function agentAt(tl,t){
+  let s=tl.seg[tl.seg.length-1];for(const q of tl.seg)if(t<q.t1){s=q;break}
+  const u=s.t1>s.t0?clamp((t-s.t0)/(s.t1-s.t0)):1;
+  return{x:Math.round(s.x0+(s.x1-s.x0)*u),y:Math.round(s.y0+(s.y1-s.y0)*u),f:s.f,mv:(s.x0!==s.x1||s.y0!==s.y1)&&t<s.t1,run:s.run};
+}
+const rfid=n=>'RF'+String(n).padStart(3,'0');
+function logLines(tl,t){const l=app.hist.map(en=>en.id+' '+en.a+' '+en.wd);
+  const nl=t>=tl.ev.log?rfid(app.runRF)+' '+SC[tl.sc].amt+' '+tl.ev.word:null;return{l,nl}}
+
+/* ================= logbook detail window: recent entries with the agent's reason, the gate's verdict and the final outcome ================= */
+const SDET={
+ 1:{o:'O1001',a:'$24.00',ag:'TWO OF FOUR MUGS ARRIVED CRACKED.',ga:'GREEN. WITHIN EVERY RULE.',fi:()=>'ALLOWED. PAID $24.00.',g:()=>1,wd:()=>'ALLOWED'},
+ 2:{o:'O1002',a:'$150.00',ag:'LAMP DOES NOT WORK. REFUND LOOKS FAIR.',ga:'YELLOW. OVER THE $100 LIMIT.',fi:d=>d==='R'?'REJECTED BY A HUMAN. NOTHING PAID.':'APPROVED BY A HUMAN. PAID $150.00.',g:d=>d==='R'?0:1,wd:d=>'NEEDED A HUMAN - '+(d==='R'?'REJECTED':'APPROVED')},
+ 3:{o:'O1003',a:'$500.00',ag:'ASKS $500 BUT THE ORDER WAS $20. ODD.',ga:'RED. MORE THAN WAS PAID.',fi:()=>'BLOCKED. NOTHING PAID.',g:()=>0,wd:()=>'BLOCKED'}
+};
+function makeEntry(sc,dec,n){const d=SDET[sc];return{id:rfid(n),o:d.o,a:d.a,ag:d.ag,ga:d.ga,fi:d.fi(dec),g:d.g(dec),wd:d.wd(dec)}}
+function logEntries(tl,t){return t>=tl.ev.log?[...app.hist,makeEntry(tl.sc,tl.dec,app.runRF)]:app.hist.slice()}
+function logSummary(tl,t){const l=logEntries(tl,t);return l.length?'Logbook, newest first. '+l.slice(-4).reverse().map(d=>d.id+', '+d.a+', order '+d.o+'. Agent: '+d.ag+' Gate: '+d.ga+' Final: '+d.fi).join(' '):'The logbook is empty. Run a scene and its entry appears.'}
+function drawLogWin(tl,t){
+  const x=12,y=8,w=296,h=186,list=logEntries(tl,t).slice(-4).reverse();
+  R(x+3,y+3,w,h,K);R(x,y,w,h,K);R(x+1,y+1,w-2,h-2,W);FR(x+2,y+2,w-4,h-4,K);
+  R(x+3,y+3,w-6,11,BL);for(let j=0;j<9;j+=2)R(x+3,y+4+j,w-6,1,WH);
+  const ttl='LOGBOOK: RECENT DECISIONS',tw=textW(ttl);R(x+(w>>1)-(tw>>1)-4,y+3,tw+8,11,W);textC(ttl,x+(w>>1),y+6,K);
+  if(!list.length){textC('NOTHING HERE YET.',x+(w>>1),y+70,K);textC('RUN A SCENE AND ITS ENTRY APPEARS.',x+(w>>1),y+84,BL)}
+  list.forEach((en,i)=>{const ey=y+19+i*37,lx=x+9,vx=lx+40;
+    text(en.id,lx,ey,R1);text(en.a+'  ORDER '+en.o,lx+textW(en.id)+8,ey,K);
+    text('AGENT:',lx,ey+9,BL);text(en.ag,vx,ey+9,K);
+    text('GATE:',lx,ey+17,BL);text(en.ga,vx,ey+17,K);
+    text('FINAL:',lx,ey+25,BL);text(en.fi,vx,ey+25,en.g?RG1:R1);
+    if(i<list.length-1)D1K(lx,ey+33,w-18,1,BL,-1)});
+  textC('CLICK ANYWHERE OR PRESS ESC TO CLOSE',x+(w>>1),y+h-11,BL);
+}
+
+/* ================= renderer ================= */
+const WB=new Uint8Array(SW*SH),OUT=new Uint8Array(SW*SH),LB=new Uint8Array(SW*LOGH);
+const WIN={x:56,y:12,w:208,h:128};
+const BTN={A:{x:WIN.x+8,y:WIN.y+86,w:92,h:21},R:{x:WIN.x+108,y:WIN.y+86,w:92,h:21}};
+const qs=new URLSearchParams(location.search);
+const app={scene:1,pace:0.5,paused:false,logOpen:false,hist:[],runRF:16,rt:0,dk:'',dt0:0,dec:'A',lastDec:'A',t:0,amb:0,auto:!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches),frozen:false,decided:false,info:null,hover:null,hoverBtn:null,pressed:null};
+let night=qs.get('day')!=='1';
+const fly=(x0,y0,x1,y1,u)=>[x0+(x1-x0)*u,y0+(y1-y0)*u-14*4*u*(1-u)];
+const HOT=[
+ {id:'shop',x:106,y:38,w:92,h:82,m:['THE SHOP IS THE HUB.','THE DASHBOARD WILL OPEN FROM HERE LATER.']},
+ {id:'h1',x:248,y:31,w:50,h:50,m:['FOR SALE! NOBODY LIVES HERE YET.','THE NEXT AGENT MOVES IN HERE SOMEDAY.']},
+ {id:'h2',x:248,y:82,w:50,h:50,m:['FOR SALE! NOBODY LIVES HERE YET.','THE NEXT AGENT MOVES IN HERE SOMEDAY.']},
+ {id:'inbox',x:28,y:44,w:62,h:42,m:['THE INBOX STAND.','NEW REFUND REQUESTS ARRIVE HERE.']},
+ {id:'home',x:26,y:96,w:64,h:62,m:['THE REFUND AGENT LIVES HERE.','IT CAN ONLY SUGGEST. IT CANNOT PAY.']},
+ {id:'log',x:68,y:154,w:24,h:34,m:['THE LOGBOOK.','EVERY DECISION GETS WRITTEN DOWN.']},
+ {id:'gate',x:198,y:34,w:56,h:64,m:['THE GATE IS PLAIN CODE, NOT A CHARACTER.','GREEN PAYS. YELLOW ASKS A HUMAN. RED BLOCKS.']},
+ {id:'desk',x:108,y:140,w:72,h:60,m:['THE HUMAN DESK.','BIG REFUNDS WAIT HERE FOR A HUMAN.']},
+ {id:'fac',x:236,y:132,w:62,h:64,m:['THE FACTORY IS PLAIN CODE TOO.','IT IS THE ONLY PLACE THAT PAYS REFUNDS.']}];
+const inR=(r,x,y)=>x>=r.x&&y>=r.y&&x<r.x+r.w&&y<r.y+r.h;
+
+function bookPage(n,pen){R(72,158,16,7,K);R(73,159,14,5,W);R(79,159,2,5,K);R(79,159,1,5,BL);R(74,160,4,1,BL);R(74,162,3,1,BL);R(82,160,4,1,BL);if(n>0)R(82,162,Math.min(5,Math.ceil(n*5)),1,R1);
+  if(pen){const px=82+Math.round(n*4),py=161+(((app.amb*10)|0)&1);R(px,py-1,1,2,K);P(px+1,py-2,R2);P(px+2,py-3,R2);P(px+2,py-4,Y1)}}
+function rot(arr,k){return arr[k%arr.length]}
+const FF=[];for(let n=0;n<400&&FF.length<0;n++){const x=((hs(n,5,21)*290)|0)+16,y=((hs(n,6,21)*150)|0)+44;FF.push([x,y,hs(n,7,21)*6.28,hs(n,8,21)*6.28,hs(n,9,21)])}
+
+function renderWorld(tl,t,amb){
+  const e=tl.ev,s=night?0:1,sc=tl.sc,I=SC[sc];
+  WB.set(STATIC[s]);B=WB;
+  for(const[x,y,k]of FLOWERS[s])drawFlower(x,y,k,((amb*1.4+x*0.13)|0)&1);
+  WINS.forEach((w,i)=>winGlass(w[0],w[1],w[2],w[3],night,night&&hs((amb*0.6)|0,i,9)>0.84?1+(i&1):0));
+  puffs(181,22,4,22,amb+1.3,2,4,6);
+  const A=agentAt(tl,t),payOn=tl.pay&&t>=e.atFac&&t<e.coinsEnd+1.0;
+  puffs(250,130,payOn?5:2,payOn?26:14,amb,payOn?4:3,2,payOn?-10:-6);
+  // gate
+  let armF=0;if(e.arm!==undefined)armF=clamp((t-e.arm)/0.45)-clamp((t-(e.leave+0.5))/0.45);
+  gateArm(Math.round(clamp(armF)*3)/3);
+  let ls='off';if(t>=e.scan&&t<e.lightOff)ls=t<e.lightFix?'RYG'[(((t-e.scan)/0.13)|0)%3]:e.result;
+  gateLights(ls,amb);
+  if(sc===3&&t>=e.lightFix&&t<e.lightFix+1.7)bzzt(t,t-e.lightFix);
+  const winOn=e.win!==undefined&&t>=e.win&&t<e.close+0.4;
+  deskScreen(winOn?1:0,amb);
+  drawBelt(payOn&&t>=e.atFac+0.2,amb);
+  // inbox letter + flight to the agent
+  if(t>=e.letter&&t<e.grabDone){let lx=39,ly=62;
+    if(t<e.grab){const u=clamp((t-e.letter)/0.55),d=1-u;ly-=Math.round(d*d*22);if(u>=1){const k=((amb*5)|0)&1;R(46,56,1,5,k?Y1:Y2);R(44,58,5,1,k?Y1:Y2);P(46,58,W)}}
+    else{const p=fly(39,62,A.x+1,A.y-9,clamp((t-e.grab)/0.45));lx=Math.round(p[0]);ly=Math.round(p[1])}
+    letterIcon(lx,ly)}
+  // letter given to the factory / the logbook
+  if(tl.pay&&t>=e.give&&t<e.give+0.45){const p=fly(A.x+1,A.y-9,FX-3,FY+9,(t-e.give)/0.45);letterIcon(Math.round(p[0]),Math.round(p[1]))}
+  if(e.giveHome!==undefined&&t>=e.giveHome&&t<e.giveHome+0.45){const p=fly(A.x+1,A.y-9,76,156,(t-e.giveHome)/0.45);letterIcon(Math.round(p[0]),Math.round(p[1]))}
+  // coins
+  if(tl.pay&&t>=e.coins){const vanish=t>=e.coinsEnd;for(let i=0;i<7;i++){const tau=t-(e.coins+i*COIN_GAP);if(tau<0)continue;
+    if(vanish&&((((t-e.coinsEnd)*14)|0)&1))continue;if(t>e.coinsEnd+0.7)continue;
+    const[lx,ly]=PILE[i],by=BELT_Y+5;let x,y,ph=((tau*14)|0)+i;
+    if(tau<BELT_T){x=FX-2-(FX-2-209)*(tau/BELT_T);y=by;ph=0}
+    else if(tau<BELT_T+ARC_T){const u=(tau-BELT_T)/ARC_T;x=209+(lx-209)*u;y=by+(ly-by)*u-26*4*u*(1-u)}
+    else{const u=tau-BELT_T-ARC_T;x=lx;y=ly-Math.round(Math.abs(Math.sin(u*11))*5*Math.exp(-u*6));ph=u<0.5?(u*14)|0:0}
+    coin(x,y,ph);
+    if(tau>=BELT_T-0.04&&tau<BELT_T+0.16)spark(207,by-6+(((tau*20)|0)&1));
+    if(tau>=BELT_T+ARC_T&&tau<BELT_T+ARC_T+1.05&&((((amb*6)|0)+i*3)%8)===0)spark(lx+4,ly-6)}}
+  if(tl.pay&&t>=e.tag&&t<e.tag+3.4){const by=127-(Math.min(5,(t-e.tag)*14)|0),w=55;
+    RR(186,by,w,21,K);RR(187,by+1,w-2,19,W);R(188,by+1,w-4,1,WH);
+    R(GX-2,by+21,5,1,W);P(GX-3,by+21,K);P(GX+3,by+21,K);R(GX-1,by+22,3,1,W);P(GX-2,by+22,K);P(GX+2,by+22,K);P(GX-1,by+23,K);P(GX,by+23,W);P(GX+1,by+23,K);P(GX,by+24,K);
+    const ax=Math.round(213.5-textW(I.amt)/2);text(I.amt,ax,by+4,RG1);text(I.amt,ax+1,by+4,RG1);
+    textC('REFUNDED',214,by+13,R1)}
+  // lectern book
+  const wp=e.write===undefined?0:clamp((t-e.write)/1.3);
+  bookPage(t>=e.log?1:wp,e.write!==undefined&&t>=e.write&&t<e.log+0.5);
+  if(e.log!==undefined&&t>=e.log&&t<e.log+3.2){const s2=rfid(app.runRF)+' '+e.word.split(' ').pop(),w=textW(s2)+10,y=189-(Math.max(0,1-(t-e.log)*6)*3|0),x=80-(w>>1),bad=/BLOCKED|REJECTED/.test(s2);
+    RR(x,y,w,12,K);RR(x+1,y+1,w-2,10,W);R(x+2,y+1,w-4,1,WH);text(s2,x+5,y+3,bad?R1:RG1)}
+  // gate card + stamp (drawn under the agent so emotes stay on top)
+  drawCard(tl,t,sc);
+  // agent
+  const hold=t>=e.grabDone&&t<e.giveEnd;
+  let ox=0,oy=0;
+  if(e.freak!==undefined&&t>=e.freak&&t<e.freakEnd){ox=(((t*34)|0)&1)?2:-2;oy=-(((t*17)|0)&1)}
+  if(e.laugh!==undefined&&t>=e.laugh&&t<e.laugh+5)oy=(((t*13)|0)&1)?-1:0;
+  const fr=A.mv?((((t*(A.run?11:6.5))|0)&1)+1):0;
+  agentShadow(A.x+ox,A.y);robot(A.x+ox,A.y,A.f,fr,{hold,blink:(t%3.3)<0.12,dy:oy});
+  for(const em of tl.em)if(t>=em.a&&t<em.b)emote(em.n,A.x+ox,A.y-21+oy,t,amb);
+  // ambient life: fireflies at dusk, butterflies by day
+  for(const f of FF){const x=Math.round(f[0]+Math.sin(amb*0.7+f[2])*9),y=Math.round(f[1]+Math.cos(amb*0.9+f[3])*6);
+    if(night){const on=Math.sin(amb*2.0+f[2]*3)>-0.1;if(on){P(x,y,Y1);P(x+1,y,Y2);if(Math.sin(amb*2.0+f[2]*3)>0.7){P(x-1,y,Y2);P(x,y-1,Y2);P(x,y+1,Y2)}}}
+    else if(f[4]<0.35){const w=((amb*8+f[2])|0)&1,c=f[4]<0.17?R2:Y2;R(x,y,2,2,c);if(w){P(x-1,y-1,c);P(x+2,y-1,c)}else{P(x-1,y+1,c);P(x+2,y+1,c)}P(x,y,K)}}
+  // hover marker
+  if(app.hover&&!app.frozen){const h=app.hover,cx=h.x+(h.w>>1),cy=h.y-3-(((amb*3)|0)&1);R(cx-3,cy,7,1,K);R(cx-2,cy+1,5,1,K);R(cx-1,cy+2,3,1,K);R(cx,cy+3,1,1,K);R(cx-2,cy,5,1,Y1);R(cx-1,cy+1,3,1,Y1);P(cx,cy+2,Y1)}
+}
+const CARD={w:150,h:106},CARDX=140,CARDTOP=84;            // sits on the plaza, below the SHOP sign
+const ROWS={1:[['NOT MORE THAN PAID','ORDER PAID $60.00',1],['UNDER THE $100 LIMIT','NO HUMAN NEEDED',1]],2:[['NOT MORE THAN PAID','ORDER PAID $150.00',1],['OVER THE $100 LIMIT','NEEDS A HUMAN',0]],3:[['MORE THAN WAS PAID','ORDER PAID $20.00',-1],['OVER THE $100 LIMIT','NEEDS A HUMAN',0]]}; // 1 tick, 0 cross = needs a human, -1 cross = blocked
+const TICK=['......#','.....##','#...##.','##.##..','.###...','..#....'],CROSS=['#...#','.#.#.','..#..','.#.#.','#...#'];
+function ruleBox(x,y,st,show,amb){ // 11x11 status box: green tick, gold cross (needs a human) or red cross (blocked)
+  R(x,y,11,11,K);
+  if(!show){R(x+1,y+1,9,9,W);for(let i=0;i<3;i++)P(x+3+i*2,y+5,(((amb*6)|0)+i)%3===0?K:BL);return}
+  R(x+1,y+1,9,9,st===1?GN:(st===0?Y2:R2));R(x+1,y+1,9,1,st===1?W:(st===0?Y1:C1));
+  if(st===1)art(x+2,y+3,TICK,{'#':K});else art(x+3,y+3,CROSS,{'#':st===0?K:W});
+}
+function drawCard(tl,t,sc){
+  const e=tl.ev;if(t<e.card||t>=e.cardEnd+0.3)return;
+  const I=SC[sc],u=Math.min(1,(t-e.card)/0.3),v=Math.max(0,(t-e.cardEnd)/0.3);let p=v>0?1-v:u;p=Math.ceil(p*4)/4;
+  const cw=Math.round(CARD.w*p),ch=Math.round(CARD.h*p),x=CARDX-(cw>>1),y=CARDTOP+((CARD.h-ch)>>1);
+  R(x+2,y+2,cw,ch,K);R(x,y,cw,ch,K);if(cw>4&&ch>4)R(x+1,y+1,cw-2,ch-2,W);
+  if(p<1){if(cw>8&&ch>8)FR(x+2,y+2,cw-4,ch-4,K);return}
+  FR(x+2,y+2,cw-4,ch-4,K);
+  textC('REFUND '+I.o,CARDX,y+6,R1);R(x+9,y+15,cw-18,1,BL);
+  textC(I.amt,CARDX,y+19,sc===3?R2:K,2);R(x+9,y+36,cw-18,1,BL);
+  ROWS[sc].forEach((r,i)=>{const ry=y+40+i*20,shown=t>=e.scan+0.25+i*0.3;
+    ruleBox(x+9,ry+2,r[2],shown,app.amb);text(r[0],x+25,ry,shown&&r[2]<0?R1:K);text(r[1],x+25,ry+9,shown&&r[2]<0?R1:BL)});
+  const zy=y+ch-14;                                    // bottom strip: tag or stamp
+  if(sc===2&&t>=e.lightFix){const tw=textW('NEEDS A HUMAN');R(CARDX-(tw>>1)-5,zy-7,tw+10,13,K);R(CARDX-(tw>>1)-4,zy-6,tw+8,11,Y2);text('NEEDS A HUMAN',CARDX-(tw>>1),zy-4,K)}
+  if(e.stamp!==undefined){
+    const sx=CARDX,sy=zy,dt=t-e.stamp;
+    if(dt>=0)stampMark(e.stampKind,sx,sy);
+    if(dt>-0.3&&dt<0.3){const dy=dt<0?-40*(-dt/0.3)*(-dt/0.3):(dt>0.1?-(dt-0.1)*150:0);stampTool(sx+3,Math.round(sy+8+dy))}
+    if(dt>=0&&dt<0.3)for(let k=0;k<8;k++){const a=k*0.785+0.3,r=6+dt*70;const dx=Math.round(sx+Math.cos(a)*r*1.9),dy2=Math.round(sy+Math.sin(a)*r*0.7);R(dx,dy2,2,2,W);P(dx,dy2,K)}
+  }
+}
+function burst(cx,cy,rin,rout,sx,spikes){ // comic-book burst: pointed star, K outline, pale yellow fill
+  const ex=Math.ceil(rout*sx)+2,ey=rout+2;
+  for(let j=-ey;j<=ey;j++)for(let i=-ex;i<=ex;i++){
+    const dx=i/sx,dy=j,r=Math.sqrt(dx*dx+dy*dy),ph=((Math.atan2(dy,dx)/(Math.PI*2)*spikes)%1+1)%1,tri=1-Math.abs(ph*2-1),lim=rin+(rout-rin)*tri;
+    if(r<=lim)P(cx+i,cy+j,(r>lim-1.2)?K:Y1)}
+}
+function bzzt(t,k){ // the red gate buzzes: shaking BZZT! burst over the gate
+  const f=((k*14)|0)&1,cx=214+(f?1:-1),cy=24+(f?1:0);
+  burst(cx,cy,16,23,2,12);const tw=textW('BZZT!',2);text('BZZT!',cx-(tw>>1)+1,cy-6,K,2);text('BZZT!',cx-(tw>>1),cy-7,f?R1:R2,2);
+}
+function shakeAt(tl,t){const e=tl.ev;if(e.stamp===undefined)return[0,0];const dt=t-e.stamp;if(dt<0||dt>=0.4)return[0,0];
+  const amp=(tl.sc===3?3:2)*(1-dt/0.4),s=((dt*45)|0)&1?1:-1;return[Math.round(s*amp),Math.round(-s*amp*0.5)]}
+function compose(dx,dy){
+  if(!dx&&!dy){OUT.set(WB);return}
+  for(let y=0;y<SH;y++)for(let x=0;x<SW;x++){const sx=x-dx,sy=y-dy;OUT[y*SW+x]=(sx<0||sy<0||sx>=SW||sy>=SH)?K:WB[sy*SW+sx]}
+}
+const HOLD_S=5.0,DWELL=0.6; // DWELL < 1: while the agent stands still, scene time runs slower, so every popup stays up longer
+function drawHumanWin(tl,t,amb){
+  const e=tl.ev;if(e.win===undefined||t<e.win||t>=e.closeEnd)return;
+  const u=Math.min(1,(t-e.win)/0.6),v=t>=e.close?Math.min(1,(t-e.close)/0.4):0;let p=v>0?1-v:u;p=Math.ceil(p*4)/4;if(p<=0)return;
+  const x0=110,y0=146,w0=68,h0=34,x=Math.round(x0+(WIN.x-x0)*p),y=Math.round(y0+(WIN.y-y0)*p),w=Math.round(w0+(WIN.w-w0)*p),h=Math.round(h0+(WIN.h-h0)*p);
+  R(x+3,y+3,w,h,K);R(x,y,w,h,K);R(x+1,y+1,w-2,h-2,W);
+  if(p<1){FR(x+2,y+2,w-4,h-4,K);if(h>18){R(x+3,y+3,w-6,11,BL);for(let j=0;j<9;j+=2)R(x+3,y+4+j,w-6,1,WH)}return}   // opening / closing: empty window with its title bar
+  FR(x+2,y+2,w-4,h-4,K);
+  R(x+3,y+3,w-6,11,BL);for(let j=0;j<9;j+=2)R(x+3,y+4+j,w-6,1,WH);
+  const tw=textW('HUMAN DESK');R(x+(w>>1)-(tw>>1)-4,y+3,tw+8,11,W);textC('HUMAN DESK',x+(w>>1),y+6,K);
+  FR(x+7,y+5,7,7,K);R(x+8,y+6,5,5,W);
+  const dec=t>=e.decide,chosen=dec?tl.dec:null,label={A:'APPROVE',R:'REJECT'};
+  textC('REFUND REQUEST NEEDS A HUMAN!',x+(w>>1),y+19,(((amb*2)|0)&1)&&!dec?R2:R1);
+  const lab=(s,yy)=>text(s,x+12,y+yy,BL),val=(s,yy,c=K,sc=1)=>text(s,x+82,y+yy,c,sc);
+  D1K(x+10,y+29,w-20,1,BL,-1);
+  lab('ORDER',33);val('O1002',33);
+  lab('AMOUNT',45);val('$150.00',41,R1,2);
+  lab('REASON',58);val('LAMP BROKEN',58);
+  D1K(x+10,y+66,w-20,1,BL,-1);
+  const rx=x+10;text('SHOP RULE:',rx,y+69,R1);text('REFUNDS OVER $100',rx+textW('SHOP RULE:')+6,y+69,K);text('NEED A HUMAN TO DECIDE.',rx,y+77,K);
+  for(const k of['A','R']){const b=BTN[k],hov=app.hoverBtn===k&&!dec,pr=chosen===k,off=pr?1:0;   // plain-text buttons, no outlined glyphs
+    const base=k==='A'?(hov?W:GN):(hov?Y1:C1),fill=pr?W:base,bx=x+(b.x-WIN.x),by=y+(b.y-WIN.y);
+    R(bx+2,by+2,b.w,b.h,K);R(bx+off,by+off,b.w,b.h,K);R(bx+1+off,by+1+off,b.w-2,b.h-2,fill);R(bx+1+off,by+1+off,b.w-2,1,WH);R(bx+1+off,by+b.h-3+off,b.w-2,1,k==='A'?RG2:R1);
+    if(dec&&!pr)D1K(bx+1,by+1,b.w-2,b.h-2,BL,W);
+    textC(label[k],bx+(b.w>>1)+off,by+4+off,K,2)}
+  const wait=t<e.decide,ly=y+h-17;
+  if(wait){const el=Math.max(0,e.decide-t),auto=app.frozen;
+    textC('YOUR CALL. CLICK A BUTTON OR PRESS A OR R.',x+(w>>1),ly,K)}
+  else textC(chosen==='A'?'APPROVED. SENT TO THE FACTORY.':'REJECTED. NOTHING IS PAID.',x+(w>>1),ly,chosen==='A'?RG1:R1);
+}
+function drawDialog(l1,l2,el,amb,full){
+  const x=1,y=202,w=318,h=37;
+  R(x,y,w,h,K);R(x+1,y+1,w-2,h-2,W);R(x+2,y+2,w-4,h-4,K);R(x+3,y+3,w-6,h-6,W);
+  for(const[cx,cy]of[[x+5,y+5],[x+w-7,y+5],[x+5,y+h-7],[x+w-7,y+h-7]])R(cx,cy,2,2,BL);
+  let n=full?999:Math.floor(el*40);
+  const line=(s,yy)=>{const k=Math.max(0,Math.min(n,s.length));n-=s.length;const sub=s.slice(0,k);
+    if(sub.startsWith('AGENT:')){text('AGENT:',x+12,yy,R1);text(sub.slice(6),x+12+textW('AGENT:')+4,yy,K)}else text(sub,x+12,yy,K)};
+  line(l1,y+9);line(l2,y+21);
+  if(n>0&&((amb*2.2)|0)%2===0){const bx=x+w-18,by=y+h-12;R(bx,by,5,1,R1);R(bx+1,by+1,3,1,R1);R(bx+2,by+2,1,1,R1)}
+}
+function drawLog(tl,t,amb){
+  B=LB;R(0,0,SW,LOGH,K);R(1,1,SW-2,LOGH-2,W);R(2,2,SW-4,LOGH-4,K);R(3,3,SW-6,LOGH-6,W);
+  text('LOGBOOK',12,7,R1);R(12,15,textW('LOGBOOK'),1,BL);text('ADD-ONLY. CLICK FOR DETAILS',SW-12-textW('ADD-ONLY. CLICK FOR DETAILS'),7,BL);
+  const{l,nl}=logLines(tl,t),all=nl?[...l,nl]:l,show=all.slice(-3);
+  if(!all.length)text('NO ENTRIES YET. RUN A SCENE.',20,25,BL);
+  show.forEach((s,i)=>{const yy=21+i*10,isNew=nl&&i===show.length-1;
+    if(isNew){const k=Math.floor((t-tl.ev.log)*34);s=s.slice(0,Math.max(0,k));text(s,20,yy,R1);if(((amb*3)|0)&1)text('>',11,yy,R1)}
+    else text(s,20,yy,K)});
+}
+function frameRender(){
+  const tl=getTL(app.scene,app.dec),t=Math.min(app.t,tl.dur),amb=app.frozen?t:app.amb,s=night?0:1;
+  if(!STATIC[s])buildStatic(night);
+  renderWorld(tl,t,amb);
+  const[dx,dy]=shakeAt(tl,t);compose(dx,dy);B=OUT;
+  const e=tl.ev;
+  if(e.red!==undefined&&tl.sc===3&&t>=e.red&&t<e.red+1.9){const k=t-e.red;
+    if(k<0.12||(k>0.28&&k<0.4))for(let y=0;y<SH;y++)for(let x=0;x<SW;x++)if(((x+y)&1)===0)OUT[y*SW+x]=R1;
+    if((((k*4)|0)&1)===0){for(let y=0;y<SH;y++)for(let x=0;x<SW;x++)if(x<4||y<4||x>=SW-4||y>=SH-4)OUT[y*SW+x]=(((x+y)>>2)&1)?R2:K}}
+  drawHumanWin(tl,t,amb);
+  if(app.paused)textO('PAUSED',6,6,W,K);
+  if(app.logOpen)drawLogWin(tl,t);
+  // dialogue (scene narration, or a click-info message)
+  let l1='',l2='',el=0,full=false;
+  if(app.info&&(app.frozen||performance.now()<app.info.until)){l1=app.info.m[0];l2=app.info.m[1];el=app.frozen?99:(performance.now()-app.info.t0)/1000;full=app.frozen}
+  else{let d=tl.dl[0];for(const q of tl.dl)if(t>=q.t)d=q;const key=app.scene+'|'+tl.dl.indexOf(d);if(app.dk!==key){app.dk=key;app.dt0=app.rt}l1=d.a;l2=d.b;el=app.rt-app.dt0;full=app.frozen}
+  const rid=rfid(app.runRF);l1=l1.replace('#RF#',rid);l2=l2.replace('#RF#',rid);
+  drawDialog(l1,l2,el,amb,full);
+  const lv=document.getElementById('live'),txt=app.logOpen?logSummary(tl,t):l1+' '+l2;if(lv.dataset.k!==txt){lv.dataset.k=txt;lv.textContent=txt}
+  const lut=LUT[night?0:1];for(let i=0;i<OUT.length;i++)u32[i]=lut[OUT[i]];sctx.putImageData(img,0,0);
+  drawLog(tl,t,amb);for(let i=0;i<LB.length;i++)lu32[i]=lut[LB[i]];lctx.putImageData(limg,0,0);
+  // HTML approve / reject buttons only while the human is needed
+  const waiting=app.scene===2&&!app.frozen&&t>=e.winOpen&&t<e.decide&&!app.decided&&!app.logOpen;
+  bA.hidden=!waiting;bR.hidden=!waiting;
+}
+
+/* ================= page wiring ================= */
+const $=id=>document.getElementById(id);
+const scr=$('screen'),sctx=scr.getContext('2d'),logc=$('logbook'),lctx=logc.getContext('2d'),ttl=$('title');
+sctx.imageSmoothingEnabled=false;lctx.imageSmoothingEnabled=false;
+const img=sctx.createImageData(SW,SH),u32=new Uint32Array(img.data.buffer),limg=lctx.createImageData(SW,LOGH),lu32=new Uint32Array(limg.data.buffer);
+const b1=$('b1'),b2=$('b2'),b3=$('b3'),bauto=$('bauto'),bday=$('bday'),bsound=$('bsound'),bspeed=$('bspeed'),bA=$('bA'),bR=$('bR'),keysc=$('keys');
+let scale=2;
+/* ================= SFX: tiny chip-style synth (WebAudio, no files). Wakes on the first click or key; M mutes ================= */
+let sfxOn=true,AC=null,MASTER=null;
+function sfxArm(){if(AC||app.frozen)return;try{AC=new(window.AudioContext||window.webkitAudioContext)();MASTER=AC.createGain();MASTER.gain.value=0.55;MASTER.connect(AC.destination);AC.resume()}catch(e){AC=null}}
+function tone(f0,f1,dur,type='square',vol=0.07,delay=0){
+  if(!sfxOn||!AC||AC.state!=='running')return;const t0=AC.currentTime+delay,o=AC.createOscillator(),g=AC.createGain();
+  o.type=type;o.frequency.setValueAtTime(f0,t0);o.frequency.linearRampToValueAtTime(f1,t0+dur);
+  g.gain.setValueAtTime(vol,t0);g.gain.linearRampToValueAtTime(0.0001,t0+dur);o.connect(g);g.connect(MASTER);o.start(t0);o.stop(t0+dur+0.02)}
+function noise(dur,vol=0.12,delay=0,rate=0.25){
+  if(!sfxOn||!AC||AC.state!=='running')return;const n=Math.max(1,(AC.sampleRate*dur)|0),buf=AC.createBuffer(1,n,AC.sampleRate),d=buf.getChannelData(0);
+  let hold=0;for(let i=0;i<n;i++){if(i%Math.max(1,(1/rate)|0)===0)hold=Math.random()*2-1;d[i]=hold*(1-i/n)}
+  const src=AC.createBufferSource(),g=AC.createGain();src.buffer=buf;g.gain.value=vol;src.connect(g);g.connect(MASTER);src.start(AC.currentTime+delay)}
+const SFX={
+  click(){tone(660,880,0.05,'square',0.05)},
+  pop(){tone(520,780,0.07,'square',0.06);tone(780,1040,0.07,'square',0.06,0.07)},
+  alert(){tone(880,880,0.06,'square',0.06);tone(1175,1175,0.09,'square',0.06,0.08)},
+  grab(){tone(440,660,0.06,'triangle',0.09)},
+  tick(){tone(1500,1500,0.025,'square',0.025)},
+  ding(){tone(1047,1047,0.1,'square',0.07);tone(1568,1568,0.28,'square',0.07,0.1)},
+  warn(){for(let i=0;i<3;i++){tone(660,660,0.1,'square',0.07,i*0.2);tone(495,495,0.1,'square',0.07,i*0.2+0.1)}},
+  buzz(){tone(110,98,0.55,'sawtooth',0.12);tone(116,104,0.55,'square',0.05);noise(0.4,0.05)},
+  arm(){tone(300,520,0.28,'triangle',0.08)},
+  thunk(){tone(130,50,0.16,'sine',0.3);noise(0.12,0.14)},
+  jingle(){[523,659,784,1047].forEach((f,i)=>tone(f,f,0.11,'square',0.06,i*0.08))},
+  sad(){[392,330,262].forEach((f,i)=>tone(f,f*0.97,0.17,'triangle',0.1,i*0.15))},
+  freak(){for(let i=0;i<8;i++)tone(i&1?990:700,i&1?700:990,0.05,'square',0.05,i*0.06)},
+  open(){tone(400,800,0.1,'square',0.05);tone(800,1200,0.1,'square',0.05,0.1)},
+  coin(){tone(1319,1319,0.05,'square',0.06);tone(1760,1760,0.18,'square',0.06,0.05)},
+  chug(){for(let i=0;i<4;i++){noise(0.1,0.1,i*0.14,0.06);tone(90,70,0.08,'square',0.06,i*0.14)}},
+  write(){for(let i=0;i<5;i++)tone(900+(i%2)*200,700,0.03,'square',0.03,i*0.07)},
+  ha(){tone(700,520,0.09,'square',0.06);tone(700,520,0.09,'square',0.06,0.14);tone(700,520,0.09,'square',0.06,0.28)},
+  bell(){tone(784,784,0.12,'square',0.05);tone(988,988,0.12,'square',0.05,0.1)}
+};
+const sfx=k=>{try{SFX[k]&&SFX[k]()}catch(e){}};
+function sfxList(tl){ // sound cues are derived from the same timeline events that drive the pictures
+  if(tl.sfx)return tl.sfx;const e=tl.ev,L=[],X=(t,k)=>{if(t!==undefined)L.push({t,k})};
+  X(e.letter,'pop');X(0.4,'alert');X(e.grab,'grab');X(e.card,'pop');
+  if(e.scan!==undefined)for(let q=e.scan;q<e.lightFix-0.05;q+=0.13)X(q,'tick');
+  X(e.lightFix,e.result==='G'?'ding':e.result==='Y'?'warn':'buzz');X(e.arm,'arm');X(e.stamp,'thunk');X(e.thumb,'jingle');X(e.freak,'freak');
+  X(e.win,'open');if(e.decide!==undefined){X(e.decide,'click');X(e.decide+0.55,tl.dec==='A'?'jingle':'sad')}
+  if(tl.pay){X(e.atFac,'chug');for(let i=0;i<7;i++)X(e.coins+i*COIN_GAP+COIN_LAND,'coin')}
+  X(e.write,'write');X(e.log,'bell');X(e.laugh,'ha');X(e.laugh!==undefined?e.laugh+1.1:undefined,'ha');
+  return tl.sfx=L.sort((a,b)=>a.t-b.t)}
+let sfxTL=null,sfxT=0;
+function sfxRun(tl,t){ // play every cue whose time was crossed since the last frame; jumps (scene change, human click) just resync
+  if(sfxTL!==tl||t<sfxT||t-sfxT>0.5){sfxTL=tl;sfxT=t;return}
+  for(const c of sfxList(tl))if(c.t>sfxT&&c.t<=t)sfx(c.k);sfxT=t}
+function toggleSound(){sfxOn=!sfxOn;sfxArm();refreshLabels();if(sfxOn)sfx('click')}
+// every bit of page chrome is drawn on the same logical pixel grid as the game, so one font pixel = one game pixel
+function pxText(x,s,px,py,col,sc=1){x.fillStyle=col;let cx=px;for(const ch of s.toUpperCase()){const g=FONT[ch]||FONT['?'];for(let j=0;j<7;j++)for(let i=0;i<g.w;i++)if(g.r[j][i]==='#')x.fillRect(cx+i*sc,py+j*sc,sc,sc);cx+=(g.w+1)*sc}return cx}
+function label(btn,lines,col){lines=[].concat(lines);const key=lines.join('|')+col;let c=btn.firstChild;if(c&&c.dataset.k===key){c.style.width=c.width*scale+'px';c.style.height=c.height*scale+'px';return}
+  if(!c){c=document.createElement('canvas');c.setAttribute('aria-hidden','true');btn.appendChild(c)}
+  const w=Math.max(...lines.map(l=>textW(l))),h=lines.length*8-1;c.width=w;c.height=h;const x=c.getContext('2d');x.clearRect(0,0,w,h);
+  lines.forEach((l,i)=>pxText(x,l,Math.round((w-textW(l))/2),i*8,col));
+  c.style.width=w*scale+'px';c.style.height=h*scale+'px';c.dataset.k=key}
+function drawTitle(){
+  const c=$('title'),x=c.getContext('2d'),W=320,H=28;x.clearRect(0,0,W,H);
+  x.fillStyle='#15102e';x.fillRect(0,0,W,H);x.fillStyle='#2b2050';x.fillRect(2,2,W-4,H-4);x.fillStyle='#15102e';x.fillRect(3,3,W-6,H-6);
+  x.fillStyle='#3b2d6e';for(let i=6;i<W-6;i+=4){x.fillRect(i,5,2,1);x.fillRect(i,H-6,2,1)}
+  const t1='APPROVAL DESK VILLAGE',w1=textW(t1)+t1.length-1; // 2px letter spacing, 1px font pixels
+  let cx=Math.round((W-w1)/2);for(const ch of t1){x.fillStyle='#0a0618';pxText(x,ch,cx+1,7,'#0a0618');pxText(x,ch,cx,6,'#f5efd6');cx+=textW(ch)+2}
+  const parts=[['AGENT SUGGESTS.','#e8806e'],['GATE DECIDES.','#e0b84a'],['FACTORY PAYS.','#6cc48a']],tw=parts.reduce((a,p)=>a+textW(p[0]),0)+(parts.length-1)*6;
+  cx=Math.round((W-tw)/2);for(const[s2,col]of parts){pxText(x,s2,cx,17,col);cx+=textW(s2)+6}
+  for(const sx of[10,W-14]){x.fillStyle='#e0b84a';x.fillRect(sx+1,11,3,1);x.fillRect(sx+2,10,1,3);x.fillStyle='#f2e8a8';x.fillRect(sx+2,11,1,1)}
+  c.style.width=W*scale+'px';c.style.height=H*scale+'px'}
+function drawKeys(){
+  const c=keysc,x=c.getContext('2d'),W=320,H=9;x.clearRect(0,0,W,H);
+  const parts=[['1 2 3','#f2e8a8'],['SCENE','#b2aad0'],['P','#f2e8a8'],['AUTO','#b2aad0'],['N','#f2e8a8'],['DAY','#b2aad0'],['SPACE','#f2e8a8'],['PAUSE','#b2aad0'],['A R','#f2e8a8'],['DECIDE','#b2aad0']];
+  const gap=[5,11,5,11,5,11,5,11,5,0];let tw=0;parts.forEach((p,i)=>tw+=textW(p[0])+gap[i]);
+  let cx=Math.round((W-tw)/2);parts.forEach((p,i)=>{pxText(x,p[0],cx,1,p[1]);cx+=textW(p[0])+gap[i]});
+  c.style.width=W*scale+'px';c.style.height=H*scale+'px'}
+function layout(){
+  const o=qs.get('scale');
+  let fit=Math.floor(Math.min((innerWidth-44)/SW,(innerHeight-170)/(SH+LOGH+28)));if(innerWidth>=700)fit=Math.max(2,fit);
+  scale=o?Math.max(1,Math.min(8,+o)):Math.max(1,Math.min(3,fit));
+  document.documentElement.style.setProperty('--s',scale);
+  scr.style.width=SW*scale+'px';scr.style.height=SH*scale+'px';logc.style.width=SW*scale+'px';logc.style.height=LOGH*scale+'px';
+  drawTitle();drawKeys();refreshLabels();
+}
+function refreshLabels(){
+  const ink='#15102e';
+  label(b1,['SCENE 1','$24 SMALL'],ink);label(b2,['SCENE 2','$150 BIG'],ink);label(b3,['SCENE 3','$500 SILLY'],ink);
+  label(bauto,['AUTO-PLAY',app.auto?'ON':'OFF'],ink);label(bday,[night?'DAY':'NIGHT','KEY N'],ink);label(bsound,['SOUND',sfxOn?'ON':'OFF'],ink);label(bspeed,['SPEED',app.pace===1?'NORMAL':(app.pace===0.5?'SLOW':'SLOWER')],ink);
+  bspeed.setAttribute('aria-label','Playback speed: '+(app.pace===1?'normal':(app.pace===0.5?'slow':'slower'))+'. Press to change');
+  label(bA,'APPROVE (A)',ink);label(bR,'REJECT (R)',ink);
+  [b1,b2,b3].forEach((b,i)=>b.setAttribute('aria-pressed',app.scene===i+1?'true':'false'));
+  bauto.setAttribute('aria-pressed',app.auto?'true':'false');bday.setAttribute('aria-pressed',night?'false':'true');bsound.setAttribute('aria-pressed',sfxOn?'true':'false');
+  bday.setAttribute('aria-label',night?'Switch to the day palette':'Switch to the night palette');
+  bsound.setAttribute('aria-label',sfxOn?'Sound effects on. Press to mute':'Sound effects off. Press to unmute');
+}
+function commitRun(){if(app.frozen)return;const tl=getTL(app.scene,app.dec);if(app.t>=tl.ev.log){app.hist.push(makeEntry(app.scene,app.dec,app.runRF));app.runRF++;if(app.hist.length>12)app.hist.shift()}}
+function setScene(n,quiet){commitRun();if(!quiet)sfx('click');if(app.scene===2)app.lastDec=app.dec;app.scene=n;app.t=0;app.dec='A';app.decided=false;app.info=null;refreshLabels()}
+function decide(d){
+  if(app.frozen||app.scene!==2||app.decided||app.logOpen)return;const tl=getTL(2,'A'),e=tl.ev;
+  if(app.t<e.winOpen||app.t>=e.decide)return;app.dec=d;app.decided=true;app.t=getTL(2,d).ev.decide;sfx('click');
+}
+function toggleNight(){night=!night;refreshLabels()}
+function toLogical(ev){const r=scr.getBoundingClientRect();return[(ev.clientX-r.left)*SW/r.width,(ev.clientY-r.top)*SH/r.height]}
+function winOpenNow(){const tl=getTL(app.scene,app.dec),e=tl.ev;return app.scene===2&&!app.decided&&app.t>=e.winOpen&&app.t<e.decide}
+scr.addEventListener('mousemove',ev=>{const[x,y]=toLogical(ev);app.hoverBtn=null;app.hover=null;
+  if(winOpenNow()){for(const k of['A','R'])if(inR(BTN[k],x,y))app.hoverBtn=k}
+  else app.hover=HOT.find(h=>inR(h,x,y))||null;
+  scr.style.cursor=(app.hover||app.hoverBtn)?'pointer':'default'});
+scr.addEventListener('mouseleave',()=>{app.hover=null;app.hoverBtn=null});
+scr.addEventListener('click',ev=>{const[x,y]=toLogical(ev);
+  if(app.logOpen){app.logOpen=false;return}
+  if(winOpenNow()){for(const k of['A','R'])if(inR(BTN[k],x,y)){decide(k);return}return}
+  const h=HOT.find(q=>inR(q,x,y));if(h){if(h.id==='log'){app.logOpen=true;sfx('click')}else app.info={m:h.m,t0:performance.now(),until:performance.now()+9000}}});
+b1.onclick=()=>setScene(1);b2.onclick=()=>setScene(2);b3.onclick=()=>setScene(3);
+bauto.onclick=()=>{app.auto=!app.auto;refreshLabels();sfx('click')};bday.onclick=()=>{toggleNight();sfx('click')};bsound.onclick=toggleSound;bspeed.onclick=()=>{app.pace=app.pace===0.5?0.25:(app.pace===0.25?1:0.5);refreshLabels();sfx('click')};bA.onclick=()=>decide('A');bR.onclick=()=>decide('R');
+addEventListener('pointerdown',sfxArm);
+logc.style.cursor='pointer';logc.addEventListener('click',()=>{app.logOpen=!app.logOpen;sfx('click')});
+logc.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();ev.stopPropagation();app.logOpen=!app.logOpen}});
+addEventListener('keydown',ev=>{if(ev.ctrlKey||ev.metaKey||ev.altKey)return;sfxArm();const k=ev.key.toLowerCase();
+  if(k==='1'||k==='2'||k==='3')setScene(+k);else if(k==='a')decide('A');else if(k==='r')decide('R');else if(k==='n')toggleNight();else if(k==='p')bauto.onclick();else if(k==='m')toggleSound();else if(k==='s')bspeed.onclick();else if(k===' '){ev.preventDefault();app.paused=!app.paused}else if(k==='l')app.logOpen=!app.logOpen;else if(k==='escape')app.logOpen=false});
+addEventListener('resize',layout);
+
+// URL parameters: ?scene=N&t=SECONDS freezes the game at that exact moment (scene 2 frozen assumes APPROVE unless &d=R)
+const pScene=+qs.get('scene')||0,pT=qs.get('t');
+if(pScene>=1&&pScene<=3)app.scene=pScene;
+if(pT!==null){app.frozen=true;app.t=Math.max(0,+pT||0);if(qs.get('d')==='R'){app.dec='R';app.lastDec='R'}
+  const ck=qs.get('click');if(ck){const h=HOT.find(q=>q.id===ck);if(h)app.info={m:h.m}}}
+if(qs.get('bare'))document.documentElement.classList.add('bare');
+if(qs.get('log'))app.logOpen=true;
+layout();
+if(qs.get('crop')){const[cx,cy]=qs.get('crop').split(',').map(Number);document.documentElement.style.overflow='hidden';scr.style.margin=(-cy*scale)+'px 0 0 '+(-cx*scale)+'px'}
+let last=performance.now();
+function tick(now){
+  const dt=Math.min(0.1,(now-last)/1000);last=now;app.amb+=dt;if(!(app.paused||app.logOpen))app.rt+=dt;
+  const tl=getTL(app.scene,app.dec);const mv=agentAt(tl,app.t).mv;let nt=app.t+((app.paused||app.logOpen)?0:dt*app.pace*(mv?1:DWELL));
+  if(app.scene===2&&!app.decided&&app.t<tl.ev.decide&&nt>=tl.ev.decide)nt=tl.ev.decide-0.001;
+  app.t=nt;
+  if(app.t>=tl.dur){if(app.auto)setScene(app.scene%3+1,true);else setScene(app.scene,true)}
+  sfxRun(getTL(app.scene,app.dec),Math.min(app.t,getTL(app.scene,app.dec).dur));
+  frameRender();requestAnimationFrame(tick);
+}
+if(app.frozen)frameRender();else requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
