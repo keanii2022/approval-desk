@@ -93,3 +93,16 @@ Template:
 - The agent's reasons in the logbook are written by hand for the demo. Real ones come from the form's reason field.
 - Playwright tests and a full accessibility check belong to Step 11.
 - Whether the village should also show R3 to R6 rules (old order, many refunds, garbled form, AI down).
+
+## R8: a refund must be on the asking customer's own order (2026-10-07)
+
+**Built:** A new hard rule, R8, in the gate and the executor. The gate blocks a refund on an order that belongs to someone else, and names R8. The executor checks it again when a person's approval is paid, so a person can't approve a refund on someone else's order either. R8 is in `docs/RULES.md`, in the policy as P15 (word for word, as the policy test requires), and in the tests. Breaking R8 on purpose in the gate failed 5 tests, and in the executor failed 1.
+**Decided:** (owner approved)
+- This turns policy line P06 into a hard rule. Until now only the agent's care stood between a customer and a refund on someone else's order.
+- The result is Block, not Send to human (Q6 in `docs/RULES.md`). It is stricter, and a person can't override it.
+- An "unsure" form naming someone else's order still goes to a person for R6, and a no-refund answer is still allowed, because nothing on either is carried out. The person then picks from the asking customer's own orders only (Step 7).
+- Several old tests paired a request with another customer's order, because nothing checked it. They now use the asking customer's own orders (the executor tests add a second request for the same customer). The "1,000 bad proposals" test gains an R8 case, so all 1,000 still stop. Nothing was loosened.
+**Left for later:**
+- Step 7's order picker must list only the asking customer's orders.
+- The village prototype's rules window still shows seven rules.
+- The agent's instructions are unchanged. It already sees only the asking customer's orders; the evals will show whether it still suggests a stranger's order.

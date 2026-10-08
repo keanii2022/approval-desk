@@ -2,9 +2,9 @@ import type { DatabaseSync } from "node:sqlite";
 
 // The gate: plain code, no AI. It checks the agent's answer to one Inbox request
 // against the hard rules in docs/RULES.md and returns one result, naming the
-// rules behind it. It checks R1 to R6; R7 belongs to the logbook and executor.
+// rules behind it. It checks R1 to R6 and R8; R7 belongs to the logbook and executor.
 
-export type RuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6";
+export type RuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R8";
 
 export type GateDecision = {
   result: "allow" | "send_to_human" | "block";
@@ -32,7 +32,7 @@ const R4_HUMAN_AT_REFUNDS = 3; // 3+ earlier refunds,
 const R4_WINDOW_DAYS = 90; // made 90 days or fewer before the request (Q3)
 
 type Request = { customer_id: string; received_on: string };
-type Order = { placed_on: string; amount_paid_cents: number };
+type Order = { customer_id: string; placed_on: string; amount_paid_cents: number };
 
 // When several rules apply, the strictest result wins (block, then send to
 // human, then allow), and every rule behind that result is named (Q4).
@@ -56,14 +56,16 @@ export function checkProposal(db: DatabaseSync, requestId: string, output: Agent
   if (form.action === "no_refund") return { result: "allow", rules: [] };
 
   // R5: a refund on an order that doesn't exist can't be checked or carried out.
-  const order = db.prepare("SELECT placed_on, amount_paid_cents FROM orders WHERE id = ?").get(form.orderId) as
-    | Order
-    | undefined;
+  const order = db
+    .prepare("SELECT customer_id, placed_on, amount_paid_cents FROM orders WHERE id = ?")
+    .get(form.orderId) as Order | undefined;
   if (!order) return { result: "block", rules: ["R5"] };
 
   const blocking: RuleId[] = [];
   const needsHuman: RuleId[] = [];
   if (form.amountCents > order.amount_paid_cents - refundedCents(db, form.orderId)) blocking.push("R1");
+  // R8: the order must belong to the customer who asked (policy line P06 made a hard rule).
+  if (order.customer_id !== request.customer_id) blocking.push("R8");
   if (form.amountCents > R2_HUMAN_ABOVE_CENTS) needsHuman.push("R2");
   if (daysBetween(order.placed_on, request.received_on) > R3_HUMAN_ABOVE_DAYS) needsHuman.push("R3");
   if (recentRefunds(db, request) >= R4_HUMAN_AT_REFUNDS) needsHuman.push("R4");

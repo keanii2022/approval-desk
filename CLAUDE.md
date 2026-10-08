@@ -7,7 +7,7 @@ big decisions to a human, and its accuracy is measured with evals.
 
 - `docs/PLAN.md`: the ten Stage 1 steps, each with a goal and "done when". The first unticked box is the current step.
 - `docs/ARCHITECTURE.md`: the parts, the flow, which step builds each part, test standards.
-- `docs/RULES.md`: the hard rules (R1 to R7) and open questions.
+- `docs/RULES.md`: the hard rules (R1 to R8) and open questions.
 - `docs/ROADMAP.md`: Stages 2 to 4. Not for now.
 - `DECISIONS.md`: one entry per step.
 - `private/`: the owner's own notes. Never committed.

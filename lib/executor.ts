@@ -22,7 +22,7 @@ import {
 //   already_done:   this Inbox request already has a refund
 //   R1:             paying now would go over the amount paid
 //   R7:             the logbook couldn't write
-export type Refusal = "not_approved" | "nothing_to_pay" | "already_done" | "R1" | "R7";
+export type Refusal = "not_approved" | "nothing_to_pay" | "already_done" | "R1" | "R7" | "R8";
 
 export type ExecuteResult =
   | { result: "done"; refundId: string; entryId: number }
@@ -91,10 +91,17 @@ export function executeRefund(db: DatabaseSync, approvalEntryId: number, now: st
       // R1: the person's amount must still fit what's left on the order. The gate
       // isn't run again here, because it would check the form's amount, not the person's.
       const approval = line.details as HumanApproval;
-      const order = db.prepare("SELECT amount_paid_cents FROM orders WHERE id = ?").get(approval.orderId) as {
+      const order = db.prepare("SELECT customer_id, amount_paid_cents FROM orders WHERE id = ?").get(approval.orderId) as {
+        customer_id: string;
         amount_paid_cents: number;
       };
       if (approval.amountCents > order.amount_paid_cents - refundedCents(db, approval.orderId)) return refused("R1");
+
+      // R8: the person can't pick an order that isn't the asking customer's, either.
+      const asker = db.prepare("SELECT customer_id FROM inbox WHERE id = ?").get(line.requestId) as
+        | { customer_id: string }
+        | undefined;
+      if (!asker || asker.customer_id !== order.customer_id) return refused("R8");
 
       // A fixed reason: a request where the AI was down has no form reason to copy.
       payment = {

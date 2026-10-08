@@ -28,7 +28,7 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
   - **Done when:** a small refund passes; a $150 refund waits for a human; an impossible one is blocked; all three are in the logbook.
 
 - [ ] **Step 7: Approval screen** (part 5)
-  - **Goal:** A screen where a human approves, rejects (note required), or changes the amount. If the agent's form named no order (the AI was down or unsure), the human picks the order. R1 applies to the human too.
+  - **Goal:** A screen where a human approves, rejects (note required), or changes the amount. If the agent's form named no order (the AI was down or unsure), the human picks the order, from the asking customer's own orders only. R1 and R8 apply to the human too.
   - **Done when:** Playwright tests pass for: approve; reject without a note (refused); amount over the limit (refused).
 
 - [ ] **Step 8: Practice cases**

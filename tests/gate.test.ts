@@ -53,6 +53,29 @@ describe("gate: plain cases", () => {
   });
 });
 
+describe("R8: a refund must be on an order that belongs to the customer who asked", () => {
+  it("R8: a refund on someone else's order is blocked (REQ-022 names Mara's O1001)", () => {
+    expect(check("REQ-022", refund("O1001", 2400))).toEqual(blocked("R8"));
+  });
+
+  it("R8: it is named together with R1 when both are broken", () => {
+    expect(check("REQ-022", refund("O1001", 5000))).toEqual(blocked("R1", "R8"));
+  });
+
+  it("R8: it blocks instead of sending to a human: $150.00 on someone else's order (REQ-022, O1002)", () => {
+    expect(check("REQ-022", refund("O1002", 15000))).toEqual(blocked("R8"));
+  });
+
+  it("R8: an unsure form naming someone else's order still goes to a human, since nothing on it is carried out", () => {
+    expect(check("REQ-022", unsure("O1001", 2400))).toEqual(toHuman("R6"));
+  });
+
+  it("R8: a no-refund answer naming someone else's order is allowed, since nothing is refunded", () => {
+    const form = { action: "no_refund", orderId: "O1001", amountCents: null, reason: "Order isn't theirs", policyLine: "P06" };
+    expect(check("REQ-022", answered(form))).toEqual(allowed);
+  });
+});
+
 describe("R1: a refund never exceeds the amount paid, counting earlier refunds", () => {
   it("R1: $60.00 on a $45.00 order is blocked (REQ-012)", () => {
     expect(check("REQ-012", refund("O1024", 6000))).toEqual(blocked("R1"));
@@ -233,8 +256,13 @@ describe("1,000 bad proposals", () => {
   // Up to what's left on the order, so R1 only applies when nothing is left.
   const fairAmount = (orderId: string) => between(1, Math.max(1, centsLeft(orderId)));
 
-  // Every request with every order. The gate doesn't check whose order it is (P06 isn't a hard rule).
-  const pairs = inbox.flatMap((request) => orders.map((order) => ({ request, orderId: order.id })));
+  // Every request with its own customer's orders. Other people's orders are tested separately (R8).
+  const pairs = inbox.flatMap((request) =>
+    orders.filter((o) => o.customerId === request.customerId).map((order) => ({ request, orderId: order.id })),
+  );
+  const foreignPairs = inbox.flatMap((request) =>
+    orders.filter((o) => o.customerId !== request.customerId).map((order) => ({ request, orderId: order.id })),
+  );
   const over100 = pairs.filter((p) => centsLeft(p.orderId) > 10_000);
   const oldOrders = pairs.filter(
     (p) => daysBetween(orders.find((o) => o.id === p.orderId)!.placedOn, p.request.receivedOn) > 30,
@@ -293,6 +321,10 @@ describe("1,000 bad proposals", () => {
       const output = random() < 0.5 ? AI_DOWN : unsure(pick([null, orderId, "O9999"]), pick([null, between(1, 50_000)]));
       return { requestId: request.id, output };
     },
+    R8: () => {
+      const { request, orderId } = pick(foreignPairs);
+      return { requestId: request.id, output: refund(orderId, fairAmount(orderId)) };
+    },
   };
 
   const rules = Object.keys(makers) as RuleId[];
@@ -301,7 +333,7 @@ describe("1,000 bad proposals", () => {
     return { breaks, ...makers[breaks]() };
   });
 
-  it("R1 to R6: none is allowed", () => {
+  it("R1 to R6 and R8: none is allowed", () => {
     expect(proposals).toHaveLength(1000);
 
     for (const p of proposals) {
@@ -310,7 +342,8 @@ describe("1,000 bad proposals", () => {
 
       expect(decision.result, why).not.toBe("allow");
       // Stopped for the rule it breaks, or blocked by R1, which is stricter than R2 to R4.
-      expect(decision.rules, why).toContain(decision.result === "block" && p.breaks !== "R5" ? "R1" : p.breaks);
+      const blockedByR1 = decision.result === "block" && p.breaks !== "R5" && p.breaks !== "R8";
+      expect(decision.rules, why).toContain(blockedByR1 ? "R1" : p.breaks);
     }
   });
 });

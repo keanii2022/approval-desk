@@ -29,7 +29,7 @@ All shop data, customers, and requests are invented.
 
 ## Hard rules
 
-- R1 to R7, summarised here. Full list: [docs/RULES.md](docs/RULES.md)
+- R1 to R8, summarised here. Full list: [docs/RULES.md](docs/RULES.md)
 
 ## Run it yourself
 

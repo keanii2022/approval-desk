@@ -94,4 +94,10 @@ export const policyLines: PolicyLine[] = [
     ruleId: "R7",
     text: "If the logbook can't write, the step doesn't happen.",
   },
+  {
+    id: "P15",
+    section: "Hard rules",
+    ruleId: "R8",
+    text: "A refund must be on an order that belongs to the customer who asked. An order that belongs to someone else is blocked, even if the customer names it.",
+  },
 ];

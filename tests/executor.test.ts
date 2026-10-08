@@ -67,6 +67,11 @@ function rawLine(db: DatabaseSync, kind: string, requestId: string, refersTo: nu
   return Number(result.lastInsertRowid);
 }
 
+// A second request from a customer, so one order can be asked about twice by its owner.
+function addRequest(db: DatabaseSync, id: string, customerId: string, receivedOn: string): void {
+  db.prepare("INSERT INTO inbox (id, customer_id, received_on, subject, body) VALUES (?, ?, ?, 'Another request', 'Another message from the same customer.')").run(id, customerId, receivedOn);
+}
+
 function refundRows(db: DatabaseSync) {
   return db.prepare("SELECT * FROM refunds ORDER BY id").all();
 }
@@ -399,8 +404,9 @@ describe("R1 at the moment of paying", () => {
   it("R1: two allowed refunds that together pass the amount paid: the second is refused at payment (O1001)", () => {
     const db = freshDb();
     // Each is allowed on its own: $15.00 of $24.00. Together they'd be $30.00.
+    addRequest(db, "REQ-T01", "C001", "2026-10-02");
     const first = gateLine(db, "REQ-001", refund("O1001", 1500));
-    const second = gateLine(db, "REQ-022", refund("O1001", 1500));
+    const second = gateLine(db, "REQ-T01", refund("O1001", 1500));
     expect(readEntry(db, second)!.details).toMatchObject({ decision: { result: "allow" } });
 
     expect(executeRefund(db, first, NOW).result).toBe("done");
@@ -413,11 +419,37 @@ describe("R1 at the moment of paying", () => {
     const db = freshDb();
     const toPerson = gateLine(db, "REQ-002", refund("O1002", 15000));
     const personLine = approvalLine(db, toPerson, "O1002", 15000);
-    const other = gateLine(db, "REQ-001", refund("O1002", 5000));
+    addRequest(db, "REQ-T02", "C002", "2026-10-01");
+    const other = gateLine(db, "REQ-T02", refund("O1002", 5000));
     expect(executeRefund(db, other, NOW).result).toBe("done");
     const before = refundRows(db);
 
     expect(executeRefund(db, personLine, NOW)).toEqual(refusedFor("R1"));
+    expect(refundRows(db)).toEqual(before);
+  });
+});
+
+describe("R8 at the moment of paying", () => {
+  it("R8: a person's approval on someone else's order is refused at payment (REQ-002 is Theo's, O1001 is Mara's)", () => {
+    const db = freshDb();
+    // The AI was down, so the form named no order and the person picks one.
+    const toPerson = gateLine(db, "REQ-002", AI_DOWN);
+    const personLine = approvalLine(db, toPerson, "O1001", 2400);
+    const before = refundRows(db);
+
+    expect(executeRefund(db, personLine, NOW)).toEqual(refusedFor("R8"));
+    expect(refundRows(db)).toEqual(before);
+  });
+
+  it("R8: a hand-written 'allow' line for someone else's order is refused, because the gate runs again", () => {
+    const db = freshDb();
+    const forged = rawLine(db, "gate_decision", "REQ-022", null, {
+      decision: { result: "allow", rules: [] },
+      output: refund("O1001", 2400),
+    });
+    const before = refundRows(db);
+
+    expect(executeRefund(db, forged, NOW)).toEqual(refusedFor("not_approved"));
     expect(refundRows(db)).toEqual(before);
   });
 });
