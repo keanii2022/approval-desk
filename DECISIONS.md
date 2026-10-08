@@ -106,3 +106,19 @@ Template:
 - Step 7's order picker must list only the asking customer's orders.
 - The village prototype's rules window still shows seven rules.
 - The agent's instructions are unchanged. It already sees only the asking customer's orders; the evals will show whether it still suggests a stranger's order.
+
+## Step 6: Connect the path (2026-10-07)
+
+**Built:** `processRequest` (`lib/pipeline.ts`) runs one Inbox request from start to finish: the agent suggests, the gate decides and writes it down, and then the request is paid by the executor (allow), waits in the human queue (send to human), or stops (block). `humanQueue` lists the requests waiting for a person. The logbook gained one line type, "refund refused" (`logRefusal`), so an executor refusal leaves a trace. Tests use a stand-in agent that hands over a fixed form; it never reads the request. A small refund is paid, a $150 refund waits for a person, an impossible one is blocked, and all three are in the logbook. Breaking the pipeline on purpose in ten ways failed the tests each time. An independent review found two gaps (below); both are fixed.
+**Decided:**
+- Each request runs once. The check is repeated, locked, right before the gate's line is written, so two runs of one request at the same moment end with one line and one payment.
+- A request that isn't in the Inbox stops at once: the agent isn't asked and nothing is written. (This was left open in Step 3.)
+- The human queue is read straight from the logbook (gate lines sent to a person that no person has decided), so there is no second list to disagree with the record.
+- An allowed refund that was interrupted (the executor threw, or the program stopped) is paid when the same request is run again. The executor pays each request at most once, so this is safe. A request with a refusal on record stays settled.
+- Executor refusals are written to the logbook. (This was left open in Step 4.)
+- If the logbook can't write the gate's line, nothing else happens (R7). The AI call itself changes nothing and isn't logged on its own; its answer is stored on the gate's line.
+- The real Claude plugs in through the same slot as the stand-in (`askClaude` instead of a fixed form). The Step 6 tests don't call it.
+**Left for later:**
+- Step 7: a person's reject must be written as a "human decision" line, or it stays in the queue. If the executor refuses a person's approval (R1, R7 or R8), the request has already left the queue, so Step 7 must show that clearly.
+- An AI outage uses up the request: it is recorded as "AI down" and sent to a person, and the agent is not asked again on its own.
+- A busy database makes the executor throw. A wait time for a busy database is still to do, once the app and the scripts share the file.

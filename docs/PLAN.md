@@ -23,7 +23,7 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
   - **Goal:** Claude reads a request and the shop data and fills the fixed form: action, order, amount, reason, policy line. It cannot change data.
   - **Done when:** five real outputs have been read by the owner; garbled output is blocked (R5).
 
-- [ ] **Step 6: Connect the path**
+- [x] **Step 6: Connect the path**
   - **Goal:** Wire request → agent → form → gate → allowed / human queue / blocked → executor → logbook.
   - **Done when:** a small refund passes; a $150 refund waits for a human; an impossible one is blocked; all three are in the logbook.
 

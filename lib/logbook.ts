@@ -1,4 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
+import type { Refusal } from "./executor.ts"; // type only, so there is no loop at run time
 import { type AgentOutput, checkProposal, type GateDecision } from "./gate.ts";
 
 // The logbook: an add-only record of every step. Lines are only ever added,
@@ -10,7 +11,7 @@ import { type AgentOutput, checkProposal, type GateDecision } from "./gate.ts";
 
 // Kinds are listed here, not in the database, so a later step can add one
 // without rebuilding a table that must never be dropped.
-export type LogKind = "gate_decision" | "human_decision" | "refund_done";
+export type LogKind = "gate_decision" | "human_decision" | "refund_done" | "refund_refused";
 
 export type LogEntry = {
   id: number;
@@ -194,6 +195,20 @@ export function logHumanApproval(
   } finally {
     if (db.isTransaction) db.exec("ROLLBACK");
   }
+}
+
+// Writes down that the executor refused to pay something the gate allowed, and
+// why, so a refusal leaves a trace. It points at the gate line it is about.
+export function logRefusal(db: DatabaseSync, gateEntryId: number, because: Refusal, now: string): { entryId: number } {
+  checkNow(now);
+  ensureLogbook(db);
+  if (typeof because !== "string" || because.trim() === "") throw new Error("A refusal needs a reason");
+
+  const gateEntry = readEntry(db, gateEntryId);
+  if (!gateEntry || gateEntry.kind !== "gate_decision") throw new Error(`Line ${gateEntryId} is not a gate decision`);
+
+  const entryId = addLine(db, now, "refund_refused", gateEntry.requestId, gateEntryId, { because });
+  return { entryId };
 }
 
 export function readEntry(db: DatabaseSync, id: number): LogEntry | undefined {
