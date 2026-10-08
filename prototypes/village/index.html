@@ -41,6 +41,7 @@ button:focus-visible{outline:calc(var(--s)*1px) solid #f2e8a8;outline-offset:cal
   <button id="bday" type="button" aria-pressed="false" aria-label="Day palette"></button>
   <button id="bsound" type="button" aria-pressed="true" aria-label="Sound effects"></button>
   <button id="bspeed" type="button" aria-label="Playback speed"></button>
+  <button id="brules" type="button" aria-label="Show the hard rules"></button>
 </div>
 <canvas id="keys" width="320" height="9" aria-hidden="true"></canvas>
 <div id="bar2">
@@ -622,12 +623,33 @@ function drawLogWin(tl,t){
   textC('CLICK ANYWHERE OR PRESS ESC TO CLOSE',x+(w>>1),y+h-11,BL);
 }
 
+/* ================= the hard rules, in plain words ================= */
+const RULES=[
+ ['BLOCK',['NEVER REFUND MORE THAN WAS PAID,','COUNTING EARLIER REFUNDS.']],
+ ['HUMAN',['REFUNDS OVER $100 NEED A HUMAN.']],
+ ['HUMAN',['ORDERS OVER 30 DAYS OLD NEED A HUMAN.']],
+ ['HUMAN',['A CUSTOMER WITH 3 OR MORE REFUNDS IN','90 DAYS NEEDS A HUMAN.']],
+ ['BLOCK',['A GARBLED OR INCOMPLETE FORM','IS BLOCKED.']],
+ ['HUMAN',['IF THE AI IS DOWN OR UNSURE,','A HUMAN DECIDES.']],
+ ['STOP',['IF THE LOGBOOK CANNOT WRITE,','NOTHING HAPPENS.']]];
+function rulesSummary(){return 'The hard rules the gate checks. '+RULES.map(r=>({BLOCK:'Blocked: ',HUMAN:'Needs a human: ',STOP:'Stops everything: '}[r[0]])+r[1].join(' ')).join(' ')}
+function drawRulesWin(){
+  const x=12,y=8,w=296,h=186;
+  R(x+3,y+3,w,h,K);R(x,y,w,h,K);R(x+1,y+1,w-2,h-2,W);FR(x+2,y+2,w-4,h-4,K);
+  R(x+3,y+3,w-6,11,BL);for(let j=0;j<9;j+=2)R(x+3,y+4+j,w-6,1,WH);
+  const ttl='THE HARD RULES',tw=textW(ttl);R(x+(w>>1)-(tw>>1)-4,y+3,tw+8,11,W);textC(ttl,x+(w>>1),y+6,K);
+  RULES.forEach((r,i)=>{const ey=y+20+i*21,lx=x+10,fill=r[0]==='BLOCK'?R2:(r[0]==='HUMAN'?Y2:R1),ink=r[0]==='HUMAN'?K:W;
+    R(lx,ey-1,42,11,K);R(lx+1,ey,40,9,fill);R(lx+1,ey,40,1,r[0]==='HUMAN'?Y1:C1);textC(r[0],lx+21,ey+1,ink);
+    r[1].forEach((ln,j)=>text(ln,lx+52,ey+j*8,K))});
+  textC('THE GATE CHECKS EVERY REQUEST. ESC TO CLOSE.',x+(w>>1),y+h-11,BL);
+}
+
 /* ================= renderer ================= */
 const WB=new Uint8Array(SW*SH),OUT=new Uint8Array(SW*SH),LB=new Uint8Array(SW*LOGH);
-const WIN={x:56,y:12,w:208,h:128};
-const BTN={A:{x:WIN.x+8,y:WIN.y+86,w:92,h:21},R:{x:WIN.x+108,y:WIN.y+86,w:92,h:21}};
+const WIN={x:56,y:12,w:208,h:144};
+const BTN={A:{x:WIN.x+8,y:WIN.y+102,w:92,h:21},R:{x:WIN.x+108,y:WIN.y+102,w:92,h:21}};
 const qs=new URLSearchParams(location.search);
-const app={scene:1,pace:0.5,paused:false,logOpen:false,hist:[],runRF:16,rt:0,dk:'',dt0:0,dec:'A',lastDec:'A',t:0,amb:0,auto:!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches),frozen:false,decided:false,info:null,hover:null,hoverBtn:null,pressed:null};
+const app={scene:1,pace:0.5,paused:false,logOpen:false,rulesOpen:false,hist:[],runRF:16,rt:0,dk:'',dt0:0,dec:'A',lastDec:'A',t:0,amb:0,auto:!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches),frozen:false,decided:false,info:null,hover:null,hoverBtn:null,pressed:null};
 let night=qs.get('day')!=='1';
 const fly=(x0,y0,x1,y1,u)=>[x0+(x1-x0)*u,y0+(y1-y0)*u-14*4*u*(1-u)];
 const HOT=[
@@ -767,13 +789,14 @@ function drawHumanWin(tl,t,amb){
   FR(x+7,y+5,7,7,K);R(x+8,y+6,5,5,W);
   const dec=t>=e.decide,chosen=dec?tl.dec:null,label={A:'APPROVE',R:'REJECT'};
   textC('REFUND REQUEST NEEDS A HUMAN!',x+(w>>1),y+19,(((amb*2)|0)&1)&&!dec?R2:R1);
-  const lab=(s,yy)=>text(s,x+12,y+yy,BL),val=(s,yy,c=K,sc=1)=>text(s,x+82,y+yy,c,sc);
+  const lab=(s,yy)=>text(s,x+12,y+yy,BL),val=(s,yy,c=K,sc=1)=>text(s,x+96,y+yy,c,sc),I2=SC[2];
   D1K(x+10,y+29,w-20,1,BL,-1);
-  lab('ORDER',33);val('O1002',33);
-  lab('AMOUNT',45);val('$150.00',41,R1,2);
-  lab('REASON',58);val('LAMP BROKEN',58);
-  D1K(x+10,y+66,w-20,1,BL,-1);
-  const rx=x+10;text('SHOP RULE:',rx,y+69,R1);text('REFUNDS OVER $100',rx+textW('SHOP RULE:')+6,y+69,K);text('NEED A HUMAN TO DECIDE.',rx,y+77,K);
+  lab('ORDER',33);val(I2.o,33);
+  lab('CUSTOMER PAID',43);val(I2.tot,43);
+  lab('REFUND AMOUNT',54);val(I2.amt,51,R1,2);
+  lab('REASON',69);val('LAMP BROKEN',69);
+  D1K(x+10,y+79,w-20,1,BL,-1);
+  const rx=x+10;text('SHOP RULE:',rx,y+83,R1);text('REFUNDS OVER $100',rx+textW('SHOP RULE:')+6,y+83,K);text('NEED A HUMAN TO DECIDE.',rx,y+91,K);
   for(const k of['A','R']){const b=BTN[k],hov=app.hoverBtn===k&&!dec,pr=chosen===k,off=pr?1:0;   // plain-text buttons, no outlined glyphs
     const base=k==='A'?(hov?W:GN):(hov?Y1:C1),fill=pr?W:base,bx=x+(b.x-WIN.x),by=y+(b.y-WIN.y);
     R(bx+2,by+2,b.w,b.h,K);R(bx+off,by+off,b.w,b.h,K);R(bx+1+off,by+1+off,b.w-2,b.h-2,fill);R(bx+1+off,by+1+off,b.w-2,1,WH);R(bx+1+off,by+b.h-3+off,b.w-2,1,k==='A'?RG2:R1);
@@ -781,7 +804,7 @@ function drawHumanWin(tl,t,amb){
     textC(label[k],bx+(b.w>>1)+off,by+4+off,K,2)}
   const wait=t<e.decide,ly=y+h-17;
   if(wait){const el=Math.max(0,e.decide-t),auto=app.frozen;
-    textC('YOUR CALL. CLICK A BUTTON OR PRESS A OR R.',x+(w>>1),ly,K)}
+    textC('YOUR CALL. (KEYS: A OR R)',x+(w>>1),ly,K)}
   else textC(chosen==='A'?'APPROVED. SENT TO THE FACTORY.':'REJECTED. NOTHING IS PAID.',x+(w>>1),ly,chosen==='A'?RG1:R1);
 }
 function drawDialog(l1,l2,el,amb,full){
@@ -815,17 +838,18 @@ function frameRender(){
   drawHumanWin(tl,t,amb);
   if(app.paused)textO('PAUSED',6,6,W,K);
   if(app.logOpen)drawLogWin(tl,t);
+  if(app.rulesOpen)drawRulesWin();
   // dialogue (scene narration, or a click-info message)
   let l1='',l2='',el=0,full=false;
   if(app.info&&(app.frozen||performance.now()<app.info.until)){l1=app.info.m[0];l2=app.info.m[1];el=app.frozen?99:(performance.now()-app.info.t0)/1000;full=app.frozen}
   else{let d=tl.dl[0];for(const q of tl.dl)if(t>=q.t)d=q;const key=app.scene+'|'+tl.dl.indexOf(d);if(app.dk!==key){app.dk=key;app.dt0=app.rt}l1=d.a;l2=d.b;el=app.rt-app.dt0;full=app.frozen}
   const rid=rfid(app.runRF);l1=l1.replace('#RF#',rid);l2=l2.replace('#RF#',rid);
   drawDialog(l1,l2,el,amb,full);
-  const lv=document.getElementById('live'),txt=app.logOpen?logSummary(tl,t):l1+' '+l2;if(lv.dataset.k!==txt){lv.dataset.k=txt;lv.textContent=txt}
+  const lv=document.getElementById('live'),txt=app.rulesOpen?rulesSummary():(app.logOpen?logSummary(tl,t):l1+' '+l2);if(lv.dataset.k!==txt){lv.dataset.k=txt;lv.textContent=txt}
   const lut=LUT[night?0:1];for(let i=0;i<OUT.length;i++)u32[i]=lut[OUT[i]];sctx.putImageData(img,0,0);
   drawLog(tl,t,amb);for(let i=0;i<LB.length;i++)lu32[i]=lut[LB[i]];lctx.putImageData(limg,0,0);
   // HTML approve / reject buttons only while the human is needed
-  const waiting=app.scene===2&&!app.frozen&&t>=e.winOpen&&t<e.decide&&!app.decided&&!app.logOpen;
+  const waiting=app.scene===2&&!app.frozen&&t>=e.winOpen&&t<e.decide&&!app.decided&&!app.logOpen&&!app.rulesOpen;
   bA.hidden=!waiting;bR.hidden=!waiting;
 }
 
@@ -834,7 +858,7 @@ const $=id=>document.getElementById(id);
 const scr=$('screen'),sctx=scr.getContext('2d'),logc=$('logbook'),lctx=logc.getContext('2d'),ttl=$('title');
 sctx.imageSmoothingEnabled=false;lctx.imageSmoothingEnabled=false;
 const img=sctx.createImageData(SW,SH),u32=new Uint32Array(img.data.buffer),limg=lctx.createImageData(SW,LOGH),lu32=new Uint32Array(limg.data.buffer);
-const b1=$('b1'),b2=$('b2'),b3=$('b3'),bauto=$('bauto'),bday=$('bday'),bsound=$('bsound'),bspeed=$('bspeed'),bA=$('bA'),bR=$('bR'),keysc=$('keys');
+const b1=$('b1'),b2=$('b2'),b3=$('b3'),bauto=$('bauto'),bday=$('bday'),bsound=$('bsound'),bspeed=$('bspeed'),brules=$('brules'),bA=$('bA'),bR=$('bR'),keysc=$('keys');
 let scale=2;
 /* ================= SFX: tiny chip-style synth (WebAudio, no files). Wakes on the first click or key; M mutes ================= */
 let sfxOn=true,AC=null,MASTER=null;
@@ -917,7 +941,7 @@ function layout(){
 function refreshLabels(){
   const ink='#15102e';
   label(b1,['SCENE 1','$24 SMALL'],ink);label(b2,['SCENE 2','$150 BIG'],ink);label(b3,['SCENE 3','$500 SILLY'],ink);
-  label(bauto,['AUTO-PLAY',app.auto?'ON':'OFF'],ink);label(bday,[night?'DAY':'NIGHT','KEY N'],ink);label(bsound,['SOUND',sfxOn?'ON':'OFF'],ink);label(bspeed,['SPEED',app.pace===1?'NORMAL':(app.pace===0.5?'SLOW':'SLOWER')],ink);
+  label(bauto,['AUTO-PLAY',app.auto?'ON':'OFF'],ink);label(bday,[night?'DAY':'NIGHT','KEY N'],ink);label(bsound,['SOUND',sfxOn?'ON':'OFF'],ink);label(brules,['RULES','KEY ?'],ink);label(bspeed,['SPEED',app.pace===1?'NORMAL':(app.pace===0.5?'SLOW':'SLOWER')],ink);
   bspeed.setAttribute('aria-label','Playback speed: '+(app.pace===1?'normal':(app.pace===0.5?'slow':'slower'))+'. Press to change');
   label(bA,'APPROVE (A)',ink);label(bR,'REJECT (R)',ink);
   [b1,b2,b3].forEach((b,i)=>b.setAttribute('aria-pressed',app.scene===i+1?'true':'false'));
@@ -928,7 +952,7 @@ function refreshLabels(){
 function commitRun(){if(app.frozen)return;const tl=getTL(app.scene,app.dec);if(app.t>=tl.ev.log){app.hist.push(makeEntry(app.scene,app.dec,app.runRF));app.runRF++;if(app.hist.length>12)app.hist.shift()}}
 function setScene(n,quiet){commitRun();if(!quiet)sfx('click');if(app.scene===2)app.lastDec=app.dec;app.scene=n;app.t=0;app.dec='A';app.decided=false;app.info=null;refreshLabels()}
 function decide(d){
-  if(app.frozen||app.scene!==2||app.decided||app.logOpen)return;const tl=getTL(2,'A'),e=tl.ev;
+  if(app.frozen||app.scene!==2||app.decided||app.logOpen||app.rulesOpen)return;const tl=getTL(2,'A'),e=tl.ev;
   if(app.t<e.winOpen||app.t>=e.decide)return;app.dec=d;app.decided=true;app.t=getTL(2,d).ev.decide;sfx('click');
 }
 function toggleNight(){night=!night;refreshLabels()}
@@ -940,16 +964,16 @@ scr.addEventListener('mousemove',ev=>{const[x,y]=toLogical(ev);app.hoverBtn=null
   scr.style.cursor=(app.hover||app.hoverBtn)?'pointer':'default'});
 scr.addEventListener('mouseleave',()=>{app.hover=null;app.hoverBtn=null});
 scr.addEventListener('click',ev=>{const[x,y]=toLogical(ev);
-  if(app.logOpen){app.logOpen=false;return}
+  if(app.logOpen||app.rulesOpen){app.logOpen=false;app.rulesOpen=false;return}
   if(winOpenNow()){for(const k of['A','R'])if(inR(BTN[k],x,y)){decide(k);return}return}
-  const h=HOT.find(q=>inR(q,x,y));if(h){if(h.id==='log'){app.logOpen=true;sfx('click')}else app.info={m:h.m,t0:performance.now(),until:performance.now()+9000}}});
+  const h=HOT.find(q=>inR(q,x,y));if(h){if(h.id==='log'){app.logOpen=true;sfx('click')}else if(h.id==='gate'){app.rulesOpen=true;sfx('click')}else app.info={m:h.m,t0:performance.now(),until:performance.now()+9000}}});
 b1.onclick=()=>setScene(1);b2.onclick=()=>setScene(2);b3.onclick=()=>setScene(3);
-bauto.onclick=()=>{app.auto=!app.auto;refreshLabels();sfx('click')};bday.onclick=()=>{toggleNight();sfx('click')};bsound.onclick=toggleSound;bspeed.onclick=()=>{app.pace=app.pace===0.5?0.25:(app.pace===0.25?1:0.5);refreshLabels();sfx('click')};bA.onclick=()=>decide('A');bR.onclick=()=>decide('R');
+bauto.onclick=()=>{app.auto=!app.auto;refreshLabels();sfx('click')};bday.onclick=()=>{toggleNight();sfx('click')};bsound.onclick=toggleSound;brules.onclick=()=>{app.logOpen=false;app.rulesOpen=!app.rulesOpen;sfx('click')};bspeed.onclick=()=>{app.pace=app.pace===0.5?0.25:(app.pace===0.25?1:0.5);refreshLabels();sfx('click')};bA.onclick=()=>decide('A');bR.onclick=()=>decide('R');
 addEventListener('pointerdown',sfxArm);
-logc.style.cursor='pointer';logc.addEventListener('click',()=>{app.logOpen=!app.logOpen;sfx('click')});
+logc.style.cursor='pointer';logc.addEventListener('click',()=>{app.rulesOpen=false;app.logOpen=!app.logOpen;sfx('click')});
 logc.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();ev.stopPropagation();app.logOpen=!app.logOpen}});
 addEventListener('keydown',ev=>{if(ev.ctrlKey||ev.metaKey||ev.altKey)return;sfxArm();const k=ev.key.toLowerCase();
-  if(k==='1'||k==='2'||k==='3')setScene(+k);else if(k==='a')decide('A');else if(k==='r')decide('R');else if(k==='n')toggleNight();else if(k==='p')bauto.onclick();else if(k==='m')toggleSound();else if(k==='s')bspeed.onclick();else if(k===' '){ev.preventDefault();app.paused=!app.paused}else if(k==='l')app.logOpen=!app.logOpen;else if(k==='escape')app.logOpen=false});
+  if(k==='1'||k==='2'||k==='3')setScene(+k);else if(k==='a')decide('A');else if(k==='r')decide('R');else if(k==='n')toggleNight();else if(k==='p')bauto.onclick();else if(k==='m')toggleSound();else if(k==='s')bspeed.onclick();else if(k===' '){ev.preventDefault();app.paused=!app.paused}else if(k==='l'){app.rulesOpen=false;app.logOpen=!app.logOpen}else if(k==='?'){app.logOpen=false;app.rulesOpen=!app.rulesOpen}else if(k==='escape'){app.logOpen=false;app.rulesOpen=false}});
 addEventListener('resize',layout);
 
 // URL parameters: ?scene=N&t=SECONDS freezes the game at that exact moment (scene 2 frozen assumes APPROVE unless &d=R)
@@ -959,12 +983,13 @@ if(pT!==null){app.frozen=true;app.t=Math.max(0,+pT||0);if(qs.get('d')==='R'){app
   const ck=qs.get('click');if(ck){const h=HOT.find(q=>q.id===ck);if(h)app.info={m:h.m}}}
 if(qs.get('bare'))document.documentElement.classList.add('bare');
 if(qs.get('log'))app.logOpen=true;
+if(qs.get('rules'))app.rulesOpen=true;
 layout();
 if(qs.get('crop')){const[cx,cy]=qs.get('crop').split(',').map(Number);document.documentElement.style.overflow='hidden';scr.style.margin=(-cy*scale)+'px 0 0 '+(-cx*scale)+'px'}
 let last=performance.now();
 function tick(now){
-  const dt=Math.min(0.1,(now-last)/1000);last=now;app.amb+=dt;if(!(app.paused||app.logOpen))app.rt+=dt;
-  const tl=getTL(app.scene,app.dec);const mv=agentAt(tl,app.t).mv;let nt=app.t+((app.paused||app.logOpen)?0:dt*app.pace*(mv?1:DWELL));
+  const dt=Math.min(0.1,(now-last)/1000);last=now;app.amb+=dt;if(!(app.paused||app.logOpen||app.rulesOpen))app.rt+=dt;
+  const tl=getTL(app.scene,app.dec);const mv=agentAt(tl,app.t).mv;let nt=app.t+((app.paused||app.logOpen||app.rulesOpen)?0:dt*app.pace*(mv?1:DWELL));
   if(app.scene===2&&!app.decided&&app.t<tl.ev.decide&&nt>=tl.ev.decide)nt=tl.ev.decide-0.001;
   app.t=nt;
   if(app.t>=tl.dur){if(app.auto)setScene(app.scene%3+1,true);else setScene(app.scene,true)}
