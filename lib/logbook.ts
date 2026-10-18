@@ -1,13 +1,13 @@
 import type { DatabaseSync } from "node:sqlite";
 import type { Refusal } from "./executor.ts"; // type only, so there is no loop at run time
-import { type AgentOutput, checkProposal, type GateDecision } from "./gate.ts";
+import { type AgentOutput, checkProposal, type GateDecision, refundedCents } from "./gate.ts";
+import { dollars } from "./money.ts";
 
 // The logbook: an add-only record of every step. Lines are only ever added,
 // never changed or deleted. Only the writers below, and the executor's own
 // "refund done" line, add lines; there's deliberately no "add any line"
-// function. A person's reject (with the note it needs) and holding the person
-// to R1 come in Step 7, next to logHumanApproval, so the approval screen can't
-// skip them.
+// function. A person's approval is held to R1 and R8, and a person's reject needs
+// a note, here in the writers, so the approval screen can't skip them.
 
 // Kinds are listed here, not in the database, so a later step can add one
 // without rebuilding a table that must never be dropped.
@@ -24,6 +24,7 @@ export type LogEntry = {
 
 export type GateDecisionDetails = { output: AgentOutput; decision: GateDecision };
 export type HumanApproval = { decision: "approve"; orderId: string; amountCents: number };
+export type HumanRejection = { decision: "reject"; note: string };
 export type RefundDoneDetails = {
   refundId: string;
   orderId: string;
@@ -153,6 +154,31 @@ export function humanApprovalProblem(db: DatabaseSync, gateEntry: LogEntry, appr
   return null;
 }
 
+// R1 and R8 for a person's approval, in plain words: the order must be the
+// asking customer's own, and the amount can't be more than is left on it.
+// Returns the problem, or null when the approval is within both rules.
+export function humanLimitProblem(
+  db: DatabaseSync,
+  requestId: string,
+  approval: { orderId: string; amountCents: number },
+): string | null {
+  const order = db.prepare("SELECT customer_id, amount_paid_cents FROM orders WHERE id = ?").get(approval.orderId) as
+    | { customer_id: string; amount_paid_cents: number }
+    | undefined;
+  const asker = db.prepare("SELECT customer_id FROM inbox WHERE id = ?").get(requestId) as
+    | { customer_id: string }
+    | undefined;
+  if (!order || !asker) return "The approval must name an order that exists, for a request in the Inbox";
+
+  if (order.customer_id !== asker.customer_id) return "That order doesn't belong to the customer who asked (R8)";
+
+  const left = order.amount_paid_cents - refundedCents(db, approval.orderId);
+  if (approval.amountCents > left) {
+    return `That is more than what is left on this order (R1). The most you can refund is ${dollars(Math.max(0, left))}`;
+  }
+  return null;
+}
+
 // Writes down a person's approval of a request the gate sent to a person.
 // Every failure throws, and nothing is written. R7: if the line can't be
 // written, the approval doesn't count.
@@ -184,12 +210,49 @@ export function logHumanApproval(
     const problem = humanApprovalProblem(db, gateEntry, copy);
     if (problem) throw new Error(problem);
 
+    // The person is held to the same hard rules as the agent: R1 and R8.
+    const limit = humanLimitProblem(db, gateEntry.requestId, copy as HumanApproval);
+    if (limit) throw new Error(limit);
+
     const earlier = db
       .prepare("SELECT 1 FROM logbook WHERE kind = 'human_decision' AND refers_to = ?")
       .get(gateEntryId);
     if (earlier) throw new Error(`Line ${gateEntryId} already has a person's decision`);
 
     const entryId = addLine(db, now, "human_decision", gateEntry.requestId, gateEntryId, copy);
+    db.exec("COMMIT");
+    return { entryId };
+  } finally {
+    if (db.isTransaction) db.exec("ROLLBACK");
+  }
+}
+
+// Writes down a person's reject. A note is required: why the person said no.
+// Every failure throws, and nothing is written. Like an approval, a request
+// gets one person's decision only.
+export function logHumanReject(db: DatabaseSync, gateEntryId: number, note: string, now: string): { entryId: number } {
+  checkNow(now);
+  ensureLogbook(db);
+
+  const trimmed = typeof note === "string" ? note.trim() : "";
+  if (trimmed === "") throw new Error("A note is required to reject a refund");
+  if (trimmed.length > 1000) throw new Error("The note is too long (1,000 characters at most)");
+
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    const gateEntry = readEntry(db, gateEntryId);
+    if (!gateEntry) throw new Error(`No logbook line ${gateEntryId}`);
+    if (gateEntry.kind !== "gate_decision") throw new Error(`Line ${gateEntryId} is not a gate decision`);
+    const stored = gateEntry.details as Partial<GateDecisionDetails> | null;
+    if (stored?.decision?.result !== "send_to_human") throw new Error("The gate didn't send this request to a person");
+
+    const earlier = db
+      .prepare("SELECT 1 FROM logbook WHERE kind = 'human_decision' AND refers_to = ?")
+      .get(gateEntryId);
+    if (earlier) throw new Error(`Line ${gateEntryId} already has a person's decision`);
+
+    const details: HumanRejection = { decision: "reject", note: trimmed };
+    const entryId = addLine(db, now, "human_decision", gateEntry.requestId, gateEntryId, details);
     db.exec("COMMIT");
     return { entryId };
   } finally {

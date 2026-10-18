@@ -15,7 +15,7 @@ import {
 // The pipeline: one Inbox request, start to finish.
 //   agent (suggests) -> gate (decides, and writes it down) -> one of:
 //     allow          -> executor (pays), which writes its own line
-//     send to human  -> waits in the human queue (the approval screen is Step 7)
+//     send to human  -> waits in the human queue (a person decides on the approval screen)
 //     block          -> stops
 // The agent only suggests. The only things handed on are a logbook line number
 // (to the executor) and the gate's decision, never the agent's form itself.
@@ -129,8 +129,8 @@ export type WaitingItem = {
 
 // The human queue: every request the gate sent to a person that no person has
 // decided yet, oldest first. It is read straight from the logbook, so there is
-// no second list that could disagree with the record. (A person's reject must be
-// written as a "human_decision" line in Step 7, or it would stay in the queue.)
+// no second list that could disagree with the record. (A person's approve or reject
+// is a "human_decision" line, which is what takes a request out of the queue.)
 export function humanQueue(db: DatabaseSync): WaitingItem[] {
   ensureLogbook(db);
   const rows = db

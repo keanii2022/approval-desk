@@ -22,6 +22,7 @@ import {
 //   already_done:   this Inbox request already has a refund
 //   R1:             paying now would go over the amount paid
 //   R7:             the logbook couldn't write
+//   R8:             the order isn't the asking customer's own
 export type Refusal = "not_approved" | "nothing_to_pay" | "already_done" | "R1" | "R7" | "R8";
 
 export type ExecuteResult =

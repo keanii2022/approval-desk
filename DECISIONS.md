@@ -122,3 +122,21 @@ Template:
 - Step 7: a person's reject must be written as a "human decision" line, or it stays in the queue. If the executor refuses a person's approval (R1, R7 or R8), the request has already left the queue, so Step 7 must show that clearly.
 - An AI outage uses up the request: it is recorded as "AI down" and sent to a person, and the agent is not asked again on its own.
 - A busy database makes the executor throw. A wait time for a busy database is still to do, once the app and the scripts share the file.
+
+## Step 7: Approval screen (2026-10-08)
+
+**Built:** The approval screen at `/approvals`. For each request waiting for a person it shows the customer's message, why a person must decide (in plain words), what the agent said, and the order with what the customer paid, what was already refunded and the most that can still be refunded. A person approves (and can change the amount), or rejects with a required note. When the agent's form named no order, the person picks from the asking customer's own orders. An approval goes to the executor, which pays. `lib/approval.ts` does the work and the screen is a thin layer over it. The logbook's writers now hold a person to R1 and R8 when they decide, and a reject needs a note (`logHumanReject`). Tests: Vitest for the logic, and 13 Playwright tests in a real browser, on their own database file. The three "done when" cases pass: approve; reject without a note is refused; an amount over the limit is refused. Breaking R1 or the note requirement on purpose failed both suites; breaking R8 failed the Vitest suite (the screen never offers someone else's order, so the browser can't try it). An independent review found four real problems, all fixed (below).
+**Decided:**
+- A person is held to R1 and R8 in the logbook's writer, not just on the screen, so no other route can skip them. The executor still re-checks both at payment.
+- A person's reject is a "human decision" line, so the request leaves the queue and can never be paid. A request gets one decision only.
+- A comma in an amount only counts as a thousands separator. "1,50" is refused, because it could mean $1.50 or $150, and a payment can't be undone.
+- If the executor refuses after a person approves, the approval stays on record, the screen says plainly that NOTHING was paid and why, and it is listed under "Approved but not paid". "Try paying again" only appears when trying again can work (the logbook couldn't write, or an error). A refusal is written down once per reason. Asking to pay something already paid says so and writes nothing.
+- The form buttons stay off until the page is ready in the browser, so an early click can't send the typed fields in the address bar. Typed values survive a refused decision.
+- The demo (`npm run demo`) uses its own file, `data/demo.db`, and refuses to run on the real database, because it drops that file's logbook. The browser tests use `data/e2e.db`.
+- The success banner only claims a payment that is really in the shop's refunds.
+**Left for later:**
+- There is no sign-in, and the logbook doesn't record who approved or rejected. Anyone who can open the page can decide. (Left open since Step 4. Fine for a one-person portfolio project; adding a required "your name" field is the smallest fix.)
+- A wait time for a busy database (`lib/db.ts`) is still not added.
+- The browser tests need Chrome installed on the computer (`channel: "chrome"`), and they can't run while `npm run dev` is running in the same folder. Step 10's README should say so.
+- `next dev` adds a block of instructions for AI tools to `CLAUDE.md` each time it starts. It was not committed with this step; the owner decides whether to keep it.
+- `app/approvals/actions.ts` has no tests of its own; the browser tests cover it.

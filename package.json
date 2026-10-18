@@ -9,7 +9,10 @@
     "start": "next start",
     "test": "vitest run",
     "seed": "node scripts/seed.ts",
-    "try-agent": "node --env-file=.env scripts/try-agent.ts"
+    "try-agent": "node --env-file=.env scripts/try-agent.ts",
+    "queue-demo": "node scripts/prepare-queue.ts",
+    "demo": "node scripts/prepare-queue.ts && APPROVAL_DESK_DB=data/demo.db next dev",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "next": "^16.3.8",
@@ -17,6 +20,7 @@
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.0",
     "@types/node": "^26.6.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

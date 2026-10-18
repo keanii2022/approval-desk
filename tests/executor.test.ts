@@ -430,11 +430,13 @@ describe("R1 at the moment of paying", () => {
 });
 
 describe("R8 at the moment of paying", () => {
-  it("R8: a person's approval on someone else's order is refused at payment (REQ-002 is Theo's, O1001 is Mara's)", () => {
+  it("R8: a person's approval line on someone else's order is refused at payment even if written around the writer (REQ-002 is Theo's, O1001 is Mara's)", () => {
     const db = freshDb();
     // The AI was down, so the form named no order and the person picks one.
     const toPerson = gateLine(db, "REQ-002", AI_DOWN);
-    const personLine = approvalLine(db, toPerson, "O1001", 2400);
+    // The approval writer now refuses this, so the line is written straight into the table:
+    // the executor must still refuse it, in case a line ever gets in some other way.
+    const personLine = rawLine(db, "human_decision", "REQ-002", toPerson, { decision: "approve", orderId: "O1001", amountCents: 2400 });
     const before = refundRows(db);
 
     expect(executeRefund(db, personLine, NOW)).toEqual(refusedFor("R8"));
