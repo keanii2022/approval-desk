@@ -1,0 +1,23 @@
+/* The village prototype's own styles, scoped under .village-canvas so the page around it
+   is untouched. --s is the pixel scale (1 to 3); the engine sets it on .village-canvas.
+   The device spans its container's width; the engine reads that width to pick the scale. */
+.village-canvas{--s:2;color-scheme:dark;display:flex;flex-direction:column;align-items:center;gap:calc(var(--s)*4px);padding:calc(var(--s)*4px) 0 calc(var(--s)*6px);box-sizing:border-box;color:#f5efd6;max-width:100%}
+.village-device{background:#2b2050;padding:calc(var(--s)*5px);border:calc(var(--s)*2px) solid #0a0618;box-shadow:inset 0 0 0 calc(var(--s)*1px) #4a3a86,0 0 0 calc(var(--s)*2px) #3b2d6e;display:flex;flex-direction:column;align-items:center;gap:calc(var(--s)*3px);width:100%;box-sizing:border-box}
+.village-canvas canvas{display:block;image-rendering:crisp-edges;image-rendering:pixelated}
+.village-screen,.village-logbook,.village-title{background:#15102e}
+.village-bar,.village-bar2{display:flex;flex-wrap:wrap;gap:calc(var(--s)*3px);justify-content:center;max-width:100%}
+.village-bar2{min-height:calc(var(--s)*17px);margin-top:calc(var(--s)*-1px)}
+.village-canvas button{font:inherit;background:#f5efd6;border:calc(var(--s)*1px) solid #15102e;border-radius:0;padding:calc(var(--s)*3px) calc(var(--s)*4px) calc(var(--s)*3px);cursor:pointer;box-shadow:0 calc(var(--s)*2px) 0 #15102e;color:#15102e;display:flex;align-items:center;justify-content:center;margin-bottom:calc(var(--s)*2px)}
+.village-canvas button:hover{background:#f2e8a8}
+.village-canvas button:active{transform:translateY(calc(var(--s)*1px));box-shadow:0 calc(var(--s)*1px) 0 #15102e}
+.village-canvas button[aria-pressed=true]{background:#e8806e}
+.village-canvas .village-bsound[aria-pressed=true],.village-canvas .village-bauto[aria-pressed=true]{background:#6cc48a}
+.village-canvas button[hidden]{visibility:hidden}
+.village-canvas .village-bA{background:#6cc48a}.village-canvas .village-bA:hover{background:#92d8a8}
+.village-canvas .village-bR{background:#e8988a}.village-canvas .village-bR:hover{background:#f0aca0}
+.village-canvas button:focus-visible{outline:calc(var(--s)*1px) solid #f2e8a8;outline-offset:calc(var(--s)*1px)}
+/* ?bare=1: the screen alone, for screenshots */
+.village-canvas.village-bare{padding:0;display:block}
+.village-bare .village-bar,.village-bare .village-bar2,.village-bare .village-logbook,.village-bare .village-title,.village-bare .village-keys{display:none}
+.village-bare .village-device{padding:0;border:0;box-shadow:none;background:none;width:auto}
+.village-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}

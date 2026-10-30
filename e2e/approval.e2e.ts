@@ -199,6 +199,6 @@ test("Approval screen: a banner can't claim a payment that didn't happen", async
   await page.goto("/approvals?result=paid&refund=RF999");
   await expect(page.getByRole("status")).toHaveCount(0);
   await page.goto("/approvals?result=__proto__");
-  await expect(page.getByRole("heading", { name: "Approvals" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Waiting for you" })).toBeVisible();
   await expect(page.getByRole("status")).toHaveCount(0);
 });

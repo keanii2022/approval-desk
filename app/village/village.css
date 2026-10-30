@@ -1,0 +1,933 @@
+/* Approval Desk Village: the robot-eye look.
+   One dark cabinet, no light mode. Every token and component style lives here
+   under the "v-" prefix; the page root carries the class "village-ui" plus the
+   next/font class names that define --font-pixel and --font-mono.
+   Display labels are uppercased HERE, never in the DOM, so tests and screen
+   readers get plain sentence-case words. */
+
+.village-ui {
+  /* colors */
+  --v-bg: #24283f;
+  --v-ink: #252d46;
+  --v-deep: #17283a;
+  --v-steel: #535d80;
+  --v-steel-light: #8a96b5;
+  --v-cream: #fff8dc;
+  --v-gold: #f5c84b;
+  --v-gold-light: #fff0af;
+  --v-blue: #496eb8;
+  --v-blue-pale: #ddeaf6;
+  --v-blue-line: #b2c7dd;
+  --v-red: #c84e48;
+  --v-red-pale: #ffe3d3;
+  --v-red-line: #e9b3a3;
+  --v-grey: #697387;
+  --v-divider: #ccd0cb;
+  --v-sand: #e9e7d7;
+  --v-teal: #8ee7dd;
+  --v-green: #c4ea83;
+  --v-white: #ffffff;
+  /* mini-map */
+  --v-grass: #84b763;
+  --v-grass-line: #587f59;
+  --v-road: #eed48b;
+  --v-map-inbox: #efc287;
+  --v-map-shop: #537f56;
+  --v-map-agent: #ca6650;
+  --v-map-desk: #658eaf;
+  --v-map-factory: #7c85a2;
+
+  /* type scale (steps down one notch below 1100px) */
+  --v-fs-title: 35px;
+  --v-fs-pill: 17px;
+  --v-fs-shortcut: 19px;
+  --v-fs-plaque: 25px;
+  --v-fs-marker: 17px;
+  --v-fs-identity: 18px;
+  --v-fs-indicator: 21px;
+  --v-fs-panel-title: 20px;
+  --v-fs-heading: 24px;
+  --v-fs-amount: 58px;
+  --v-fs-rule: 20px;
+  --v-fs-status: 19px;
+  --v-fs-closing: 18px;
+  --v-fs-headline: 31px;
+  --v-fs-body: 20px;
+  --v-fs-action: 21px;
+  --v-fs-action-2: 18px;
+  --v-fs-motto: 17px;
+
+  --v-font-pixel: var(--font-pixel), "Pixelify Sans", system-ui, sans-serif;
+  --v-font-mono: var(--font-mono), "IBM Plex Mono", ui-monospace, monospace;
+
+  box-sizing: border-box;
+  min-height: 100dvh;
+  margin: 0 auto;
+  max-width: 1600px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--v-bg);
+  color: var(--v-cream);
+  font-family: var(--v-font-pixel);
+  line-height: 1.2;
+}
+.village-ui *,
+.village-ui *::before,
+.village-ui *::after {
+  box-sizing: border-box;
+}
+/* The body behind these pages is the same dark cabinet; the plain home page is untouched. */
+body:has(.village-ui) {
+  margin: 0;
+  background: #24283f;
+}
+.village-ui :where(a, button) {
+  font: inherit;
+  color: inherit;
+}
+.village-ui :is(a, button, [tabindex]):focus-visible {
+  outline: 3px solid var(--v-gold);
+  outline-offset: 2px;
+}
+.v-mono {
+  font-family: var(--v-font-mono);
+}
+.v-icon {
+  display: block;
+  flex: none;
+}
+
+/* ---------- Header ---------- */
+.v-header {
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.v-identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+.v-emblem {
+  width: 68px;
+  height: 68px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: var(--v-steel);
+  border: 2px solid var(--v-steel-light);
+  border-radius: 12px;
+}
+.v-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding-top: 4px; /* seats the title where the design has it */
+}
+.v-title {
+  margin: 0;
+  font: 700 var(--v-fs-title) / 1 var(--v-font-pixel);
+  color: var(--v-cream);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.v-chapter {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 400 12px / 1.2 var(--v-font-mono);
+  color: var(--v-steel-light);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.v-chapter-dot {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  background: var(--v-gold);
+}
+.v-chapter-sep {
+  margin: 0 14px;
+}
+
+.v-pills {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.v-pill {
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 13px;
+  border-radius: 4px;
+  background: var(--v-deep);
+  border: 1px solid var(--v-steel);
+  color: var(--v-steel-light);
+  font: 600 var(--v-fs-pill) / 1 var(--v-font-pixel);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.v-pill--active {
+  background: var(--v-gold);
+  border-color: var(--v-gold-light);
+  color: var(--v-ink);
+}
+
+.v-shortcut {
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  border: 2px solid var(--v-steel);
+  border-radius: 6px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.v-shortcut-label {
+  font: 400 var(--v-fs-shortcut) / 1 var(--v-font-pixel);
+  color: var(--v-cream);
+  text-transform: uppercase;
+}
+.v-shortcut-count {
+  font: 400 14px / 1 var(--v-font-mono);
+  color: var(--v-steel-light);
+}
+
+/* ---------- Control key (key cap) ---------- */
+.v-key {
+  height: 28px;
+  min-width: 28px;
+  padding: 0 7px;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  border-radius: 4px;
+  border: 2px solid;
+  font: 700 17px / 1 var(--v-font-pixel);
+  text-transform: uppercase;
+}
+.v-key--dark {
+  background: var(--v-ink);
+  border-color: var(--v-steel-light);
+  color: var(--v-cream);
+}
+.v-key--light {
+  background: var(--v-cream);
+  border-color: var(--v-ink);
+  color: var(--v-ink);
+}
+
+/* ---------- Stage ---------- */
+.v-stage {
+  height: 688px;
+  display: flex;
+  background: var(--v-blue);
+  border: 3px solid var(--v-steel-light);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.v-scene {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--v-blue) url("/village/scene-gate.jpg") left center / cover no-repeat;
+  image-rendering: auto;
+}
+.v-scene > * {
+  position: absolute;
+}
+
+.v-plaque {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  background: var(--v-cream);
+  border: 3px solid var(--v-ink);
+  border-radius: 6px;
+  color: var(--v-ink);
+  white-space: nowrap;
+}
+.v-plaque-name {
+  font: 700 var(--v-fs-plaque) / 1 var(--v-font-pixel);
+  text-transform: uppercase;
+}
+.v-plaque-sub {
+  margin-top: 4px;
+  font: 400 10px / 1.2 var(--v-font-mono);
+  color: var(--v-grey);
+  text-transform: uppercase;
+}
+
+.v-vision {
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: var(--v-deep);
+  border: 1px solid var(--v-steel-light);
+  border-radius: 4px;
+  font: 400 11px / 1 var(--v-font-mono);
+  color: var(--v-teal);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.v-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+.v-marker-sign {
+  height: 29px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  background: var(--v-cream);
+  border: 2px solid var(--v-ink);
+  border-radius: 3px;
+  color: var(--v-ink);
+  font: 700 var(--v-fs-marker) / 1 var(--v-font-pixel);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.v-marker--current .v-marker-sign {
+  background: var(--v-gold);
+}
+.v-marker-stem {
+  width: 2px;
+  height: 12px;
+  background: var(--v-ink);
+}
+
+.v-reticle {
+  width: 85px;
+  height: 119px;
+  border: 2px solid var(--v-cream);
+  border-radius: 14px;
+  opacity: 0.65;
+  pointer-events: none;
+  animation: v-pulse 2.4s ease-in-out infinite;
+}
+
+.v-minimap {
+  width: 208px;
+  height: 198px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 5px;
+  background: var(--v-cream);
+  border: 3px solid var(--v-ink);
+  border-radius: 6px;
+  color: var(--v-ink);
+}
+.v-minimap-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1px;
+  font: 700 15px / 1 var(--v-font-pixel);
+  text-transform: uppercase;
+}
+.v-minimap-north {
+  font-weight: 400;
+  color: var(--v-blue);
+  text-transform: none;
+}
+.v-minimap-plan {
+  position: relative;
+  height: 120px;
+  width: 100%;
+  background: var(--v-grass);
+  border: 2px solid var(--v-grass-line);
+  overflow: hidden;
+}
+.v-minimap-plan > * {
+  position: absolute;
+}
+.v-map-road {
+  background: var(--v-road);
+}
+.v-map-building {
+  border: 2px solid var(--v-ink);
+}
+.v-map-crossing {
+  background: var(--v-ink);
+}
+.v-minimap-caption {
+  font: 400 11px / 1.2 var(--v-font-mono);
+  color: var(--v-grey);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.v-identity-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--v-deep);
+  border: 2px solid var(--v-steel-light);
+  border-radius: 4px;
+  font: 400 var(--v-fs-identity) / 1 var(--v-font-pixel);
+  color: var(--v-cream);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ---------- Console rail ---------- */
+.v-rail {
+  flex: 0 0 463px;
+  width: 463px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 21px 23px 21px 7px;
+  background: var(--v-bg);
+  border-left: 3px solid var(--v-steel);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.v-indicator {
+  height: 48px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 5px 16px 21px;
+  padding: 0 12px;
+  background: var(--v-deep);
+  border: 1px solid var(--v-steel);
+  border-radius: 4px;
+  font: 700 var(--v-fs-indicator) / 1 var(--v-font-pixel);
+  color: var(--v-gold);
+  text-transform: uppercase;
+}
+
+.v-panel {
+  flex: none;
+  padding: 5px;
+  background: var(--v-ink);
+  border-radius: 8px;
+  box-shadow: 0 7px 0 rgba(23, 40, 58, 0.31);
+  animation: v-slide-in 200ms ease-out both;
+}
+.v-panel-display {
+  background: var(--v-cream);
+  border: 2px solid var(--v-steel-light);
+  border-radius: 4px;
+  overflow: hidden;
+  color: var(--v-ink);
+}
+.v-panel-head {
+  height: 41px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 17px;
+  background: var(--v-blue);
+}
+.v-panel-title {
+  margin: 0;
+  font: 700 var(--v-fs-panel-title) / 1 var(--v-font-pixel);
+  color: var(--v-white);
+  text-transform: uppercase;
+}
+.v-panel-aside {
+  font: 400 11px / 1 var(--v-font-mono);
+  color: var(--v-blue-pale);
+  text-transform: uppercase;
+}
+.v-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+}
+
+.v-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.v-heading {
+  margin: 0;
+  font: 700 var(--v-fs-heading) / 1 var(--v-font-pixel);
+  color: var(--v-ink);
+  text-transform: uppercase;
+}
+.v-badge {
+  flex: none;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font: 600 10px / 1.2 var(--v-font-mono);
+  text-transform: uppercase;
+}
+.v-badge--red {
+  background: var(--v-red-pale);
+  color: var(--v-red);
+}
+.v-badge--blue {
+  background: var(--v-blue-pale);
+  color: var(--v-blue);
+}
+
+.v-amount {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.v-amount-label {
+  font: 400 11px / 1.3 var(--v-font-mono);
+  color: var(--v-grey);
+  text-transform: uppercase;
+}
+.v-amount-value {
+  font: 700 var(--v-fs-amount) / 1.05 var(--v-font-pixel);
+  color: var(--v-ink);
+}
+.v-amount--red .v-amount-value {
+  color: var(--v-red);
+}
+
+.v-divider {
+  height: 2px;
+  border: 0;
+  margin: 0;
+  background: var(--v-divider);
+}
+
+.v-rule {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+.v-rule-symbol {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 3px;
+  font: 700 25px / 1 var(--v-font-pixel);
+  color: var(--v-white);
+}
+.v-rule-title {
+  font: 700 var(--v-fs-rule) / 1 var(--v-font-pixel);
+  text-transform: uppercase;
+}
+.v-rule-sub {
+  margin-top: 6px;
+  font: 500 12px / 1.2 var(--v-font-mono);
+  text-transform: uppercase;
+}
+.v-rule--red {
+  background: var(--v-red-pale);
+  border-color: var(--v-red-line);
+  color: var(--v-red);
+}
+.v-rule--red .v-rule-symbol {
+  background: var(--v-red);
+}
+.v-rule--blue {
+  background: var(--v-blue-pale);
+  border-color: var(--v-blue-line);
+  color: var(--v-ink);
+}
+.v-rule--blue .v-rule-symbol {
+  background: var(--v-blue);
+}
+.v-rule--blue .v-rule-sub {
+  color: var(--v-blue);
+}
+
+.v-status {
+  min-height: 43px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.v-status-title {
+  font: 700 var(--v-fs-status) / 1 var(--v-font-pixel);
+  color: var(--v-ink);
+  text-transform: uppercase;
+}
+.v-status-sub {
+  margin-top: 5px;
+  font: 400 10px / 1.2 var(--v-font-mono);
+  color: var(--v-grey);
+  text-transform: uppercase;
+}
+
+.v-lock {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 10px;
+  background: var(--v-sand);
+  border-radius: 3px;
+  font: 400 10px / 1 var(--v-font-mono);
+  color: var(--v-grey);
+  text-transform: uppercase;
+}
+
+.v-closing {
+  margin: 0;
+  font: 400 var(--v-fs-closing) / 1.2 var(--v-font-pixel);
+  color: var(--v-grey);
+}
+
+/* ---------- Dialogue bar ---------- */
+.v-dialogue {
+  height: 154px;
+  padding: 3px;
+  background: var(--v-steel-light);
+  border: 2px solid var(--v-deep);
+  border-radius: 9px;
+}
+.v-dialogue-inner {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 17px 19px 17px 17px;
+  background: var(--v-cream);
+  border: 3px solid var(--v-ink);
+  border-radius: 4px;
+  color: var(--v-ink);
+}
+.v-speaker {
+  width: 100px;
+  height: 104px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--v-blue-pale);
+  border: 2px solid var(--v-blue);
+  border-radius: 4px;
+}
+.v-speaker-name {
+  font: 700 13px / 1 var(--v-font-pixel);
+  color: var(--v-blue);
+  text-transform: uppercase;
+  text-align: center;
+}
+.v-dialogue-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.v-speaker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-transform: uppercase;
+}
+.v-speaker-label {
+  font: 600 11px / 1 var(--v-font-mono);
+  color: var(--v-blue);
+}
+.v-speaker-sep {
+  width: 20px;
+  height: 2px;
+  background: var(--v-blue);
+}
+.v-speaker-sub {
+  font: 400 10px / 1 var(--v-font-mono);
+  color: var(--v-grey);
+}
+.v-headline {
+  margin: 0;
+  font: 600 var(--v-fs-headline) / 1 var(--v-font-pixel);
+  color: var(--v-ink);
+  text-transform: uppercase;
+}
+.v-body {
+  margin: 0;
+  font: 400 var(--v-fs-body) / 1.2 var(--v-font-pixel);
+  color: var(--v-grey);
+}
+.v-actions {
+  flex: 0 0 300px;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.v-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 12px;
+  text-decoration: none;
+  cursor: pointer;
+  text-align: left;
+  text-transform: uppercase;
+}
+.v-action--primary {
+  height: 47px;
+  background: var(--v-gold);
+  border: 2px solid var(--v-ink);
+  border-radius: 5px;
+  color: var(--v-ink);
+  font: 700 var(--v-fs-action) / 1 var(--v-font-pixel);
+}
+.v-action--secondary {
+  height: 33px;
+  background: none;
+  border: 0;
+  color: var(--v-grey);
+  font: 400 var(--v-fs-action-2) / 1 var(--v-font-pixel);
+}
+.v-action-arrow {
+  font-weight: 400;
+}
+
+/* ---------- Device strip ---------- */
+.v-device {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 8px;
+  font: 400 12px / 1 var(--v-font-mono);
+  color: var(--v-steel-light);
+  text-transform: uppercase;
+}
+.v-device-left,
+.v-device-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+.v-motto {
+  font: 400 var(--v-fs-motto) / 1 var(--v-font-pixel);
+  color: var(--v-cream);
+  text-align: center;
+}
+
+/* ---------- Pixel portraits (positioned divs, no images) ---------- */
+.v-portrait {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex: none;
+}
+.v-px {
+  position: absolute;
+  display: block;
+}
+.v-robot-eye {
+  transform-origin: center;
+  animation: v-blink 4.6s steps(1, end) infinite;
+}
+
+/* ---------- Motion (CSS only) ---------- */
+.v-blink-slow {
+  animation: v-glow 2.6s ease-in-out infinite;
+}
+@keyframes v-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@keyframes v-pulse {
+  0%, 100% { opacity: 0.65; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.04); }
+}
+@keyframes v-blink {
+  0%, 93%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.12); }
+}
+@keyframes v-slide-in {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .village-ui *,
+  .village-ui *::before,
+  .village-ui *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1100px) {
+  .village-ui {
+    --v-fs-title: 30px;
+    --v-fs-pill: 15px;
+    --v-fs-shortcut: 17px;
+    --v-fs-plaque: 21px;
+    --v-fs-marker: 15px;
+    --v-fs-identity: 16px;
+    --v-fs-indicator: 18px;
+    --v-fs-panel-title: 18px;
+    --v-fs-heading: 21px;
+    --v-fs-amount: 48px;
+    --v-fs-rule: 18px;
+    --v-fs-status: 17px;
+    --v-fs-closing: 16px;
+    --v-fs-headline: 26px;
+    --v-fs-body: 17px;
+    --v-fs-action: 18px;
+    --v-fs-action-2: 16px;
+    --v-fs-motto: 15px;
+  }
+  .v-header {
+    height: auto;
+    flex-wrap: wrap;
+    row-gap: 12px;
+  }
+  /* identity and shortcut share the first row; the pills take a row of their own */
+  .v-pills-nav {
+    order: 3;
+    flex: 1 1 100%;
+  }
+  .v-rail {
+    padding: 21px 24px 24px;
+  }
+  .v-indicator {
+    margin: 0 0 16px;
+  }
+  .v-stage {
+    height: auto;
+    flex-direction: column;
+  }
+  .v-scene {
+    aspect-ratio: 1083 / 682;
+  }
+  .v-rail {
+    flex: none;
+    width: auto;
+    border-left: 0;
+    border-top: 3px solid var(--v-steel);
+    overflow: visible;
+  }
+  .v-dialogue {
+    height: auto;
+  }
+}
+@media (max-width: 760px) {
+  .village-ui {
+    padding: 16px;
+  }
+  .v-identity {
+    flex: 1 1 auto;
+  }
+  .v-title {
+    white-space: normal;
+    font-size: 26px;
+  }
+  .v-chapter {
+    white-space: normal;
+  }
+  .v-rail {
+    padding: 16px;
+  }
+  .v-indicator {
+    margin: 0 0 8px;
+  }
+  .v-amount-value {
+    font-size: 40px;
+  }
+  .v-dialogue-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 14px;
+  }
+  .v-speaker {
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 8px 12px;
+  }
+  .v-actions {
+    flex: none;
+    width: 100%;
+  }
+  .v-device {
+    height: auto;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 6px;
+  }
+  /* the scene is small here: keep the plaque, the chip and the current place; hide the rest */
+  .v-marker:not(.v-marker--current),
+  .v-reticle,
+  .v-minimap {
+    display: none;
+  }
+  .v-plaque {
+    padding: 6px 10px;
+    gap: 8px;
+    border-width: 2px;
+  }
+  .v-plaque .v-icon {
+    width: 18px;
+    height: 18px;
+  }
+  .v-plaque-name {
+    font-size: 15px;
+  }
+  .v-plaque-sub {
+    font-size: 8px;
+  }
+  .v-vision {
+    left: auto !important;
+    right: 3%;
+    height: 24px;
+    padding: 0 8px;
+    font-size: 8px;
+  }
+  .v-identity-chip {
+    left: 50% !important;
+    top: auto !important;
+    bottom: 5%;
+    transform: translateX(-50%);
+    max-width: 94%;
+    padding: 5px 10px;
+    font-size: 12px;
+    white-space: normal;
+    text-align: center;
+  }
+  .v-marker-sign {
+    height: 22px;
+    padding: 0 6px;
+    font-size: 12px;
+  }
+}

@@ -29,3 +29,6 @@ next-env.d.ts
 # Browser test output
 test-results/
 playwright-report/
+
+# Extra build folders, one per dev server (NEXT_DIST_DIR)
+.next-*/
