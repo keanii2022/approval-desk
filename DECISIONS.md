@@ -140,3 +140,15 @@ Template:
 - The browser tests need Chrome installed on the computer (`channel: "chrome"`), and they can't run while `npm run dev` is running in the same folder. Step 10's README should say so.
 - `next dev` adds a block of instructions for AI tools to `CLAUDE.md` each time it starts. It was not committed with this step; the owner decides whether to keep it.
 - `app/approvals/actions.ts` has no tests of its own; the browser tests cover it.
+
+## Step 8: Practice cases (2026-11-04)
+
+**Built:** 60 practice requests in `data/cases.ts`, each with its right answer: the form a correct agent fills in (action, order, amount, policy line) and what the gate then says. 40 are plain; 20 are tricky: forgotten earlier refunds, an already-refunded order, a missing or wrong order number, someone else's order, a used item, costs beyond the price, a fake instruction inside the message, amounts in words, in euros, or missing, and a request withdrawn in the same message. They reuse the shop data from step 2, so the rule edges (exactly $100, exactly 30 days, a refund exactly 90 days back) are real. `tests/cases.test.ts` feeds every expected form through the real gate and checks the result and rules match, with no AI call.
+**Decided:**
+- The cases are not in the Inbox. The seed stays identical; the eval runner (step 9) loads them into its own database.
+- The right answer is what the policy supports, not what the customer asked for. If a customer asks for $80 but $40 is left, the right answer is $40. An agent that proposes $80 scores a miss, but the gate blocks it, so it is a safe miss.
+- No case expects a block. A block means the agent got it wrong; the right answer is always something the shop can act on.
+- What is scored: for a refund, the action, order, amount and gate result; for no_refund and unsure, the action and gate result only.
+**Left for later:**
+- The owner read all 60 on 2026-11-04 and changed none.
+- Whether "unsure" should count as half-right on the fake-instruction case (CASE-053) is for step 9 to decide.
