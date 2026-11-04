@@ -54,3 +54,15 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
 - [ ] **Step 12: Dashboard** (opened from the shop house; builds on steps 7 and 9)
   - **Goal:** One app where the owner can see everything: the shop (customers, orders, refunds), the Inbox, the human queue (reusing the step 7 screen), the logbook, and the dated eval scorecards from step 9. Read-only apart from the step 7 actions. Invented data only.
   - **Done when:** every section loads from the real data; Playwright tests open each section; the latest scorecard is shown with its date.
+
+- [ ] **Step 14: Prompt scores** (builds on step 9)
+  - **Goal:** Change the agent's prompt twice, each time writing down a guess of what will change before running the evals. Record all three scores (baseline and two changes) in `EVALS.md`, with the guess next to each result.
+  - **Done when:** `EVALS.md` holds three dated scorecards with a written guess for each prompt change; a test fails if the prompt file changed but `EVALS.md` did not.
+
+- [ ] **Step 15: Tracing** (builds on step 5)
+  - **Goal:** Every Claude call logs tokens in and out, cost, latency and the gate's result, on the gate's logbook line. One command prints a summary: calls, total cost, average latency, results by gate verdict.
+  - **Done when:** the summary command runs on the seeded database and matches the logbook by hand for five calls; a test checks the line is written on success and on an AI outage.
+
+- [ ] **Step 16: Live on the internet** (builds on steps 10 and 15)
+  - **Goal:** The app runs on a hosted URL with a hosted database, invented data only, and the README shows real cost numbers from step 15 for one full eval run.
+  - **Done when:** a stranger can open the URL and approve a request; the README's cost table comes from the hosted logbook, with a date.
