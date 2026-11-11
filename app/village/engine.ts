@@ -48,8 +48,6 @@ export interface VillageControls {
 }
 
 export interface VillageOptions {
-  /** Called when the person presses E or clicks the human desk in the scene. */
-  onEnterDesk?: () => void;
   /** Called once each time the robot's stop changes (null while it walks). */
   onStage?: (stage: VillageStage | null) => void;
   /** Called once each time a control changes (scene, auto-play, palette, sound, speed, open windows). */
@@ -683,7 +681,7 @@ const HOT=[
  {id:'home',x:26,y:96,w:64,h:62,m:['THE REFUND AGENT LIVES HERE.','IT CAN ONLY SUGGEST. IT CANNOT PAY.']},
  {id:'log',x:68,y:154,w:24,h:34,m:['THE LOGBOOK.','EVERY DECISION GETS WRITTEN DOWN.']},
  {id:'gate',x:198,y:34,w:56,h:64,m:['THE GATE IS PLAIN CODE, NOT A CHARACTER.','GREEN PAYS. YELLOW ASKS A HUMAN. RED BLOCKS.']},
- {id:'desk',x:108,y:140,w:72,h:60,m:null}, // no info bubble: clicking the desk enters the human desk (options.onEnterDesk)
+ {id:'desk',x:108,y:140,w:72,h:60,m:['THE HUMAN DESK.','A PERSON DECIDES BIG REFUNDS HERE.']},
  {id:'fac',x:236,y:132,w:62,h:64,m:['THE FACTORY IS PLAIN CODE TOO.','IT IS THE ONLY PLACE THAT PAYS REFUNDS.']}];
 const inR=(r,x,y)=>x>=r.x&&y>=r.y&&x<r.x+r.w&&y<r.y+r.h;
 function rot(arr,k){return arr[k%arr.length]}
@@ -732,14 +730,11 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   let scale=2;
   const WB=new Uint8Array(SW*SH),OUT=new Uint8Array(SW*SH),LB=new Uint8Array(SW*LOGH);
   const qs=new URLSearchParams(window.location.search);
-  const app={scene:1,pace:0.5,paused:false,logOpen:false,rulesOpen:false,hist:[],runRF:16,rt:0,dk:'',dt0:0,dec:'A',lastDec:'A',t:0,amb:0,auto:!(typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches),frozen:false,decided:false,info:null,hover:null,hoverBtn:null,pressed:null,announce:null};
+  const app={scene:1,pace:0.5,paused:false,logOpen:false,rulesOpen:false,hist:[],runRF:16,rt:0,dk:'',dt0:0,dec:'A',lastDec:'A',t:0,amb:0,auto:!(typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches),frozen:false,decided:false,info:null,hover:null,hoverBtn:null,pressed:null};
   let night=qs.get('day')!=='1';
   // every listener, timer and observer is recorded here and undone in destroy()
   const listeners=[];const on=(t,type,fn,opts)=>{t.addEventListener(type,fn,opts);listeners.push([t,type,fn,opts])};
   let raf=0,roRaf=0,ro=null,dead=false,lastStage,lastCtl;
-  // hook 1: the human desk is a door, not an info bubble. E, or a click on the desk, goes through it.
-  function announce(txt){app.announce={txt,until:performance.now()+4000};live.dataset.k=txt;live.textContent=txt}
-  function enterDesk(){sfx('click');announce('Entering the human desk');if(options.onEnterDesk)options.onEnterDesk()}
   function logLines(tl,t){const l=app.hist.map(en=>en.id+' '+en.a+' '+en.wd);
     const nl=t>=tl.ev.log?rfid(app.runRF)+' '+SC[tl.sc].amt+' '+tl.ev.word:null;return{l,nl}}
   function logEntries(tl,t){return t>=tl.ev.log?[...app.hist,makeEntry(tl.sc,tl.dec,app.runRF)]:app.hist.slice()}
@@ -904,7 +899,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     else{let d=tl.dl[0];for(const q of tl.dl)if(t>=q.t)d=q;const key=app.scene+'|'+tl.dl.indexOf(d);if(app.dk!==key){app.dk=key;app.dt0=app.rt}l1=d.a;l2=d.b;el=app.rt-app.dt0;full=app.frozen}
     const rid=rfid(app.runRF);l1=l1.replace('#RF#',rid);l2=l2.replace('#RF#',rid);
     drawDialog(l1,l2,el,amb,full);
-    const txt=app.announce&&performance.now()<app.announce.until?app.announce.txt:(app.rulesOpen?rulesSummary():(app.logOpen?logSummary(tl,t):l1+' '+l2));if(live.dataset.k!==txt){live.dataset.k=txt;live.textContent=txt}
+    const txt=app.rulesOpen?rulesSummary():(app.logOpen?logSummary(tl,t):l1+' '+l2);if(live.dataset.k!==txt){live.dataset.k=txt;live.textContent=txt}
     const lut=LUT[night?0:1];for(let i=0;i<OUT.length;i++)u32[i]=lut[OUT[i]];sctx.putImageData(img,0,0);
     drawLog(tl,t,amb);for(let i=0;i<LB.length;i++)lu32[i]=lut[LB[i]];lctx.putImageData(limg,0,0);
     // HTML approve / reject buttons only while the human is needed
@@ -1021,7 +1016,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   on(scr,'click',ev=>{const[x,y]=toLogical(ev);
     if(app.logOpen||app.rulesOpen){app.logOpen=false;app.rulesOpen=false;return}
     if(winOpenNow()){for(const k of['A','R'])if(inR(BTN[k],x,y)){decide(k);return}return}
-    const h=HOT.find(q=>inR(q,x,y));if(h){if(h.id==='log'){app.logOpen=true;sfx('click')}else if(h.id==='gate'){app.rulesOpen=true;sfx('click')}else if(h.id==='desk')enterDesk();else app.info={m:h.m,t0:performance.now(),until:performance.now()+9000}}});
+    const h=HOT.find(q=>inR(q,x,y));if(h){if(h.id==='log'){app.logOpen=true;sfx('click')}else if(h.id==='gate'){app.rulesOpen=true;sfx('click')}else app.info={m:h.m,t0:performance.now(),until:performance.now()+9000}}});
   b1.onclick=()=>setScene(1);b2.onclick=()=>setScene(2);b3.onclick=()=>setScene(3);
   bauto.onclick=()=>{app.auto=!app.auto;refreshLabels();sfx('click')};bday.onclick=()=>{toggleNight();sfx('click')};bsound.onclick=toggleSound;brules.onclick=()=>{app.logOpen=false;app.rulesOpen=!app.rulesOpen;sfx('click')};bspeed.onclick=()=>{app.pace=app.pace===0.5?0.25:(app.pace===0.25?1:0.5);refreshLabels();sfx('click')};bA.onclick=()=>decide('A');bR.onclick=()=>decide('R');
   on(window,'pointerdown',sfxArm);
@@ -1030,7 +1025,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   // shortcuts stay quiet while a form field has focus or a modifier is held (hook 3)
   // the same shortcuts are reachable through handle.press(key), for a page that draws its own buttons
   function handleKey(k){
-    if(k==='1'||k==='2'||k==='3')setScene(+k);else if(k==='a')decide('A');else if(k==='r')decide('R');else if(k==='e')enterDesk();else if(k==='n')toggleNight();else if(k==='p')bauto.onclick();else if(k==='m')toggleSound();else if(k==='s')bspeed.onclick();else if(k===' ')app.paused=!app.paused;else if(k==='l'){app.rulesOpen=false;app.logOpen=!app.logOpen}else if(k==='?'){app.logOpen=false;app.rulesOpen=!app.rulesOpen}else if(k==='escape'){app.logOpen=false;app.rulesOpen=false}}
+    if(k==='1'||k==='2'||k==='3')setScene(+k);else if(k==='a')decide('A');else if(k==='r')decide('R');else if(k==='n')toggleNight();else if(k==='p')bauto.onclick();else if(k==='m')toggleSound();else if(k==='s')bspeed.onclick();else if(k===' ')app.paused=!app.paused;else if(k==='l'){app.rulesOpen=false;app.logOpen=!app.logOpen}else if(k==='?'){app.logOpen=false;app.rulesOpen=!app.rulesOpen}else if(k==='escape'){app.logOpen=false;app.rulesOpen=false}}
   on(window,'keydown',ev=>{if(ev.ctrlKey||ev.metaKey||ev.altKey||isTypingTarget(ev.target))return;sfxArm();const k=ev.key.toLowerCase();if(k===' ')ev.preventDefault();handleKey(k)});
   // the scale follows the device's width; the relayout is deferred a frame so the observer never sees its own resize
   if(typeof ResizeObserver==='function'){ro=new ResizeObserver(()=>{if(dead||roRaf)return;roRaf=requestAnimationFrame(()=>{roRaf=0;if(!dead)layout()})});ro.observe(device,{box:'border-box'})}

@@ -170,3 +170,8 @@ Template:
 - Nothing links to `/village/gate` (the Gate encounter page) yet.
 - Step 5 still waits for the API key.
 - `.claude/launch.json` (starts the demo server for previews) is not committed.
+
+## Plan change: robot-eye view removed (2026-11-11)
+
+**Decided:** The robot-eye Human Desk from Step 13 is removed. The first-person view added steps between the owner and a decision without adding anything. `/approvals` is the plain Step 7 screen again (same logic, same tests), and the first-person Gate page at `/village/gate` is gone with its art and styles. The village prototype stays at `/village`, view only. Its human desk now shows a short note like the other places do, instead of leading to `/approvals`: the village plays made-up stories, and the real queue shouldn't look like part of them.
+**Kept from Step 13:** the village inside the app, and the fix that stopped it freezing after one frame.

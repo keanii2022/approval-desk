@@ -1,308 +1,91 @@
-/* The Human Desk stop: what the shared chrome (app/village/village.css) doesn't
-   have. Everything here is prefixed hd- or scoped under .human-desk, and reads the
-   --v-* tokens the chrome defines on .village-ui. Display labels are uppercased
-   here, never in the DOM; the customer's letter and the agent's words stay as
-   written, because they are content, not labels. */
-
-/* The page wrapper takes no space of its own, so the shell's column and gap still apply. */
-.human-desk {
-  display: contents;
+:root {
+  --bg: #f6f5fa;
+  --fg: #1d1b2b;
+  --muted: #5d5a73;
+  --card: #ffffff;
+  --line: #d9d6e6;
+  --accent: #4a3f9f;
+  --good: #1f6b3a;
+  --good-bg: #e3f3e8;
+  --bad: #a3262f;
+  --bad-bg: #fbe7e8;
+  --warn-bg: #fff3d6;
+  --warn: #7a5200;
 }
-
-/* The standing sentence can need a third line: let the bar grow rather than clip. */
-.human-desk .v-dialogue {
-  height: auto;
-  min-height: 154px;
-  display: flex;
-  flex-direction: column;
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16142a;
+    --fg: #ecebf5;
+    --muted: #a9a6c4;
+    --card: #211f3a;
+    --line: #3a3760;
+    --accent: #9d93f0;
+    --good: #7be08a;
+    --good-bg: #17331f;
+    --bad: #ff9aa0;
+    --bad-bg: #3b1a1d;
+    --warn-bg: #3a2f10;
+    --warn: #ffd37a;
+  }
 }
-.human-desk .v-dialogue-inner {
-  flex: 1 1 auto;
-  height: auto;
-}
-
-/* ---------- Section headings in the rail ---------- */
-.hd-section-title {
-  margin: 0 5px 0 22px;
-  font: 500 12px / 1 var(--v-font-mono);
-  letter-spacing: 0.04em;
-  color: var(--v-steel-light);
-  text-transform: uppercase;
-}
-.v-indicator + .hd-section-title {
-  margin-top: -16px; /* the indicator already carries 16px below; one gap, not two */
-}
-.hd-section-title--red {
-  color: var(--v-red-line);
-}
-
-/* ---------- Panels ---------- */
-.hd-panel--red .v-panel-display {
-  background: var(--v-red-pale);
-  border-color: var(--v-red-line);
-}
-.hd-panel--red .v-panel-head {
-  background: var(--v-red);
-}
-.hd-panel--red .v-panel-aside {
-  color: var(--v-red-pale);
-}
-
-.hd-empty {
+body:has(.approvals) {
   margin: 0;
-  font: 400 var(--v-fs-closing) / 1.2 var(--v-font-pixel);
-  color: var(--v-grey);
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.5 system-ui, sans-serif;
 }
-.hd-note {
-  margin: 0;
-  font: 400 17px / 1.25 var(--v-font-pixel);
-  color: var(--v-ink);
+main.approvals {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
 }
-
-/* "No amount": the words where a figure would be, smaller than a figure */
-.hd-amount--none .v-amount-value {
-  font-size: 28px;
-  text-transform: uppercase;
+.approvals a { color: var(--accent); }
+.approvals h1 { margin: 0.25rem 0; }
+.approvals h2 { margin-top: 2rem; }
+.approvals h3, .approvals h4 { margin: 0.75rem 0 0.25rem; }
+.approvals .lede, .approvals .muted { color: var(--muted); }
+.approvals .card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
 }
-
-/* The customer's letter */
-.hd-letter {
-  margin: 0;
-  padding: 12px;
-  background: var(--v-sand);
-  border-radius: 3px;
-  color: var(--v-ink);
+.approvals .card.warn { background: var(--warn-bg); color: var(--warn); }
+.approvals blockquote {
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 4px solid var(--line);
+  color: var(--fg);
 }
-.hd-letter-label {
-  display: block;
-  margin-bottom: 7px;
-  font: 400 10px / 1 var(--v-font-mono);
-  color: var(--v-grey);
-  text-transform: uppercase;
+.approvals table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 0.75rem; display: block; max-width: 100%; overflow-x: auto; }
+.approvals th, .approvals td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.approvals .decision { margin-top: 1rem; padding-top: 0.5rem; border-top: 1px dashed var(--line); display: grid; gap: 0.35rem; }
+.approvals .decision textarea { max-width: 40rem; width: 100%; box-sizing: border-box; }
+.approvals input[name="amount"], .approvals textarea {
+  font: inherit;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
 }
-.hd-letter-subject {
-  display: block;
-  font: 700 17px / 1.15 var(--v-font-pixel);
-}
-.hd-letter-body {
-  margin: 8px 0 0;
-  font: 400 14px / 1.5 var(--v-font-mono);
-}
-
-/* Rule reasons can be whole sentences: let them wrap with a little air */
-.hd-case .v-rule-title {
-  line-height: 1.1;
-}
-
-/* What the agent said: a quoted sentence, so readable size and no uppercase */
-.hd-agent .v-status {
-  align-items: flex-start;
-}
-.hd-agent .v-icon {
-  margin-top: 1px;
-}
-.hd-agent .v-status-sub {
-  margin-top: 6px;
-  font-size: 12px;
-  line-height: 1.45;
-  text-transform: none;
-}
-
-/* ---------- Decision forms ---------- */
-.hd-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.hd-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.hd-label {
-  font: 500 11px / 1.3 var(--v-font-mono);
-  color: var(--v-grey);
-  text-transform: uppercase;
-}
-.hd-input,
-.hd-textarea {
-  width: 100%;
-  margin: 0;
-  padding: 8px 10px;
-  font: 400 14px / 1.4 var(--v-font-mono);
-  color: var(--v-ink);
-  background: var(--v-white);
-  border: 2px solid var(--v-ink);
-  border-radius: 3px;
-}
-.hd-input {
-  height: 40px;
-  max-width: 220px;
-}
-.hd-textarea {
-  min-height: 76px;
-  resize: vertical;
-}
-.hd-input:focus-visible,
-.hd-textarea:focus-visible,
-.hd-table input:focus-visible {
-  outline: 3px solid var(--v-gold);
-  outline-offset: 2px;
-}
-
-/* The order table: pixel-console numbers, one thin line per row. Wider than the
-   card, so it scrolls sideways inside it; the order column stays put. */
-.hd-table-wrap {
-  overflow-x: auto;
-  border: 1px solid var(--v-divider);
-  border-radius: 3px;
-}
-.hd-table {
-  width: 100%;
-  border-collapse: collapse;
-  font: 400 12px / 1.3 var(--v-font-mono);
-  color: var(--v-ink);
-}
-.hd-table th,
-.hd-table td {
-  padding: 7px 8px;
-  border-bottom: 1px solid var(--v-divider);
-  text-align: left;
-  vertical-align: top;
-  white-space: nowrap;
-}
-.hd-table thead th {
-  font-weight: 600;
-  font-size: 10px;
-  line-height: 1.2;
-  color: var(--v-grey);
-  background: var(--v-sand);
-  text-transform: uppercase;
-  white-space: normal;
-  min-width: 64px;
-}
-.hd-table tbody tr:last-child > * {
-  border-bottom: 0;
-}
-.hd-table tbody th {
-  font-weight: 500;
-}
-.hd-table th:first-child {
-  position: sticky;
-  left: 0;
-  background: var(--v-cream);
-  box-shadow: 1px 0 0 var(--v-divider);
-}
-.hd-table thead th:first-child {
-  background: var(--v-sand);
-}
-.hd-table .hd-item {
-  white-space: normal;
-  min-width: 120px;
-}
-.hd-table .hd-left {
-  font-weight: 600;
-}
-.hd-table label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.approvals input[name="amount"] { max-width: 12rem; }
+.approvals button {
+  font: inherit;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--fg);
   cursor: pointer;
+  justify-self: start;
 }
-.hd-table input[type="radio"] {
-  margin: 0;
-  width: 14px;
-  height: 14px;
-  accent-color: var(--v-blue);
-}
-
-/* Buttons: the primary is the gold cabinet key; reject is quiet, red and bordered */
-.hd-button {
-  width: 100%;
-  height: 47px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 0 12px;
-  border-radius: 5px;
-  cursor: pointer;
-  text-transform: uppercase;
-  font: 700 var(--v-fs-action) / 1 var(--v-font-pixel);
-}
-.hd-button--primary {
-  background: var(--v-gold);
-  border: 2px solid var(--v-ink);
-  color: var(--v-ink);
-}
-.hd-button--primary:hover:not(:disabled) {
-  background: var(--v-gold-light);
-}
-.hd-button--reject {
-  height: 40px;
-  background: none;
-  border: 2px solid var(--v-red-line);
-  color: var(--v-red);
-  font: 600 var(--v-fs-action-2) / 1 var(--v-font-pixel);
-}
-.hd-button--reject:hover:not(:disabled) {
-  background: var(--v-red-pale);
-}
-.hd-button:disabled {
-  opacity: 0.55;
-  cursor: progress;
-}
-
-/* A refused decision or a stopped desk: a red rule row whose mark is CSS, so the
-   element's text is exactly the message */
-.hd-problem {
-  margin: 0;
-  font: 700 15px / 1.15 var(--v-font-pixel);
-  text-transform: uppercase;
-}
-.hd-problem::before {
-  content: "×";
-  width: 30px;
-  height: 30px;
-  flex: none;
-  display: grid;
-  place-items: center;
-  border-radius: 3px;
-  background: var(--v-red);
-  color: var(--v-white);
-  font: 700 25px / 1 var(--v-font-pixel);
-}
-.hd-problem--rail {
-  margin: -16px 5px 0 22px;
-}
-
-/* ---------- Dialogue banner ---------- */
-.hd-banner {
-  color: var(--v-blue);
-}
-.hd-banner--warn {
-  color: var(--v-red);
-}
-
-/* ---------- Responsive ---------- */
-@media (max-width: 1100px) {
-  .hd-section-title {
-    margin-left: 1px;
-    margin-right: 0;
-  }
-  .hd-problem--rail {
-    margin-left: 0;
-    margin-right: 0;
-  }
-}
-@media (max-width: 760px) {
-  .hd-button {
-    height: 44px;
-  }
-  .hd-amount--none .v-amount-value {
-    font-size: 24px;
-  }
-  .hd-letter-subject {
-    font-size: 16px;
-  }
-}
+.approvals button.approve { background: var(--good-bg); border-color: var(--good); color: var(--good); }
+.approvals button.reject { background: var(--bad-bg); border-color: var(--bad); color: var(--bad); }
+.approvals button:disabled { opacity: 0.6; cursor: progress; }
+.approvals button:focus-visible, .approvals input:focus-visible, .approvals textarea:focus-visible, .approvals a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.approvals .problem { color: var(--bad); background: var(--bad-bg); padding: 0.4rem 0.6rem; border-radius: 6px; margin: 0.25rem 0; }
+.approvals .banner { background: var(--good-bg); color: var(--good); padding: 0.6rem 0.8rem; border-radius: 6px; }
+.approvals .banner.warn { background: var(--warn-bg); color: var(--warn); }
+.approvals .empty { padding: 1rem; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); }

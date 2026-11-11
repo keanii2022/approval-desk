@@ -2,7 +2,7 @@
 
 // The village prototype as a React component: the same markup the prototype had, with refs
 // instead of ids, and the drawing engine mounted in an effect. All the picture and the
-// stories live in engine.ts; this file only hands it the DOM and the two page hooks.
+// stories live in engine.ts; this file only hands it the DOM and the page hook.
 import { useEffect, useRef } from "react";
 import { mountVillage, type VillageStage } from "./engine.ts";
 import "./canvas.css";
@@ -10,14 +10,12 @@ import "./canvas.css";
 export type { VillageStage } from "./engine.ts";
 
 export interface VillageCanvasProps {
-  /** The person pressed E or clicked the human desk in the scene. */
-  onEnterDesk?: () => void;
   /** The robot's stop changed (null while it walks between stops). */
   onStage?: (stage: VillageStage | null) => void;
   className?: string;
 }
 
-export default function VillageCanvas({ onEnterDesk, onStage, className }: VillageCanvasProps) {
+export default function VillageCanvas({ onStage, className }: VillageCanvasProps) {
   const screen = useRef<HTMLCanvasElement>(null);
   const title = useRef<HTMLCanvasElement>(null);
   const logbook = useRef<HTMLCanvasElement>(null);
@@ -34,10 +32,10 @@ export default function VillageCanvas({ onEnterDesk, onStage, className }: Villa
   const bA = useRef<HTMLButtonElement>(null);
   const bR = useRef<HTMLButtonElement>(null);
 
-  // The engine mounts once. The callbacks are read through a ref, so a parent that passes a
+  // The engine mounts once. The callback is read through a ref, so a parent that passes a
   // new function on every render never restarts the village.
-  const hooks = useRef({ onEnterDesk, onStage });
-  hooks.current = { onEnterDesk, onStage };
+  const hooks = useRef({ onStage });
+  hooks.current = { onStage };
 
   useEffect(() => {
     if (
@@ -60,7 +58,6 @@ export default function VillageCanvas({ onEnterDesk, onStage, className }: Villa
         },
       },
       {
-        onEnterDesk: () => hooks.current.onEnterDesk?.(),
         onStage: (stage) => hooks.current.onStage?.(stage),
       },
     );
@@ -78,7 +75,7 @@ export default function VillageCanvas({ onEnterDesk, onStage, className }: Villa
           width={320}
           height={240}
           role="img"
-          aria-label="Pixel-art village at dusk. A small coral robot, the refund agent, walks between its house, the inbox stand, the gate with a three-colour light, the human desk screen and the factory that pays refunds. The shop stands in the middle and two empty houses are for sale. Press E, or click the human desk, to enter it."
+          aria-label="Pixel-art village at dusk. A small coral robot, the refund agent, walks between its house, the inbox stand, the gate with a three-colour light, the human desk screen and the factory that pays refunds. The shop stands in the middle and two empty houses are for sale."
         />
         <canvas
           ref={logbook}
