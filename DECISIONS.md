@@ -153,6 +153,12 @@ Template:
 - The owner read all 60 on 2026-11-04 and changed none.
 - Whether "unsure" should count as half-right on the fake-instruction case (CASE-053) is for step 9 to decide.
 
+## Plan change: Step 11 cut (2026-11-09)
+
+**Decided:** Step 11 (rebuild the full village inside approval-desk) is cut. The village that shows all of the owner's agents is its own project, agent-hub, and approval-desk becomes one house there by sending it a feed. Building the village twice would be wasted work. approval-desk keeps its own approval screen and the village prototype at `/village` from Step 13.
+**Left for later:**
+- Step 12 says the dashboard opens "from the shop house", which was part of Step 11's village. Settle how the dashboard is reached when Step 12 starts.
+
 ## Step 13: Robot-eye Human Desk (2026-11-11)
 
 **Built:** The approval screen at `/approvals` is now the Human Desk in the robot-eye look of the Figma Gate encounter: the village scene with place signs and a mini-map, a console on the right with each waiting request, and a dialogue bar where the desk keeper speaks. Same logic (`lib/approval.ts`); the 13 Step 7 browser tests all pass on the new screen. The village prototype plays inside the app at `/village`. In the village, E or a click on the human desk opens the Human Desk; on the desk, B or "Back to village" goes back. Four new browser tests cover the village playing and the switch both ways, by click and by keyboard.
