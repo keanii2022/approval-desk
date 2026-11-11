@@ -152,3 +152,15 @@ Template:
 **Left for later:**
 - The owner read all 60 on 2026-11-04 and changed none.
 - Whether "unsure" should count as half-right on the fake-instruction case (CASE-053) is for step 9 to decide.
+
+## Step 13: Robot-eye Human Desk (2026-11-11)
+
+**Built:** The approval screen at `/approvals` is now the Human Desk in the robot-eye look of the Figma Gate encounter: the village scene with place signs and a mini-map, a console on the right with each waiting request, and a dialogue bar where the desk keeper speaks. Same logic (`lib/approval.ts`); the 13 Step 7 browser tests all pass on the new screen. The village prototype plays inside the app at `/village`. In the village, E or a click on the human desk opens the Human Desk; on the desk, B or "Back to village" goes back. Four new browser tests cover the village playing and the switch both ways, by click and by keyboard.
+**Decided:**
+- `/village` is the prototype as it is (scripted invented data, view only), with no robot-eye frame around it. The robot-eye look belongs to the Human Desk.
+- Typing a "b" into a note or an amount never leaves the desk: the shortcut only works outside form fields. A test checks it.
+- The village was drawing one frame and then stopping on an error (a variable in the engine was never declared). Fixed, and the "village plays" test now also fails on any page error.
+**Left for later:**
+- Nothing links to `/village/gate` (the Gate encounter page) yet.
+- Step 5 still waits for the API key.
+- `.claude/launch.json` (starts the demo server for previews) is not committed.

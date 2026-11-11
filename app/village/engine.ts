@@ -736,7 +736,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   let night=qs.get('day')!=='1';
   // every listener, timer and observer is recorded here and undone in destroy()
   const listeners=[];const on=(t,type,fn,opts)=>{t.addEventListener(type,fn,opts);listeners.push([t,type,fn,opts])};
-  let raf=0,roRaf=0,ro=null,dead=false,lastStage;
+  let raf=0,roRaf=0,ro=null,dead=false,lastStage,lastCtl;
   // hook 1: the human desk is a door, not an info bubble. E, or a click on the desk, goes through it.
   function announce(txt){app.announce={txt,until:performance.now()+4000};live.dataset.k=txt;live.textContent=txt}
   function enterDesk(){sfx('click');announce('Entering the human desk');if(options.onEnterDesk)options.onEnterDesk()}
