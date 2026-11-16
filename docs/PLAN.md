@@ -63,6 +63,48 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
   - **Goal:** Every Claude call logs tokens in and out, cost, latency and the gate's result, on the gate's logbook line. One command prints a summary: calls, total cost, average latency, results by gate verdict.
   - **Done when:** the summary command runs on the seeded database and matches the logbook by hand for five calls; a test checks the line is written on success and on an AI outage.
 
-- [ ] **Step 16: Live on the internet** (builds on steps 10 and 15)
-  - **Goal:** The app runs on a hosted URL with a hosted database, invented data only, and the README shows real cost numbers from step 15 for one full eval run.
-  - **Done when:** a stranger can open the URL and approve a request; the README's cost table comes from the hosted logbook, with a date.
+- [ ] **Step 16: Live on the internet** (moved below, into "Public village", on 2026-11-16: it now comes before step 15, and the cost table waits for step 15.)
+
+## Public village (added 2026-11-16)
+
+The owner chose to make the village the front door and go live before steps 12, 14 and 15. Visitors try the real agent on the owner's credits, behind hard spending limits. See `DECISIONS.md`.
+
+### 17. Visitors and spending guards
+- **Status:** current
+- **Goal:** Every visitor gets a private sandbox: a cookie holds a random visitor ID, and the try page and the approval screen only show that visitor's own tried requests (seeded `REQ-` requests still show, so local demos keep working). A visitor can only approve or reject their own tried requests. Spending locks on the real agent: at most `TRY_DAILY_LIMIT` tries a day across everyone (default 50), and at most `TRY_VISITOR_HOURLY_LIMIT` per visitor per hour (default 5). Over a limit, the try is refused in plain words before any AI call ("The agent is done for today, come back tomorrow"), and nothing is written.
+- **Scope:** `lib/tryout.ts`, `lib/visitor.ts` (new), `lib/approval.ts`, `app/try/actions.ts`, `app/try/page.tsx`, `app/approvals/page.tsx`, `app/approvals/actions.ts`, `tests/tryout.test.ts`, `tests/approval.test.ts`
+- **Out of scope:** the village, `app/try/TryForm.tsx` layout, the gate, the executor, the seed schema.
+- **Dependencies:** none
+- **Done when:** tests show a fresh visitor sees no tried requests, one visitor can't see or decide another's, both limits refuse before the agent is called, and the existing approval tests still pass.
+
+### 18. Ready to host
+- **Status:** current
+- **Goal:** The app runs on a host from `npm start` alone: if the database file at `APPROVAL_DESK_DB` (or the default path) doesn't exist, it is seeded first, then `next start` runs on the host's `PORT`. `package.json` says Node 24 or newer. `.env.example` lists the new optional settings (`AGENT_MODEL`, `TRY_DAILY_LIMIT`, `TRY_VISITOR_HOURLY_LIMIT`, `APPROVAL_DESK_DB`) without values.
+- **Scope:** `package.json`, `scripts/start.ts` (new), `.env.example`
+- **Out of scope:** app code, the README.
+- **Dependencies:** none
+- **Done when:** with no database file, `npm run build && npm start` seeds it and serves `/` on the given `PORT`; with a file present, it isn't re-seeded.
+
+### 19. Village front door
+- **Status:** todo
+- **Goal:** The village is the front page (`/`). It plays the scripted demo stories on its own, as now. Clicking the Inbox stand (or pressing its key) opens a panel over the village with the try form (customer picker, receipt, example buttons). After sending, the panel shows the result (what the agent filled in, what the gate decided, how it ended). Clicking the human desk opens the visitor's own waiting requests, with a way to the approval screen. The page says in one line what this is and links to GitHub. A short note makes clear the scripted stories are made up and "your requests" are real. Original pixel art only, nothing copied from any game.
+- **Scope:** `app/page.tsx`, `app/village/*`, `e2e/village.e2e.ts`
+- **Out of scope:** `lib/*`, the approval screen's logic, the try page's logic (reuse `TryForm` and `tryAction` as they are).
+- **Dependencies:** 17
+- **Done when:** browser tests open the try panel from the Inbox by click and by keyboard, send a request (stand-in agent) and see the result in the panel, and the village still plays the three scripted stories.
+
+### 20. The village plays your request
+- **Status:** todo
+- **Goal:** After a visitor sends a request from the Inbox panel, the robot carries it through the village: Inbox to the agent house to the gate, and the gate light shows the real gate's decision (green paid, yellow a person decides, red blocked). On yellow, the human desk lights up and waits for the visitor. On green, the factory pays. The logbook gets the visitor's real entry. The scripted stories pause while the visitor's request plays.
+- **Scope:** `app/village/*`, `e2e/village.e2e.ts`
+- **Out of scope:** `lib/*`, the approval screen.
+- **Dependencies:** 19
+- **Done when:** browser tests (stand-in agent) send a small refund, a big refund and a garbled one, and see the green, yellow and red lights in turn, with the visitor's entry in the logbook.
+
+### 16. Live on the internet
+- **Status:** todo
+- **Goal:** The app runs on a hosted URL with a persistent database file, invented data only, the owner's key on the host only, spending limits on. The README opens with the live link, says this agent is one house in the owner's bigger agent-hub, with a screenshot of the hub supplied by the owner. The cost table from step 15 is added once step 15 is done.
+- **Scope:** `README.md`, host settings (owner's account)
+- **Out of scope:** app code.
+- **Dependencies:** 17, 18, 19, 20
+- **Done when:** a stranger can open the URL, send a request from the village and approve it.
