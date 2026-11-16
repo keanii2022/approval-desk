@@ -8,6 +8,8 @@ import type { AskModel } from "./agent.ts";
 const DEFAULT_MODEL = "claude-opus-5-5";
 const TIMEOUT_MS = 60_000;
 
+export const agentModel = (): string => process.env.AGENT_MODEL || DEFAULT_MODEL;
+
 const nullable = (type: "string" | "integer", description: string) => ({
   anyOf: [{ type }, { type: "null" }],
   description,
@@ -37,7 +39,7 @@ export function claudeAgent({ maxRetries = 2 }: { maxRetries?: number } = {}): A
 
     const client = new Anthropic({ apiKey, maxRetries, timeout: TIMEOUT_MS });
     const response = await client.beta.messages.create({
-      model: process.env.AGENT_MODEL || DEFAULT_MODEL,
+      model: agentModel(),
       max_tokens: 16000,
       system,
       messages: [{ role: "user", content: user }],

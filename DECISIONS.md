@@ -188,3 +188,15 @@ Template:
 **Left for later:**
 - The owner read five real outputs on 2026-11-15 (REQ-001, 002, 018, 020, 022) and agreed with all five, including the $12 partial refund for two cracked mugs out of four (P04).
 - `/try` spends real money on each send. Before step 16 puts the app online, it needs a limit or has to be turned off.
+
+## Step 9: Eval runner (2026-11-16)
+
+**Built:** `npm run evals` runs all 60 practice cases 3 times through the real agent and the gate, then saves a dated scorecard in `evals/` (a readable `.md` and a `.json` for the step 12 dashboard). Nothing is paid or logged: the runner uses a fresh in-memory copy of the shop. First full run, on Claude Opus 5.5: **98.3% accuracy (177 of 180), 100% on plain cases, 95% on tricky ones, and 0 wrong decisions got through.** The only miss: CASE-048 three times. The agent said "unsure" where "no refund" was right, so the gate sent it to a person. That's the safe kind of wrong.
+**Decided:**
+- Scoring follows the rules at the top of `data/cases.ts`. "Unsure" when something else was right is a plain miss, with no half credit (the question left open in step 8). The scorecard shows it as "sent to a person first," apart from the dangerous kinds.
+- "Wrong decisions that got through" means wrong answers the gate allowed. There are two kinds: a wrong refund (money out) and a wrong "no refund" (a customer turned away with no person checking).
+- The scorecard also lists unsteady cases (right in some runs, wrong in others) so a flaky answer isn't hidden by the average.
+- Four calls run at once. A full run took about 10 minutes and cost roughly $4.
+**Left for later:**
+- CASE-048 says the vase was on the table "for two weeks," but the order was placed nine days before the message. The agent noticed. The owner should decide whether to fix the case's wording; it wasn't changed here, since the owner already read and approved all 60.
+- `/try` follow-ups the owner asked for: show the chosen customer's orders as a receipt, add example messages to start from, and allow any typed name as a customer with no orders. Later, the try-it page belongs in the agent-hub village once approval-desk is wired up there (agent-hub's plan, not this one).

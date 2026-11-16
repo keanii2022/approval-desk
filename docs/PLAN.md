@@ -35,7 +35,7 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
   - **Goal:** 60 practice requests, each with its expected right answer. 20 of them are tricky.
   - **Done when:** all 60 are drafted, and all have been read and corrected by the owner.
 
-- [ ] **Step 9: Eval runner** (part 8)
+- [x] **Step 9: Eval runner** (part 8)
   - **Goal:** Run every practice case 3 times through the agent and gate, and write a scorecard.
   - **Done when:** the scorecard shows accuracy, misses, and wrong decisions that got through; it is saved with a date.
 
