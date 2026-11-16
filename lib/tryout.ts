@@ -3,6 +3,7 @@ import type { AskModel } from "./agent.ts";
 import type { AgentOutput, GateDecision } from "./gate.ts";
 import { type GateDecisionDetails, readEntries } from "./logbook.ts";
 import { type PipelineResult, processRequest, utcNow } from "./pipeline.ts";
+import { ensureVisitorTable, recordTry, spendingProblem, type TryLimits } from "./visitor.ts";
 
 // "Try it yourself": a person writes a request as one of the shop's customers,
 // and it runs the same path as any Inbox request (agent -> gate -> executor or
@@ -67,14 +68,22 @@ export function tryInputProblem(db: DatabaseSync, input: TryInput): string | nul
   return null;
 }
 
-// Adds the request to the Inbox and runs it. Throws if the input is bad; check it first.
+export type Visit = { visitorId: string; now?: string; limits?: TryLimits };
+
+// Adds the request to the Inbox, owned by the visitor, and runs it. Throws if the
+// input is bad or a spending limit is reached; check both first. Both checks come
+// before anything is written and before the agent is asked.
 export async function tryRequest(
   db: DatabaseSync,
   input: TryInput,
   askModel: AskModel,
+  visit: Visit,
 ): Promise<{ requestId: string; result: PipelineResult }> {
   const problem = tryInputProblem(db, input);
   if (problem) throw new Error(problem);
+  const now = visit.now ?? utcNow();
+  const overLimit = spendingProblem(db, visit.visitorId, now, visit.limits);
+  if (overLimit) throw new Error(overLimit);
 
   const customerId = input.customerId === NEW_CUSTOMER ? addNewCustomer(db, (input.newName ?? "").trim()) : input.customerId;
   const requestId = nextTryId(db);
@@ -85,7 +94,8 @@ export async function tryRequest(
     input.subject.trim() || "(no subject)",
     input.message.trim(),
   );
-  return { requestId, result: await processRequest(db, requestId, askModel) };
+  recordTry(db, requestId, visit.visitorId, now);
+  return { requestId, result: await processRequest(db, requestId, askModel, now) };
 }
 
 // The invented shop lives in early October 2026. Dating a try with the real date
@@ -113,15 +123,19 @@ function nextTryId(db: DatabaseSync): string {
   return `TRY-${String((row.n ?? 0) + 1).padStart(3, "0")}`;
 }
 
-// The tried requests, newest first, each with what the agent said, what the gate
-// decided, and how it ended, read back from the logbook.
-export function recentTries(db: DatabaseSync, limit = 20): Tried[] {
+// One visitor's tried requests, newest first, each with what the agent said, what
+// the gate decided, and how it ended, read back from the logbook. No visitor, no tries.
+export function recentTries(db: DatabaseSync, visitorId: string | null, limit = 20): Tried[] {
+  if (visitorId === null) return [];
+  ensureVisitorTable(db);
   const rows = db
     .prepare(
-      `SELECT i.id, i.subject, i.body, c.name FROM inbox i JOIN customers c ON c.id = i.customer_id
-       WHERE i.id LIKE 'TRY-%' ORDER BY CAST(SUBSTR(i.id, 5) AS INTEGER) DESC LIMIT ?`,
+      `SELECT i.id, i.subject, i.body, c.name FROM inbox i
+       JOIN customers c ON c.id = i.customer_id
+       JOIN try_owners t ON t.request_id = i.id
+       WHERE i.id LIKE 'TRY-%' AND t.visitor_id = ? ORDER BY CAST(SUBSTR(i.id, 5) AS INTEGER) DESC LIMIT ?`,
     )
-    .all(limit) as { id: string; subject: string; body: string; name: string }[];
+    .all(visitorId, limit) as { id: string; subject: string; body: string; name: string }[];
 
   return rows.map((row) => {
     const entries = readEntries(db, row.id);

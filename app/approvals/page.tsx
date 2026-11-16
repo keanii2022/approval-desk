@@ -1,6 +1,8 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { approvedNotPaid, getWaitingCases, type WaitingCase } from "../../lib/approval.ts";
 import { dollars } from "../../lib/money.ts";
+import { readVisitorId, VISITOR_COOKIE } from "../../lib/visitor.ts";
 import { appDb } from "./db.ts";
 import { ApproveForm, RejectForm, RetryForm } from "./Forms.tsx";
 import "./approvals.css";
@@ -26,6 +28,7 @@ function agentSays(c: WaitingCase): string {
 
 export default async function ApprovalsPage({ searchParams }: { searchParams: Promise<{ result?: string; refund?: string }> }) {
   const { result, refund } = await searchParams;
+  const visitor = readVisitorId((await cookies()).get(VISITOR_COOKIE)?.value);
   let cases: WaitingCase[] = [];
   let unpaid: ReturnType<typeof approvedNotPaid> = [];
   let problem: string | null = null;
@@ -33,8 +36,8 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
   try {
     const db = appDb();
     try {
-      cases = getWaitingCases(db);
-      unpaid = approvedNotPaid(db);
+      cases = getWaitingCases(db, visitor);
+      unpaid = approvedNotPaid(db, visitor);
       // The banner only claims a payment that is really in the shop's refunds.
       refundIsReal = Boolean(refund && db.prepare("SELECT 1 FROM refunds WHERE id = ?").get(refund));
     } finally {

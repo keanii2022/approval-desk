@@ -1,9 +1,10 @@
 import type { DatabaseSync } from "node:sqlite";
 import { executeRefund, type Refusal } from "./executor.ts";
 import { refundedCents, type RuleId } from "./gate.ts";
-import { ensureLogbook, logHumanApproval, logHumanReject, logRefusal, readEntries } from "./logbook.ts";
+import { ensureLogbook, logHumanApproval, logHumanReject, logRefusal, readEntries, readEntry } from "./logbook.ts";
 import { dollars, parseDollars } from "./money.ts";
 import { humanQueue, utcNow } from "./pipeline.ts";
+import { canSeeRequest } from "./visitor.ts";
 
 // What the approval screen shows and does. The screen is a thin layer over this
 // file: everything a person sees is worked out here, and every decision goes
@@ -97,9 +98,19 @@ function orderChoice(db: DatabaseSync, row: OrderRow): OrderChoice {
   };
 }
 
-// Everything waiting for a person, oldest first, with what they need to decide.
-export function getWaitingCases(db: DatabaseSync): WaitingCase[] {
-  return humanQueue(db).map((item) => {
+// Each visitor only sees and decides the shop's own requests and their own tries.
+// Someone else's try is answered as if it didn't exist.
+const NOT_FOUND: Decision = { ok: false, message: "That request could not be found" };
+
+function gateLineIsVisible(db: DatabaseSync, gateEntryId: number, visitorId: string | null): boolean {
+  const line = readEntry(db, gateEntryId);
+  return line === undefined || canSeeRequest(db, line.requestId, visitorId); // a missing line is refused by the writers
+}
+
+// Everything waiting for a person that this visitor may see, oldest first, with what they need to decide.
+export function getWaitingCases(db: DatabaseSync, visitorId: string | null = null): WaitingCase[] {
+  const visible = humanQueue(db).filter((item) => canSeeRequest(db, item.requestId, visitorId));
+  return visible.map((item) => {
     const request = db
       .prepare("SELECT customer_id, subject, body, received_on FROM inbox WHERE id = ?")
       .get(item.requestId) as { customer_id: string; subject: string; body: string; received_on: string };
@@ -153,7 +164,9 @@ export function approveAndPay(
   gateEntryId: number,
   input: { orderId: string; amount: string },
   now: string = utcNow(),
+  visitorId: string | null = null,
 ): Decision {
+  if (!gateLineIsVisible(db, gateEntryId, visitorId)) return NOT_FOUND;
   const amountCents = parseDollars(input.amount);
   if (amountCents === null) return { ok: false, message: "Enter an amount in dollars, like 150.00" };
   if (typeof input.orderId !== "string" || input.orderId.trim() === "") return { ok: false, message: "Pick an order" };
@@ -200,7 +213,14 @@ function notPaid(db: DatabaseSync, gateEntryId: number, because: Refusal, now: s
 }
 
 // A person rejects. The note is required.
-export function rejectRequest(db: DatabaseSync, gateEntryId: number, note: string, now: string = utcNow()): Decision {
+export function rejectRequest(
+  db: DatabaseSync,
+  gateEntryId: number,
+  note: string,
+  now: string = utcNow(),
+  visitorId: string | null = null,
+): Decision {
+  if (!gateLineIsVisible(db, gateEntryId, visitorId)) return NOT_FOUND;
   try {
     logHumanReject(db, gateEntryId, note, now);
   } catch (error) {
@@ -209,14 +229,14 @@ export function rejectRequest(db: DatabaseSync, gateEntryId: number, note: strin
   return { ok: true, outcome: "rejected", message: "Rejected. Nothing was paid." };
 }
 
-// Approvals that are on record but were never paid, so they can't be missed.
-export function approvedNotPaid(db: DatabaseSync): ApprovedNotPaid[] {
+// Approvals this visitor may see that are on record but were never paid, so they can't be missed.
+export function approvedNotPaid(db: DatabaseSync, visitorId: string | null = null): ApprovedNotPaid[] {
   ensureLogbook(db);
   const lines = readEntries(db);
   const paidRequests = new Set(lines.filter((l) => l.kind === "refund_done").map((l) => l.requestId));
 
   return lines
-    .filter((l) => l.kind === "human_decision" && !paidRequests.has(l.requestId))
+    .filter((l) => l.kind === "human_decision" && !paidRequests.has(l.requestId) && canSeeRequest(db, l.requestId, visitorId))
     .flatMap((l) => {
       const details = l.details as { decision?: string; orderId?: string; amountCents?: number };
       if (details.decision !== "approve" || l.refersTo === null) return [];
@@ -243,10 +263,15 @@ export function approvedNotPaid(db: DatabaseSync): ApprovedNotPaid[] {
 
 // Hands an approved-but-unpaid approval to the executor again. The executor pays
 // each request at most once, so asking twice is safe.
-export function retryPayment(db: DatabaseSync, approvalEntryId: number, now: string = utcNow()): Decision {
+export function retryPayment(
+  db: DatabaseSync,
+  approvalEntryId: number,
+  now: string = utcNow(),
+  visitorId: string | null = null,
+): Decision {
   const line = readEntries(db).find((l) => l.id === approvalEntryId && l.kind === "human_decision");
   const details = line?.details as { decision?: string; amountCents?: number } | undefined;
-  if (!line || line.refersTo === null || details?.decision !== "approve") {
+  if (!line || line.refersTo === null || details?.decision !== "approve" || !canSeeRequest(db, line.requestId, visitorId)) {
     return { ok: false, message: "That isn't an approval waiting to be paid" };
   }
   return pay(db, line.refersTo, line.id, Number(details.amountCents), now);

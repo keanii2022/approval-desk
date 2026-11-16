@@ -1,13 +1,32 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { askClaude } from "../../lib/claude.ts";
+import { utcNow } from "../../lib/pipeline.ts";
 import { tryInputProblem, tryRequest } from "../../lib/tryout.ts";
+import { newVisitorId, readVisitorId, spendingProblem, VISITOR_COOKIE, VISITOR_COOKIE_MAX_AGE } from "../../lib/visitor.ts";
 import { appDb } from "../approvals/db.ts";
 
 export type TryState = { error: string | null };
 
 const text = (formData: FormData, field: string) => String(formData.get(field) ?? "");
+
+// Cookies can only be set in a server action, so a visitor gets their ID on their first try.
+async function visitorId(): Promise<string> {
+  const store = await cookies();
+  const existing = readVisitorId(store.get(VISITOR_COOKIE)?.value);
+  if (existing) return existing;
+  const id = newVisitorId();
+  store.set(VISITOR_COOKIE, id, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: VISITOR_COOKIE_MAX_AGE,
+    path: "/",
+  });
+  return id;
+}
 
 export async function tryAction(_previous: TryState, formData: FormData): Promise<TryState> {
   const input = {
@@ -26,7 +45,10 @@ export async function tryAction(_previous: TryState, formData: FormData): Promis
   try {
     const problem = tryInputProblem(db, input);
     if (problem) return { error: problem };
-    ({ requestId } = await tryRequest(db, input, askClaude));
+    const visit = { visitorId: await visitorId(), now: utcNow() };
+    const overLimit = spendingProblem(db, visit.visitorId, visit.now);
+    if (overLimit) return { error: overLimit };
+    ({ requestId } = await tryRequest(db, input, askClaude, visit));
   } finally {
     db.close();
   }

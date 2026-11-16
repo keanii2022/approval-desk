@@ -1,9 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { approveAndPay, rejectRequest, retryPayment, type Decision } from "../../lib/approval.ts";
+import { utcNow } from "../../lib/pipeline.ts";
+import { readVisitorId, VISITOR_COOKIE } from "../../lib/visitor.ts";
 import { appDb } from "./db.ts";
+
+async function currentVisitor(): Promise<string | null> {
+  return readVisitorId((await cookies()).get(VISITOR_COOKIE)?.value);
+}
 
 // What each form gets back when a person's decision is refused: the reason, in
 // plain words. When the decision goes through, the page reloads with a banner.
@@ -50,17 +57,21 @@ const text = (formData: FormData, field: string) => String(formData.get(field) ?
 export async function approveAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const gateEntryId = entryId(formData, "gateEntryId");
   if (gateEntryId === null) return { error: "That request could not be found" };
-  return withDb((db) => finish(approveAndPay(db, gateEntryId, { orderId: text(formData, "orderId"), amount: text(formData, "amount") })));
+  const visitor = await currentVisitor();
+  const input = { orderId: text(formData, "orderId"), amount: text(formData, "amount") };
+  return withDb((db) => finish(approveAndPay(db, gateEntryId, input, utcNow(), visitor)));
 }
 
 export async function rejectAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const gateEntryId = entryId(formData, "gateEntryId");
   if (gateEntryId === null) return { error: "That request could not be found" };
-  return withDb((db) => finish(rejectRequest(db, gateEntryId, text(formData, "note"))));
+  const visitor = await currentVisitor();
+  return withDb((db) => finish(rejectRequest(db, gateEntryId, text(formData, "note"), utcNow(), visitor)));
 }
 
 export async function retryAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const approvalEntryId = entryId(formData, "approvalEntryId");
   if (approvalEntryId === null) return { error: "That approval could not be found" };
-  return withDb((db) => finish(retryPayment(db, approvalEntryId)));
+  const visitor = await currentVisitor();
+  return withDb((db) => finish(retryPayment(db, approvalEntryId, utcNow(), visitor)));
 }
