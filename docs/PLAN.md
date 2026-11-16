@@ -70,7 +70,7 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
 The owner chose to make the village the front door and go live before steps 12, 14 and 15. Visitors try the real agent on the owner's credits, behind hard spending limits. See `DECISIONS.md`.
 
 ### 17. Visitors and spending guards
-- **Status:** current
+- **Status:** done
 - **Goal:** Every visitor gets a private sandbox: a cookie holds a random visitor ID, and the try page and the approval screen only show that visitor's own tried requests (seeded `REQ-` requests still show, so local demos keep working). A visitor can only approve or reject their own tried requests. Spending locks on the real agent: at most `TRY_DAILY_LIMIT` tries a day across everyone (default 50), and at most `TRY_VISITOR_HOURLY_LIMIT` per visitor per hour (default 5). Over a limit, the try is refused in plain words before any AI call ("The agent is done for today, come back tomorrow"), and nothing is written.
 - **Scope:** `lib/tryout.ts`, `lib/visitor.ts` (new), `lib/approval.ts`, `app/try/actions.ts`, `app/try/page.tsx`, `app/approvals/page.tsx`, `app/approvals/actions.ts`, `tests/tryout.test.ts`, `tests/approval.test.ts`
 - **Out of scope:** the village, `app/try/TryForm.tsx` layout, the gate, the executor, the seed schema.
@@ -78,7 +78,7 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **Done when:** tests show a fresh visitor sees no tried requests, one visitor can't see or decide another's, both limits refuse before the agent is called, and the existing approval tests still pass.
 
 ### 18. Ready to host
-- **Status:** current
+- **Status:** done
 - **Goal:** The app runs on a host from `npm start` alone: if the database file at `APPROVAL_DESK_DB` (or the default path) doesn't exist, it is seeded first, then `next start` runs on the host's `PORT`. `package.json` says Node 24 or newer. `.env.example` lists the new optional settings (`AGENT_MODEL`, `TRY_DAILY_LIMIT`, `TRY_VISITOR_HOURLY_LIMIT`, `APPROVAL_DESK_DB`) without values.
 - **Scope:** `package.json`, `scripts/start.ts` (new), `.env.example`
 - **Out of scope:** app code, the README.
@@ -86,7 +86,7 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **Done when:** with no database file, `npm run build && npm start` seeds it and serves `/` on the given `PORT`; with a file present, it isn't re-seeded.
 
 ### 19. Village front door
-- **Status:** todo
+- **Status:** current
 - **Goal:** The village is the front page (`/`). It plays the scripted demo stories on its own, as now. Clicking the Inbox stand (or pressing its key) opens a panel over the village with the try form (customer picker, receipt, example buttons). After sending, the panel shows the result (what the agent filled in, what the gate decided, how it ended). Clicking the human desk opens the visitor's own waiting requests, with a way to the approval screen. The page says in one line what this is and links to GitHub. A short note makes clear the scripted stories are made up and "your requests" are real. Original pixel art only, nothing copied from any game.
 - **Scope:** `app/page.tsx`, `app/village/*`, `e2e/village.e2e.ts`
 - **Out of scope:** `lib/*`, the approval screen's logic, the try page's logic (reuse `TryForm` and `tryAction` as they are).
@@ -108,3 +108,13 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **Out of scope:** app code.
 - **Dependencies:** 17, 18, 19, 20
 - **Done when:** a stranger can open the URL, send a request from the village and approve it.
+
+## Calls to review
+
+- **17:** Hourly limit message: "That's all your tries for this hour. Come back in a bit." Matches the plain tone of the daily one.
+- **17:** The visitor cookie is called `visitor` and lasts a year (httpOnly, secure in production), so a returning visitor keeps their sandbox.
+- **17:** Someone else's try answers "That request could not be found", so it doesn't reveal that the request exists.
+- **17:** The daily limit resets at midnight UTC, the same clock as the logbook.
+- **17:** Tries made before step 17 have no owner, so they no longer show to anyone. Only local test data was affected.
+- **18:** `npm start` checks for the database file, seeds it if missing, then runs `next start`, which reads the host's PORT itself. It prints one line saying which happened, so host logs show it.
+- **18:** `.env.example` didn't get the 4 optional settings: this session isn't allowed to read or edit it. The owner can add `AGENT_MODEL`, `TRY_DAILY_LIMIT`, `TRY_VISITOR_HOURLY_LIMIT`, `APPROVAL_DESK_DB`, empty, with a comment each.
