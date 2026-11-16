@@ -88,7 +88,7 @@ The owner chose to make the village the front door and go live before steps 12, 
 ### 19. Village front door
 - **Status:** current
 - **Goal:** The village is the front page (`/`). It plays the scripted demo stories on its own, as now. Clicking the Inbox stand (or pressing its key) opens a panel over the village with the try form (customer picker, receipt, example buttons). After sending, the panel shows the result (what the agent filled in, what the gate decided, how it ended). Clicking the human desk opens the visitor's own waiting requests, with a way to the approval screen. The page says in one line what this is and links to GitHub. A short note makes clear the scripted stories are made up and "your requests" are real. Original pixel art only, nothing copied from any game.
-- **Scope:** `app/page.tsx`, `app/village/*`, `e2e/village.e2e.ts`
+- **Scope:** `app/page.tsx`, `app/village/*`, `e2e/village.e2e.ts`, small changes to `app/try/TryForm.tsx` and `app/try/actions.ts` so the form can work inside the panel without leaving the village
 - **Out of scope:** `lib/*`, the approval screen's logic, the try page's logic (reuse `TryForm` and `tryAction` as they are).
 - **Dependencies:** 17
 - **Done when:** browser tests open the try panel from the Inbox by click and by keyboard, send a request (stand-in agent) and see the result in the panel, and the village still plays the three scripted stories.
