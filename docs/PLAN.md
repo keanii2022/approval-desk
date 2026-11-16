@@ -94,7 +94,7 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **Done when:** browser tests open the try panel from the Inbox by click and by keyboard, send a request (stand-in agent) and see the result in the panel, and the village still plays the three scripted stories.
 
 ### 20. The village plays your request
-- **Status:** current
+- **Status:** done
 - **Goal:** After a visitor sends a request from the Inbox panel, the robot carries it through the village: Inbox to the agent house to the gate, and the gate light shows the real gate's decision (green paid, yellow a person decides, red blocked). On yellow, the human desk lights up and waits for the visitor. On green, the factory pays. The logbook gets the visitor's real entry. The scripted stories pause while the visitor's request plays.
 - **Scope:** `app/village/*`, `e2e/village.e2e.ts`, a test-only stand-in agent (`lib/stand-in-agent.ts`, new) picked in `app/try/actions.ts` when `AGENT_STAND_IN=1`, and that setting in `playwright.config.ts`
 - **Out of scope:** `lib/*`, the approval screen.
@@ -102,7 +102,7 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **Done when:** browser tests (stand-in agent) send a small refund, a big refund and a garbled one, and see the green, yellow and red lights in turn, with the visitor's entry in the logbook.
 
 ### 16. Live on the internet
-- **Status:** todo
+- **Status:** current
 - **Goal:** The app runs on Render's free plan (chosen 2026-11-16: $0 a month; it sleeps when idle and wakes with a fresh copy of the data), invented data only, the owner's key on the host only, spending limits on. The README opens with the live link, says this agent is one house in the owner's bigger agent-hub, with a screenshot of the hub supplied by the owner. The cost table from step 15 is added once step 15 is done.
 - **Scope:** `README.md`, host settings (owner's account)
 - **Out of scope:** app code.
@@ -124,3 +124,8 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **19:** Panel titles "The Inbox", "What happened", "The human desk". The village keeps playing, dimmed, behind the panel.
 - **19:** The human desk shows only your own tried requests; the seeded practice ones stay on the approval screen.
 - **Locks (owner asked for extra):** daily cap default lowered to 20, `TRY_ENABLED=off` switches the live agent off, and one Claude call is capped at 4,000 output tokens (a cut-off answer is blocked, R5). Re-seeding also clears the try owners, which fixed a crash after resetting the Inbox.
+- **20:** Your request plays when you close the result panel (it would be hidden behind it otherwise). A green "Watch it in the village" button starts it too.
+- **20:** Your robot wears a gold star and carries a gold letter, and says "THIS ONE IS REAL."
+- **20:** On yellow, the robot waits at the human desk for about 6 seconds and says "YOU ARE THE PERSON. PRESS H TO DECIDE IT", then the stories carry on, so a visitor who walks away doesn't freeze the village.
+- **20:** On red, the robot sweats instead of scene 3's "LOL YA RIGHT", so it never mocks a visitor's own request.
+- **20:** `?speed=N` speeds the village up (for tests); the default pace is unchanged.

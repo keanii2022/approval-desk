@@ -233,3 +233,14 @@ Template:
 
 **Built:** the owner's follow-ups from step 9. On `/try`, picking a customer shows their orders as a receipt (order number, item, date, paid, already refunded, what's left), so it's clear what to write about. Example buttons fill in a starter message for that customer: honest, asks for too much, fake authority, vague, and someone else's order. "Someone new (type any name)" makes a customer with an `N-` ID and no orders; any refund they ask for should be turned down, and a refund on another customer's order is blocked (R8). Tests cover the new customer and the receipt amounts.
 **Decided:** the form's shared limits and types live in `lib/try-fields.ts`, because the form runs in the browser and can't load the database code in `lib/tryout.ts`.
+
+## Public village: steps 17 to 20 (2026-11-16)
+
+**Built:** the village is now the front page. It plays its scripted stories on its own. Clicking the Inbox stand (key I) opens a panel to write a real request as any customer, or as someone new. The real agent reads it, the panel shows what happened, and then the robot acts it out with the real gate light. The human desk (key H) lists the visitor's own requests waiting for a person. Every visitor has a private sandbox, kept with a cookie, so a first visit shows nothing waiting. `npm start` sets up the database on its own, ready for a host.
+**Decided (owner):**
+- Make the village the front door and go live before steps 12, 14 and 15. This reverses the earlier call to keep real requests out of the village: with private sandboxes and requests clearly marked "yours, real," they can't be mistaken for the made-up stories.
+- Host: Render's free plan. $0 a month; it sleeps when idle and wakes with a fresh copy of the data, which is fine for a demo.
+- Spending locks on the owner's credits: 20 tries a day across everyone, 5 per visitor per hour, `TRY_ENABLED=off` switches the live agent off, and one call is capped at 4,000 output tokens. Because Render's free plan wakes with fresh data, the daily count can restart, so the hard ceiling is the prepaid credit balance (auto-reload off) and a separate key for the live site that can be deleted any time.
+**Left for later:**
+- `.env.example` should list the optional settings (`AGENT_MODEL`, `TRY_ENABLED`, `TRY_DAILY_LIMIT`, `TRY_VISITOR_HOURLY_LIMIT`, `APPROVAL_DESK_DB`). This session isn't allowed to edit that file; the owner can add them.
+- The per-step calls are listed under "Calls to review" in `docs/PLAN.md`.
