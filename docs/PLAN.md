@@ -19,7 +19,7 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
   - **Goal:** The executor, the only part that changes an order, accepting only gate-allowed or human-approved proposals. The logbook, add-only.
   - **Done when:** a proposal that skipped the gate is refused; a broken log means no refund (R7).
 
-- [ ] **Step 5: Agent** (part 3)
+- [x] **Step 5: Agent** (part 3)
   - **Goal:** Claude reads a request and the shop data and fills the fixed form: action, order, amount, reason, policy line. It cannot change data.
   - **Done when:** five real outputs have been read by the owner; garbled output is blocked (R5).
 

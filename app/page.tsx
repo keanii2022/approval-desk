@@ -11,6 +11,9 @@ export default function Home() {
       <p>
         <Link href="/approvals">Approvals waiting for a person →</Link>
       </p>
+      <p>
+        <Link href="/try">Try it yourself: send the agent a request →</Link>
+      </p>
     </main>
   );
 }

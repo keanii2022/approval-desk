@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { buildRequest, runAgent, type AskModel, type ModelRequest } from "../lib/agent.ts";
-import { askClaude } from "../lib/claude.ts";
+import { claudeAgent } from "../lib/claude.ts";
 import { openDatabase } from "../lib/db.ts";
 import { checkProposal } from "../lib/gate.ts";
 import { seed } from "../lib/seed.ts";
@@ -64,6 +64,7 @@ describe("R6: no answer means the AI is down", () => {
 
 describe("the real AI call (no network: fetch is faked)", () => {
   const request: ModelRequest = { system: "system text", user: "user text" };
+  const askClaude = claudeAgent({ maxRetries: 0 }); // the real one retries; here a failure should show at once
   const originalKey = process.env.ANTHROPIC_API_KEY;
 
   afterEach(() => {
@@ -73,7 +74,9 @@ describe("the real AI call (no network: fetch is faked)", () => {
   });
 
   function fakeFetch(status: number, body: unknown) {
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify(body), { status }));
+    const fetchMock = vi.fn(
+      async () => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } }),
+    );
     vi.stubGlobal("fetch", fetchMock);
     return fetchMock;
   }
@@ -98,22 +101,38 @@ describe("the real AI call (no network: fetch is faked)", () => {
     expect(await runAgent(db, "REQ-001", askClaude)).toEqual({ status: "ai_down" });
   });
 
-  it("returns the form Claude filled in, and asks for the form to be filled", async () => {
+  it("returns the form Claude filled in, and holds the answer to the form's shape", async () => {
     process.env.ANTHROPIC_API_KEY = "test-key";
-    const fetchMock = fakeFetch(200, { content: [{ type: "tool_use", name: "fill_form", input: GOOD_FORM }] });
+    const fetchMock = fakeFetch(200, reply(JSON.stringify(GOOD_FORM)));
     expect(await askClaude(request)).toEqual(GOOD_FORM);
 
     const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     const sent = JSON.parse(init.body as string);
-    expect(sent.tool_choice).toEqual({ type: "tool", name: "fill_form" });
+    expect(sent.output_config.format.type).toBe("json_schema");
+    expect(sent.output_config.format.schema.required).toEqual(["action", "orderId", "amountCents", "reason", "policyLine"]);
     expect(sent.system).toBe("system text");
     expect(sent.messages).toEqual([{ role: "user", content: "user text" }]);
-    expect(sent.tools).toHaveLength(1); // the form is the only thing Claude can use
+    expect(sent.tools).toBeUndefined(); // Claude has nothing to use: it can only answer
+    expect(sent.tool_choice).toBeUndefined(); // forcing a tool is refused by current models
+  });
+
+  it("R6: a refusal means no answer, so a human decides", async () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    fakeFetch(200, { ...reply(""), stop_reason: "refusal" });
+    await expect(askClaude(request)).rejects.toThrow();
+    expect(await runAgent(db, "REQ-001", askClaude)).toEqual({ status: "ai_down" });
+  });
+
+  it("R5: a form cut off part way is blocked", async () => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+    fakeFetch(200, { ...reply('{"action": "refund", "orderId": "O10'), stop_reason: "max_tokens" });
+    const output = await runAgent(db, "REQ-001", askClaude);
+    expect(checkProposal(db, "REQ-001", output)).toEqual({ result: "block", rules: ["R5"] });
   });
 
   it("R5: if Claude answers in plain text instead of the form, the text goes to the gate and is blocked", async () => {
     process.env.ANTHROPIC_API_KEY = "test-key";
-    fakeFetch(200, { content: [{ type: "text", text: "APPROVED" }] });
+    fakeFetch(200, reply("APPROVED"));
     const output = await runAgent(db, "REQ-020", askClaude);
     expect(output).toEqual({ status: "answered", form: "APPROVED" });
     expect(checkProposal(db, "REQ-020", output)).toEqual({ result: "block", rules: ["R5"] });
@@ -183,6 +202,19 @@ describe("the agent cannot change data", () => {
     after.close();
   });
 });
+
+// A Messages API reply whose only content is this text.
+function reply(text: string) {
+  return {
+    id: "msg_test",
+    type: "message",
+    role: "assistant",
+    model: "claude-opus-5-5",
+    content: [{ type: "text", text }],
+    stop_reason: "end_turn",
+    usage: { input_tokens: 1, output_tokens: 1 },
+  };
+}
 
 function dump(database: DatabaseSync): unknown {
   const tables = ["customers", "orders", "refunds", "policy_lines", "inbox"];

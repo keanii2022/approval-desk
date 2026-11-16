@@ -175,3 +175,16 @@ Template:
 
 **Decided:** The robot-eye Human Desk from Step 13 is removed. The first-person view added steps between the owner and a decision without adding anything. `/approvals` is the plain Step 7 screen again (same logic, same tests), and the first-person Gate page at `/village/gate` is gone with its art and styles. The village prototype stays at `/village`, view only. Its human desk now shows a short note like the other places do, instead of leading to `/approvals`: the village plays made-up stories, and the real queue shouldn't look like part of them.
 **Kept from Step 13:** the village inside the app, and the fix that stopped it freezing after one frame.
+
+## Step 5: Agent (2026-11-15)
+
+**Built:** The agent's prompt, the form check and the fake-network tests were already in place from earlier work. The real Claude call now works with current models. A new page at `/try` lets a person write a request as any shop customer and watch it go through the real agent, the gate, and then payment, the human queue, or a block. Every try is written to the logbook like any other request.
+**Decided:**
+- The Claude call uses the official SDK (`@anthropic-ai/sdk`), part of the "Claude API" stack item. The old call forced Claude to use a form tool, and current models refuse that request outright, so every real call would have looked like "AI down." Now Claude's answer is held to the form's shape (structured output) and given no tools at all.
+- Model: Claude Opus 5.5 at low effort. `AGENT_MODEL` in `.env` can switch it, for example to Sonnet 5.5 to halve the cost of eval runs.
+- If Claude's safety check declines, the API retries on a fallback model inside the same call. If everything declines, that counts as no answer, so a human decides (R6).
+- A reply cut off part way (out of room) is garbled, so it's blocked (R5).
+- Tries get `TRY-` IDs, so they never mix with the seeded `REQ-` requests the practice cases use. They're dated on the shop's own calendar (its latest seeded request), not today's date. Otherwise every invented order would look older than 30 days (R3).
+**Left for later:**
+- The owner read five real outputs on 2026-11-15 (REQ-001, 002, 018, 020, 022) and agreed with all five, including the $12 partial refund for two cracked mugs out of four (P04).
+- `/try` spends real money on each send. Before step 16 puts the app online, it needs a limit or has to be turned off.
