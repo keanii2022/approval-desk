@@ -3,10 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node scripts/start.ts && next start",
     "test": "vitest run",
     "seed": "node scripts/seed.ts",
     "try-agent": "node --env-file=.env scripts/try-agent.ts",
