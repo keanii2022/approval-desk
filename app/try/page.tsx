@@ -1,9 +1,11 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { ruleInWords } from "../../lib/approval.ts";
 import type { AgentOutput, GateDecision } from "../../lib/gate.ts";
 import { dollars } from "../../lib/money.ts";
 import type { ReceiptCustomer } from "../../lib/try-fields.ts";
 import { customerReceipts, MESSAGE_MAX, NAME_MAX, recentTries, SUBJECT_MAX, type Tried } from "../../lib/tryout.ts";
+import { readVisitorId, VISITOR_COOKIE } from "../../lib/visitor.ts";
 import { appDb } from "../approvals/db.ts";
 import { TryForm } from "./TryForm.tsx";
 import "../approvals/approvals.css";
@@ -76,6 +78,7 @@ function TriedCard({ tried, fresh }: { tried: Tried; fresh: boolean }) {
 
 export default async function TryPage({ searchParams }: { searchParams: Promise<{ ran?: string }> }) {
   const { ran } = await searchParams;
+  const visitor = readVisitorId((await cookies()).get(VISITOR_COOKIE)?.value);
   let customers: ReceiptCustomer[] = [];
   let tries: Tried[] = [];
   let problem: string | null = null;
@@ -83,7 +86,7 @@ export default async function TryPage({ searchParams }: { searchParams: Promise<
     const db = appDb();
     try {
       customers = customerReceipts(db);
-      tries = recentTries(db);
+      tries = recentTries(db, visitor);
     } finally {
       db.close();
     }

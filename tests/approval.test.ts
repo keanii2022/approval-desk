@@ -8,6 +8,7 @@ import { executeRefund } from "../lib/executor.ts";
 import { logHumanApproval, readEntries } from "../lib/logbook.ts";
 import { humanQueue, processRequest } from "../lib/pipeline.ts";
 import { seed } from "../lib/seed.ts";
+import { tryRequest } from "../lib/tryout.ts";
 
 // The approval screen's tests use a stand-in agent: a form written here ahead of time.
 // No AI calls. Each test gets its own fresh database. The screen itself is tested in
@@ -307,5 +308,67 @@ describe("Approval screen: an approval the executor then refuses is never lost",
     const gate = await waiting(db, "REQ-002", standIn(refundForm("O1002", 15000)));
     expect(retryPayment(db, gate, NOW)).toEqual({ ok: false, message: "That isn't an approval waiting to be paid" });
     expect(retryPayment(db, 999, NOW)).toMatchObject({ ok: false });
+  });
+});
+
+describe("Approval screen: each visitor only sees and decides their own tries", () => {
+  const ME = "visitor-a";
+  const SOMEONE_ELSE = "visitor-b";
+
+  // Visitor A tries a $150.00 refund for Theo (R2 sends it to a person), and REQ-002 is waiting too.
+  async function myTryAndASeededRequest(db: DatabaseSync) {
+    const { requestId, result } = await tryRequest(
+      db,
+      { customerId: "C002", subject: "Lamp", message: "The lamp arrived broken" },
+      standIn(refundForm("O1002", 15000)),
+      { visitorId: ME, now: NOW },
+    );
+    if (result.outcome !== "waiting_for_human") throw new Error(`Expected a waiting try, got ${result.outcome}`);
+    const seeded = await waiting(db, "REQ-022", AI_FAILS);
+    return { tryId: requestId, tryGate: result.gateEntryId, seeded };
+  }
+
+  it("R2: a try waiting for a person shows only to the visitor who made it; seeded REQ- requests show to everyone", async () => {
+    const db = freshDb();
+    const { tryId } = await myTryAndASeededRequest(db);
+
+    expect(getWaitingCases(db, ME).map((c) => c.requestId)).toEqual([tryId, "REQ-022"]);
+    expect(getWaitingCases(db, SOMEONE_ELSE).map((c) => c.requestId)).toEqual(["REQ-022"]);
+    expect(getWaitingCases(db).map((c) => c.requestId)).toEqual(["REQ-022"]); // a fresh visitor, no cookie yet
+  });
+
+  it("R2: another visitor can't approve or reject someone else's try, and nothing is written", async () => {
+    const db = freshDb();
+    const { tryId, tryGate } = await myTryAndASeededRequest(db);
+    const before = readEntries(db).length;
+
+    expect(approveAndPay(db, tryGate, { orderId: "O1002", amount: "150" }, NOW, SOMEONE_ELSE)).toEqual({ ok: false, message: "That request could not be found" });
+    expect(rejectRequest(db, tryGate, "No", NOW, SOMEONE_ELSE)).toEqual({ ok: false, message: "That request could not be found" });
+    expect(approveAndPay(db, tryGate, { orderId: "O1002", amount: "150" }, NOW)).toMatchObject({ ok: false }); // no visitor at all
+    expect(readEntries(db)).toHaveLength(before);
+    expect(refundRows(db)).toHaveLength(SEEDED_REFUNDS);
+
+    expect(approveAndPay(db, tryGate, { orderId: "O1002", amount: "150" }, NOW, ME)).toMatchObject({ ok: true, outcome: "paid" });
+    expect(kinds(db, tryId)).toEqual(["gate_decision", "human_decision", "refund_done"]);
+  });
+
+  it("any visitor can still decide a seeded REQ- request", async () => {
+    const db = freshDb();
+    const { seeded } = await myTryAndASeededRequest(db);
+    expect(rejectRequest(db, seeded, "Not enough to go on", NOW, SOMEONE_ELSE)).toMatchObject({ ok: true, outcome: "rejected" });
+  });
+
+  it("R7: an approved-but-unpaid try is listed and retried only for the visitor who made it", async () => {
+    const db = freshDb();
+    const { tryGate } = await myTryAndASeededRequest(db);
+    db.exec("CREATE TRIGGER test_no_payment BEFORE INSERT ON logbook WHEN NEW.kind = 'refund_done' BEGIN SELECT RAISE(ABORT, 'no payments'); END");
+    expect(approveAndPay(db, tryGate, { orderId: "O1002", amount: "150" }, NOW, ME)).toMatchObject({ outcome: "approved_not_paid" });
+    db.exec("DROP TRIGGER test_no_payment");
+
+    expect(approvedNotPaid(db, SOMEONE_ELSE)).toEqual([]);
+    const [mine] = approvedNotPaid(db, ME);
+    expect(retryPayment(db, mine.approvalEntryId, NOW, SOMEONE_ELSE)).toEqual({ ok: false, message: "That isn't an approval waiting to be paid" });
+    expect(refundRows(db)).toHaveLength(SEEDED_REFUNDS);
+    expect(retryPayment(db, mine.approvalEntryId, NOW, ME)).toMatchObject({ ok: true, outcome: "paid" });
   });
 });
