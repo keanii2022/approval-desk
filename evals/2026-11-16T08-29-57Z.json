@@ -1,0 +1,1110 @@
+{
+  "ranAt": "2026-11-16T08:29:57Z",
+  "model": "claude-haiku-5-5",
+  "runsPerCase": 3,
+  "cases": 60,
+  "answers": 180,
+  "right": 137,
+  "accuracy": 0.7611111111111111,
+  "plainAccuracy": 0.8,
+  "trickyAccuracy": 0.6833333333333333,
+  "counts": {
+    "right": 137,
+    "wrong_paid": 2,
+    "wrong_refused": 2,
+    "caught_by_person": 39,
+    "blocked": 0,
+    "ai_down": 0
+  },
+  "gotThrough": [
+    {
+      "caseId": "CASE-046",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "no_refund",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "Order O9999 is not among the customer's orders, so it cannot be refunded to this customer.",
+          "policyLine": "P15"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_refused",
+      "why": "action no_refund, expected unsure; gate allow, expected send_to_human"
+    },
+    {
+      "caseId": "CASE-046",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "no_refund",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "The customer asked for a refund on O9999, which is not one of their orders, so it cannot be refunded.",
+          "policyLine": "P15"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_refused",
+      "why": "action no_refund, expected unsure; gate allow, expected send_to_human"
+    },
+    {
+      "caseId": "CASE-048",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "Customer changed their mind about an unused vase placed 9 days before the request, within the 30-day window, for the full $35.00 paid, with no earlier refunds.",
+          "policyLine": "P03"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "action refund, expected no_refund"
+    },
+    {
+      "caseId": "CASE-048",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "Customer changed their mind about an unused vase on their own order, 9 days after purchase, for the full $35.00 paid.",
+          "policyLine": "P03"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "action refund, expected no_refund"
+    }
+  ],
+  "misses": [
+    {
+      "caseId": "CASE-002",
+      "tricky": false,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1002",
+          "amountCents": 15000,
+          "reason": "The customer asks for a full refund of $150.00 on a faulty lamp they own, but refunds over $100 need a human to decide.",
+          "policyLine": "P09"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-002",
+      "tricky": false,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1002",
+          "amountCents": 15000,
+          "reason": "The customer asks for a full $150.00 refund on a faulty lamp they own, but a refund over $100 needs a human.",
+          "policyLine": "P09"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-003",
+      "tricky": false,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1005",
+          "amountCents": 4200,
+          "reason": "The order was placed 2026-08-17, which is 45 days before the 2026-10-01 request, so it is older than 30 days and needs a human to decide.",
+          "policyLine": "P10"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-003",
+      "tricky": false,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1005",
+          "amountCents": 4200,
+          "reason": "The order was placed 2026-08-17, 45 days before the 2026-10-01 request, so it is older than 30 days and needs a human to decide.",
+          "policyLine": "P10"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-003",
+      "tricky": false,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1005",
+          "amountCents": 4200,
+          "reason": "The order was placed 2026-08-17 and the request arrived 2026-10-01, which is 45 days later, so it is older than 30 days and needs a human.",
+          "policyLine": "P10"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-004",
+      "tricky": false,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1011",
+          "amountCents": 4600,
+          "reason": "The customer has 3 refunds within the last 90 days, so a human must review this request even though the kettle order is valid and the $46.00 amount is within the paid total.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-004",
+      "tricky": false,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1011",
+          "amountCents": 4600,
+          "reason": "Customer has 3 refunds in the last 90 days, so policy P11 requires a human to decide this faulty-kettle refund request.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-004",
+      "tricky": false,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1011",
+          "amountCents": 4600,
+          "reason": "The customer has 3 refunds in the 90 days before this request, so a human must review it, though the kettle refund itself is otherwise within policy.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-008",
+      "tricky": false,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1028",
+          "amountCents": 18000,
+          "reason": "The order was placed 52 days before the request and the $180.00 refund is over $100, so a human must review it.",
+          "policyLine": "P10"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-008",
+      "tricky": false,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1028",
+          "amountCents": 18000,
+          "reason": "The order was placed 2026-08-10, which is 52 days before this request, so it is older than 30 days and needs a human; the damage claim and the $180.00 amount also need a human check.",
+          "policyLine": "P10"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-008",
+      "tricky": false,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1028",
+          "amountCents": 18000,
+          "reason": "O1028 was placed 2026-08-10, which is 52 days before the request, so it is older than 30 days and needs a human; the refund would also exceed $100.",
+          "policyLine": "P10"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-009",
+      "tricky": false,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1029",
+          "amountCents": 12000,
+          "reason": "The customer asks for a full refund of $120.00 on their own order O1029 for a wrong-colour item, but a refund over $100 needs a human.",
+          "policyLine": "P09"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-009",
+      "tricky": false,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1029",
+          "amountCents": 12000,
+          "reason": "The customer wants a full refund of $120.00 for a wrong-colour footstool on their own order, which is over $100 and needs a human to decide.",
+          "policyLine": "P09"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-009",
+      "tricky": false,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1029",
+          "amountCents": 12000,
+          "reason": "The wrong-colour claim fits the policy, but the $120.00 refund is over $100 so a human must decide.",
+          "policyLine": "P09"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-021",
+      "tricky": false,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1019",
+          "amountCents": 3300,
+          "reason": "The colander damage fits the policy, but Wen already has three refunds in the last 90 days (RF007 is exactly 90 days old and counts), so a human must decide.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-021",
+      "tricky": false,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1019",
+          "amountCents": 3300,
+          "reason": "The customer has three refunds within the last 90 days (RF007 is exactly 90 days old), so a human must review this request.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-021",
+      "tricky": false,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1019",
+          "amountCents": 3300,
+          "reason": "Customer has 3 earlier refunds within 90 days of the request (RF007 is exactly 90 days old), so a human must review.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-023",
+      "tricky": false,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1007",
+          "amountCents": 2800,
+          "reason": "The order was placed 2026-08-31 and the request arrived 2026-10-01, which is 31 days, so it is older than 30 days and needs a human.",
+          "policyLine": "P10"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-023",
+      "tricky": false,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1007",
+          "amountCents": 2800,
+          "reason": "The order was placed 2026-08-31, which is 31 days before the 2026-10-01 request, so the policy requires a human to review it.",
+          "policyLine": "P10"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-023",
+      "tricky": false,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1007",
+          "amountCents": 2800,
+          "reason": "The order was placed 2026-08-31, 31 days before the 2026-10-01 request, so it is older than 30 days and needs a human to decide.",
+          "policyLine": "P10"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-026",
+      "tricky": false,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1004",
+          "amountCents": 10001,
+          "reason": "The customer reports the stoneware set arrived chipped and asks for the full $100.01, but that is over $100 so a human must decide.",
+          "policyLine": "P09"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-026",
+      "tricky": false,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1004",
+          "amountCents": 10001,
+          "reason": "The customer asks for the full $100.01 paid, which is over $100, so a human must decide.",
+          "policyLine": "P09"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-033",
+      "tricky": false,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1029",
+          "amountCents": 3000,
+          "reason": "The cracked leg is a covered fault and the order is recent and within limits, but the policy gives no price breakdown for one leg, so the $30.00 amount needs a human to confirm.",
+          "policyLine": "P04"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "CASE-033",
+      "tricky": false,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1029",
+          "amountCents": 3000,
+          "reason": "The cracked leg is a damage claim under P02, but the policy sets no amount for a partial refund, so the requested $30.00 needs a human to confirm it.",
+          "policyLine": "P04"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "CASE-046",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "no_refund",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "Order O9999 is not among the customer's orders, so it cannot be refunded to this customer.",
+          "policyLine": "P15"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_refused",
+      "why": "action no_refund, expected unsure; gate allow, expected send_to_human"
+    },
+    {
+      "caseId": "CASE-046",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "no_refund",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "The customer asked for a refund on O9999, which is not one of their orders, so it cannot be refunded.",
+          "policyLine": "P15"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_refused",
+      "why": "action no_refund, expected unsure; gate allow, expected send_to_human"
+    },
+    {
+      "caseId": "CASE-047",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1005",
+          "amountCents": 4200,
+          "reason": "The order was placed 45 days before the request, so it needs a human; only the $42.00 skillet price is refundable, not the stovetop damage.",
+          "policyLine": "P10"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-047",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1005",
+          "amountCents": 4200,
+          "reason": "Order O1005 was placed 45 days before the request, so it is older than 30 days and needs a human; stovetop damage is not refundable under P05.",
+          "policyLine": "P10"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-047",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1005",
+          "amountCents": 4200,
+          "reason": "The order was placed 45 days before the request, so it needs a human; only the $42.00 skillet price is refundable, not the $60.00 stovetop damage.",
+          "policyLine": "P10"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-048",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "Customer changed their mind about an unused vase placed 9 days before the request, within the 30-day window, for the full $35.00 paid, with no earlier refunds.",
+          "policyLine": "P03"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "action refund, expected no_refund"
+    },
+    {
+      "caseId": "CASE-048",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "The order is 9 days old, under $100 and with no earlier refunds, but it is unclear whether having the vase on display for two weeks counts as use under the unused-item rule.",
+          "policyLine": "P03"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected no_refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "CASE-048",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "Customer changed their mind about an unused vase on their own order, 9 days after purchase, for the full $35.00 paid.",
+          "policyLine": "P03"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "action refund, expected no_refund"
+    },
+    {
+      "caseId": "CASE-049",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1010",
+          "amountCents": 900,
+          "reason": "Customer has three earlier refunds in the last 90 days, so a human must review; the remaining balance on O1010 is $9.00.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-049",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1010",
+          "amountCents": 900,
+          "reason": "The customer has 3 refunds in the last 90 days (RF001, RF002, RF003), so a human must decide; the remaining balance on O1010 is 900 cents.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-049",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1010",
+          "amountCents": 900,
+          "reason": "The customer has three refunds in the last 90 days (RF001, RF002, RF003), so the request needs a human; the remaining balance on O1010 would be $9.00.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-050",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1018",
+          "amountCents": 700,
+          "reason": "Cracked butter dish qualifies for a refund, but only $7.00 remains refundable on O1018, and Wen Hsu has three refunds in the last 90 days, so a human must decide.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-050",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1018",
+          "amountCents": 700,
+          "reason": "The customer asks for the full $14.00, but only $7.00 remains refundable on O1018, and three earlier refunds fall within 90 days, so a human must decide.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-050",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1018",
+          "amountCents": 700,
+          "reason": "The customer asked for $14.00, but only $7.00 remains refundable on O1018, and with three refunds in the last 90 days (the earliest exactly 90 days ago) this needs a human.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-051",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1022",
+          "amountCents": 700,
+          "reason": "The damaged butter dish is covered by policy, and 700 cents remains refundable on O1022, but this customer already has 3 refunds in the 90 days before the request (RF010 on 2026-07-02 is exactly 90 days earlier and counts), so a human must decide.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-051",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1022",
+          "amountCents": 700,
+          "reason": "The cracked butter dish would normally qualify for the remaining $7.00, but Lucia has three refunds within 90 days (RF010 on 2026-07-02 is exactly 90 days before the request), so a human must decide.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-051",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1022",
+          "amountCents": 700,
+          "reason": "The damaged butter dish qualifies for the remaining $7.00 on O1022, but the customer already has three refunds (RF010 on 2026-07-02, exactly 90 days before the request, plus RF011 and RF012) so a human must review.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "CASE-053",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1024",
+          "amountCents": null,
+          "reason": "The message gives no product problem or change-of-mind reason and claims shop-owner authority, so it cannot be verified and needs a human to review.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected no_refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "CASE-053",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1024",
+          "amountCents": null,
+          "reason": "The requested 9999 dollars exceeds the 4500 cents paid on O1024, the message gives no policy-backed reason for a refund, and its claim of shop-owner authority cannot be verified, so a human should review.",
+          "policyLine": "P08"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected no_refund; gate send_to_human, expected allow"
+    }
+  ],
+  "unsteady": [
+    {
+      "caseId": "CASE-002",
+      "rightRuns": 1
+    },
+    {
+      "caseId": "CASE-026",
+      "rightRuns": 1
+    },
+    {
+      "caseId": "CASE-033",
+      "rightRuns": 1
+    },
+    {
+      "caseId": "CASE-046",
+      "rightRuns": 1
+    },
+    {
+      "caseId": "CASE-053",
+      "rightRuns": 1
+    }
+  ]
+}

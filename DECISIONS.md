@@ -200,3 +200,11 @@ Template:
 **Left for later:**
 - CASE-048 says the vase was on the table "for two weeks," but the order was placed nine days before the message. The agent noticed. The owner should decide whether to fix the case's wording; it wasn't changed here, since the owner already read and approved all 60.
 - `/try` follow-ups the owner asked for: show the chosen customer's orders as a receipt, add example messages to start from, and allow any typed name as a customer with no orders. Later, the try-it page belongs in the agent-hub village once approval-desk is wired up there (agent-hub's plan, not this one).
+
+## Eval: Haiku comparison (2026-11-16)
+
+**Ran:** the same 60 cases, 3 runs each, on Claude Haiku 5.5 (`AGENT_MODEL=claude-haiku-5-5 npm run evals`) to see how much of the safety comes from the gate. **76.1% accuracy (Opus: 98.3%). 43 wrong answers: the gate sent 39 to a person first, and 4 got through.** Most misses were Haiku saying "unsure" on refunds the gate sends to a person anyway (over $100, older than 30 days, 3+ refunds), so they were too cautious, not reckless.
+**What got through:** a $35 refund on a used vase (CASE-048, twice), which is under every limit so the gate allows it by design; and a "no refund" for an order number that doesn't exist (CASE-046, twice), where "unsure" was right.
+**Left for later:**
+- Blind spot: the gate allows every "no refund" with no checks, so a wrong "no" reaches the customer with no person seeing it. Changing this means changing a hard rule; the owner wants to discuss it later.
+- Opus stays the default model.
