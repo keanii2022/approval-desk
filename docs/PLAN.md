@@ -86,7 +86,7 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **Done when:** with no database file, `npm run build && npm start` seeds it and serves `/` on the given `PORT`; with a file present, it isn't re-seeded.
 
 ### 19. Village front door
-- **Status:** current
+- **Status:** done
 - **Goal:** The village is the front page (`/`). It plays the scripted demo stories on its own, as now. Clicking the Inbox stand (or pressing its key) opens a panel over the village with the try form (customer picker, receipt, example buttons). After sending, the panel shows the result (what the agent filled in, what the gate decided, how it ended). Clicking the human desk opens the visitor's own waiting requests, with a way to the approval screen. The page says in one line what this is and links to GitHub. A short note makes clear the scripted stories are made up and "your requests" are real. Original pixel art only, nothing copied from any game.
 - **Scope:** `app/page.tsx`, `app/village/*`, `e2e/village.e2e.ts`, small changes to `app/try/TryForm.tsx` and `app/try/actions.ts` so the form can work inside the panel without leaving the village
 - **Out of scope:** `lib/*`, the approval screen's logic, the try page's logic (reuse `TryForm` and `tryAction` as they are).
@@ -94,16 +94,16 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **Done when:** browser tests open the try panel from the Inbox by click and by keyboard, send a request (stand-in agent) and see the result in the panel, and the village still plays the three scripted stories.
 
 ### 20. The village plays your request
-- **Status:** todo
+- **Status:** current
 - **Goal:** After a visitor sends a request from the Inbox panel, the robot carries it through the village: Inbox to the agent house to the gate, and the gate light shows the real gate's decision (green paid, yellow a person decides, red blocked). On yellow, the human desk lights up and waits for the visitor. On green, the factory pays. The logbook gets the visitor's real entry. The scripted stories pause while the visitor's request plays.
-- **Scope:** `app/village/*`, `e2e/village.e2e.ts`
+- **Scope:** `app/village/*`, `e2e/village.e2e.ts`, a test-only stand-in agent (`lib/stand-in-agent.ts`, new) picked in `app/try/actions.ts` when `AGENT_STAND_IN=1`, and that setting in `playwright.config.ts`
 - **Out of scope:** `lib/*`, the approval screen.
 - **Dependencies:** 19
 - **Done when:** browser tests (stand-in agent) send a small refund, a big refund and a garbled one, and see the green, yellow and red lights in turn, with the visitor's entry in the logbook.
 
 ### 16. Live on the internet
 - **Status:** todo
-- **Goal:** The app runs on a hosted URL with a persistent database file, invented data only, the owner's key on the host only, spending limits on. The README opens with the live link, says this agent is one house in the owner's bigger agent-hub, with a screenshot of the hub supplied by the owner. The cost table from step 15 is added once step 15 is done.
+- **Goal:** The app runs on Render's free plan (chosen 2026-11-16: $0 a month; it sleeps when idle and wakes with a fresh copy of the data), invented data only, the owner's key on the host only, spending limits on. The README opens with the live link, says this agent is one house in the owner's bigger agent-hub, with a screenshot of the hub supplied by the owner. The cost table from step 15 is added once step 15 is done.
 - **Scope:** `README.md`, host settings (owner's account)
 - **Out of scope:** app code.
 - **Dependencies:** 17, 18, 19, 20
@@ -118,3 +118,9 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **17:** Tries made before step 17 have no owner, so they no longer show to anyone. Only local test data was affected.
 - **18:** `npm start` checks for the database file, seeds it if missing, then runs `next start`, which reads the host's PORT itself. It prints one line saying which happened, so host logs show it.
 - **18:** `.env.example` didn't get the 4 optional settings: this session isn't allowed to read or edit it. The owner can add `AGENT_MODEL`, `TRY_DAILY_LIMIT`, `TRY_VISITOR_HOURLY_LIMIT`, `APPROVAL_DESK_DB`, empty, with a comment each.
+- **19:** Keys: I opens the Inbox, H the human desk, Escape closes. "P AUTO" left the key strip to make room; the auto-play button still shows its state.
+- **19:** `/village` now sends people to `/`.
+- **19:** Top line: "APPROVAL DESK" plus one sentence on what it is and a GitHub link. A note under the scene says the stories are made up and your requests are real.
+- **19:** Panel titles "The Inbox", "What happened", "The human desk". The village keeps playing, dimmed, behind the panel.
+- **19:** The human desk shows only your own tried requests; the seeded practice ones stay on the approval screen.
+- **Locks (owner asked for extra):** daily cap default lowered to 20, `TRY_ENABLED=off` switches the live agent off, and one Claude call is capped at 4,000 output tokens (a cut-off answer is blocked, R5). Re-seeding also clears the try owners, which fixed a crash after resetting the Inbox.
