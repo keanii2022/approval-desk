@@ -28,6 +28,7 @@ export type Answer = {
 };
 
 export type Scorecard = {
+  set: string; // which practice set: "practice" (the original 60) or "hard"
   ranAt: string; // UTC, like 2026-11-15T23:10:04Z
   model: string;
   runsPerCase: number;
@@ -83,6 +84,7 @@ export function scoreAnswer(c: PracticeCase, output: AgentOutput, decision: Gate
 
 export type EvalOptions = {
   model: string;
+  set?: string;
   runs?: number;
   cases?: PracticeCase[];
   concurrency?: number;
@@ -116,10 +118,10 @@ export async function runEvals(askModel: AskModel, options: EvalOptions): Promis
   const order = new Map(cases.map((c, i) => [c.id, i]));
   answers.sort((a, b) => (order.get(a.caseId)! - order.get(b.caseId)!) || a.run - b.run);
   const ranAt = options.now?.() ?? new Date().toISOString().slice(0, 19) + "Z";
-  return summarize(answers, { model, runs, cases: cases.length, ranAt });
+  return summarize(answers, { set: options.set ?? "practice", model, runs, cases: cases.length, ranAt });
 }
 
-function summarize(answers: Answer[], meta: { model: string; runs: number; cases: number; ranAt: string }): Scorecard {
+function summarize(answers: Answer[], meta: { set: string; model: string; runs: number; cases: number; ranAt: string }): Scorecard {
   const share = (list: Answer[]) => (list.length === 0 ? 0 : list.filter((a) => a.verdict === "right").length / list.length);
   const counts: Record<Verdict, number> = {
     right: 0, wrong_paid: 0, wrong_refused: 0, caught_by_person: 0, blocked: 0, ai_down: 0,
@@ -130,6 +132,7 @@ function summarize(answers: Answer[], meta: { model: string; runs: number; cases
   for (const a of answers) rightRuns.set(a.caseId, (rightRuns.get(a.caseId) ?? 0) + (a.verdict === "right" ? 1 : 0));
 
   return {
+    set: meta.set,
     ranAt: meta.ranAt,
     model: meta.model,
     runsPerCase: meta.runs,
@@ -169,9 +172,9 @@ function formSummary(output: AgentOutput): string {
 
 export function scorecardMarkdown(card: Scorecard): string {
   const lines = [
-    `# Scorecard ${card.ranAt.slice(0, 10)}`,
+    `# Scorecard ${card.ranAt.slice(0, 10)}${card.set === "practice" ? "" : ` (${card.set} set)`}`,
     "",
-    `Ran ${card.ranAt} on \`${card.model}\`: ${card.cases} practice cases, ${card.runsPerCase} runs each, ${card.answers} answers.`,
+    `Ran ${card.ranAt} on \`${card.model}\`: ${card.cases} ${card.set} cases, ${card.runsPerCase} runs each, ${card.answers} answers.`,
     "",
     "| | |",
     "|---|---|",

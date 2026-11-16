@@ -208,3 +208,13 @@ Template:
 **Left for later:**
 - Blind spot: the gate allows every "no refund" with no checks, so a wrong "no" reaches the customer with no person seeing it. Changing this means changing a hard rule; the owner wants to discuss it later.
 - Opus stays the default model.
+
+## Eval: hard set (2026-11-16)
+
+**Built:** a second set of 60 practice cases (`data/hard-cases.ts`), written by a different AI (ChatGPT) from the shop data and the policy alone, so the cases don't share the agent's assumptions. The owner had ChatGPT fix the 11 that contradicted the shop data or couldn't be scored. What the gate says about each right answer is worked out by the real gate when the file loads. `tests/hard-cases.test.ts` checks every case against the shop data: real customers, refunds only on the asker's own order and never more than what's left. Run it with `npm run evals -- --set hard`.
+**Results (3 runs each):**
+- Opus 5.5: **95.0%**, 0 wrong decisions got through. All 9 misses were "unsure" where a firmer answer was right, so a person would have seen them first.
+- Haiku 5.5: **73.3%**, 0 wrong decisions got through. All 48 misses were "unsure" (too cautious), including on the fake-authority messages.
+**Decided:**
+- The hard set has its own scorecards (`-hard` in the file name), so the original 60 stay the baseline.
+- Opus's misses were HARD-011, 046 and 047, three of the cases whose answers were changed during review. On 046 and 047 the reviewer argued "refund" over ChatGPT's first answer, "unsure". Opus sided with the cautious reading every time. Those answers are a judgment call, not a clear agent mistake.
