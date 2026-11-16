@@ -40,7 +40,7 @@ export function claudeAgent({ maxRetries = 2 }: { maxRetries?: number } = {}): A
     const client = new Anthropic({ apiKey, maxRetries, timeout: TIMEOUT_MS });
     const response = await client.beta.messages.create({
       model: agentModel(),
-      max_tokens: 16000,
+      max_tokens: 4000, // caps what one call can cost; a cut-off answer is blocked by the gate (R5)
       system,
       messages: [{ role: "user", content: user }],
       output_config: { effort: "low", format: { type: "json_schema", schema: FORM_SCHEMA } },

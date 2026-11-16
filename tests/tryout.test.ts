@@ -4,7 +4,7 @@ import type { AskModel } from "../lib/agent.ts";
 import { openDatabase } from "../lib/db.ts";
 import { seed } from "../lib/seed.ts";
 import { customerReceipts, MESSAGE_MAX, NEW_CUSTOMER, recentTries, tryInputProblem, tryRequest } from "../lib/tryout.ts";
-import { DAILY_LIMIT_WORDS, HOURLY_LIMIT_WORDS, readVisitorId, spendingProblem, tryLimits } from "../lib/visitor.ts";
+import { DAILY_LIMIT_WORDS, HOURLY_LIMIT_WORDS, readVisitorId, spendingProblem, SWITCHED_OFF_WORDS, tryLimits } from "../lib/visitor.ts";
 
 // "Try it yourself" runs a typed-in request down the same path as any Inbox
 // request. A stand-in plays the agent: no AI calls.
@@ -185,9 +185,22 @@ describe("try it yourself: spending limits on the real agent", () => {
     expect(calls.n).toBe(4);
   });
 
-  it("the limits default to 50 a day and 5 per visitor per hour, and can be set from the environment", () => {
-    expect(tryLimits({})).toEqual({ daily: 50, visitorHourly: 5 });
-    expect(tryLimits({ TRY_DAILY_LIMIT: "10", TRY_VISITOR_HOURLY_LIMIT: "2" })).toEqual({ daily: 10, visitorHourly: 2 });
-    expect(tryLimits({ TRY_DAILY_LIMIT: "lots", TRY_VISITOR_HOURLY_LIMIT: "-1" })).toEqual({ daily: 50, visitorHourly: 5 });
+  it("the limits default to 20 a day and 5 per visitor per hour, and can be set from the environment", () => {
+    expect(tryLimits({})).toEqual({ enabled: true, daily: 20, visitorHourly: 5 });
+    expect(tryLimits({ TRY_DAILY_LIMIT: "10", TRY_VISITOR_HOURLY_LIMIT: "2" })).toEqual({ enabled: true, daily: 10, visitorHourly: 2 });
+    expect(tryLimits({ TRY_DAILY_LIMIT: "lots", TRY_VISITOR_HOURLY_LIMIT: "-1" })).toEqual({ enabled: true, daily: 20, visitorHourly: 5 });
+  });
+
+  it("TRY_ENABLED=off switches the live agent off: every try is refused before the agent is called", async () => {
+    const db = freshDb();
+    const limits = tryLimits({ TRY_ENABLED: "off" });
+    expect(limits.enabled).toBe(false);
+    const { calls, ask } = countingAgent();
+    const inboxSize = () => (db.prepare("SELECT COUNT(*) AS n FROM inbox").get() as { n: number }).n;
+    const before = inboxSize();
+    expect(spendingProblem(db, ME, "2026-11-16T09:00:00Z", limits)).toBe(SWITCHED_OFF_WORDS);
+    await expect(tryRequest(db, request, ask, { visitorId: ME, now: "2026-11-16T09:00:00Z", limits })).rejects.toThrow(SWITCHED_OFF_WORDS);
+    expect(calls.n).toBe(0);
+    expect(inboxSize()).toBe(before);
   });
 });

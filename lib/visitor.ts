@@ -45,7 +45,7 @@ export function canSeeRequest(db: DatabaseSync, requestId: string, visitorId: st
   return Boolean(db.prepare("SELECT 1 FROM try_owners WHERE request_id = ? AND visitor_id = ?").get(requestId, visitorId));
 }
 
-export type TryLimits = { daily: number; visitorHourly: number };
+export type TryLimits = { enabled?: boolean; daily: number; visitorHourly: number };
 
 function limitFromEnv(value: string | undefined, fallback: number): number {
   const n = Number(value);
@@ -54,17 +54,21 @@ function limitFromEnv(value: string | undefined, fallback: number): number {
 
 export function tryLimits(env: Record<string, string | undefined> = process.env): TryLimits {
   return {
-    daily: limitFromEnv(env.TRY_DAILY_LIMIT, 50),
+    // TRY_ENABLED=off is the owner's off switch for the live agent, no redeploy of code needed.
+    enabled: (env.TRY_ENABLED ?? "").trim().toLowerCase() !== "off",
+    daily: limitFromEnv(env.TRY_DAILY_LIMIT, 20),
     visitorHourly: limitFromEnv(env.TRY_VISITOR_HOURLY_LIMIT, 5),
   };
 }
 
+export const SWITCHED_OFF_WORDS = "The live agent is switched off right now. The stories in the village still play.";
 export const DAILY_LIMIT_WORDS = "The agent is done for today, come back tomorrow.";
 export const HOURLY_LIMIT_WORDS = "That's all your tries for this hour. Come back in a bit.";
 
 // Says in plain words why one more try isn't allowed right now, or null if it is.
 // "A day" is the UTC calendar day; "an hour" is the last 60 minutes.
 export function spendingProblem(db: DatabaseSync, visitorId: string, now: string, limits: TryLimits = tryLimits()): string | null {
+  if (limits.enabled === false) return SWITCHED_OFF_WORDS;
   ensureVisitorTable(db);
   const today = now.slice(0, 10);
   const { n: triedToday } = db.prepare("SELECT COUNT(*) AS n FROM try_owners WHERE substr(tried_at, 1, 10) = ?").get(today) as { n: number };

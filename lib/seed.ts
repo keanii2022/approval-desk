@@ -6,6 +6,7 @@ import { customers, orders, refunds } from "../data/shop.ts";
 export const SEEDED_TABLES = ["customers", "orders", "refunds", "policy_lines", "inbox"] as const;
 
 const SCHEMA = `
+  DROP TABLE IF EXISTS try_owners; -- who tried which Inbox request; stale once the Inbox is reset
   DROP TABLE IF EXISTS inbox;
   DROP TABLE IF EXISTS refunds;
   DROP TABLE IF EXISTS orders;
