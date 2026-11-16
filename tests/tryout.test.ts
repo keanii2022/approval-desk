@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { AskModel } from "../lib/agent.ts";
 import { openDatabase } from "../lib/db.ts";
 import { seed } from "../lib/seed.ts";
-import { MESSAGE_MAX, recentTries, tryInputProblem, tryRequest } from "../lib/tryout.ts";
+import { customerReceipts, MESSAGE_MAX, NEW_CUSTOMER, recentTries, tryInputProblem, tryRequest } from "../lib/tryout.ts";
 
 // "Try it yourself" runs a typed-in request down the same path as any Inbox
 // request. A stand-in plays the agent: no AI calls.
@@ -66,5 +66,34 @@ describe("try it yourself", () => {
     expect(tryInputProblem(db, { customerId: "C001", subject: "", message: "a".repeat(MESSAGE_MAX + 1) })).toMatch(/under/);
     await expect(tryRequest(db, { customerId: "C001", subject: "", message: "" }, answers(SMALL))).rejects.toThrow();
     expect(count()).toBe(before);
+  });
+});
+
+describe("try it yourself: someone new", () => {
+  it("a typed-in name becomes a new customer with no orders, and their request runs the normal path", async () => {
+    const db = freshDb();
+    const refundOnSomeoneElses = { action: "no_refund", orderId: null, amountCents: null, reason: "No orders", policyLine: "P06" };
+    const { requestId, result } = await tryRequest(db, { customerId: NEW_CUSTOMER, newName: "Ada Stone", subject: "", message: "Refund O1001 please" }, answers(refundOnSomeoneElses));
+    expect(result.outcome).toBe("nothing_to_pay");
+    const customer = db.prepare("SELECT c.id, c.name FROM inbox i JOIN customers c ON c.id = i.customer_id WHERE i.id = ?").get(requestId) as { id: string; name: string };
+    expect(customer).toEqual({ id: "N-001", name: "Ada Stone" });
+    expect(customerReceipts(db).find((c) => c.id === "N-001")?.orders).toEqual([]);
+  });
+
+  it("R8: a new customer can't be refunded on someone else's order", async () => {
+    const db = freshDb();
+    const { result } = await tryRequest(db, { customerId: NEW_CUSTOMER, newName: "Ada Stone", subject: "", message: "Refund O1001" }, answers(SMALL));
+    expect(result).toMatchObject({ outcome: "blocked", rules: ["R8"] });
+  });
+
+  it("needs a name for someone new", () => {
+    const db = freshDb();
+    expect(tryInputProblem(db, { customerId: NEW_CUSTOMER, newName: "  ", subject: "", message: "hi" })).toMatch(/name/);
+  });
+
+  it("the receipt shows each order with what's already refunded and what's left", () => {
+    const db = freshDb();
+    const saoirse = customerReceipts(db).find((c) => c.id === "C008")!;
+    expect(saoirse.orders.find((o) => o.id === "O1010")).toMatchObject({ paid: "$18.00", refunded: "$9.00", left: "$9.00", leftCents: 900 });
   });
 });

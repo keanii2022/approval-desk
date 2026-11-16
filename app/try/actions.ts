@@ -10,7 +10,12 @@ export type TryState = { error: string | null };
 const text = (formData: FormData, field: string) => String(formData.get(field) ?? "");
 
 export async function tryAction(_previous: TryState, formData: FormData): Promise<TryState> {
-  const input = { customerId: text(formData, "customerId"), subject: text(formData, "subject"), message: text(formData, "message") };
+  const input = {
+    customerId: text(formData, "customerId"),
+    subject: text(formData, "subject"),
+    message: text(formData, "message"),
+    newName: text(formData, "newName"),
+  };
   let db;
   try {
     db = appDb();

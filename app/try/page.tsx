@@ -2,10 +2,12 @@ import Link from "next/link";
 import { ruleInWords } from "../../lib/approval.ts";
 import type { AgentOutput, GateDecision } from "../../lib/gate.ts";
 import { dollars } from "../../lib/money.ts";
-import { MESSAGE_MAX, recentTries, SUBJECT_MAX, type Tried } from "../../lib/tryout.ts";
+import type { ReceiptCustomer } from "../../lib/try-fields.ts";
+import { customerReceipts, MESSAGE_MAX, NAME_MAX, recentTries, SUBJECT_MAX, type Tried } from "../../lib/tryout.ts";
 import { appDb } from "../approvals/db.ts";
-import { type CustomerChoice, TryForm } from "./TryForm.tsx";
+import { TryForm } from "./TryForm.tsx";
 import "../approvals/approvals.css";
+import "./try.css";
 
 export const metadata = { title: "Try it | Approval Desk" };
 export const dynamic = "force-dynamic";
@@ -74,19 +76,13 @@ function TriedCard({ tried, fresh }: { tried: Tried; fresh: boolean }) {
 
 export default async function TryPage({ searchParams }: { searchParams: Promise<{ ran?: string }> }) {
   const { ran } = await searchParams;
-  let customers: CustomerChoice[] = [];
+  let customers: ReceiptCustomer[] = [];
   let tries: Tried[] = [];
   let problem: string | null = null;
   try {
     const db = appDb();
     try {
-      const rows = db
-        .prepare(
-          `SELECT c.id, c.name, GROUP_CONCAT(o.id || ' ' || o.item || ' $' || printf('%.2f', o.amount_paid_cents / 100.0), ', ') AS orders
-           FROM customers c LEFT JOIN orders o ON o.customer_id = c.id GROUP BY c.id ORDER BY c.name`,
-        )
-        .all() as { id: string; name: string; orders: string | null }[];
-      customers = rows.map((r) => ({ id: r.id, label: `${r.name}: ${r.orders ?? "no orders"}` }));
+      customers = customerReceipts(db);
       tries = recentTries(db);
     } finally {
       db.close();
@@ -110,7 +106,7 @@ export default async function TryPage({ searchParams }: { searchParams: Promise<
           {problem}
         </p>
       ) : (
-        <TryForm customers={customers} subjectMax={SUBJECT_MAX} messageMax={MESSAGE_MAX} />
+        <TryForm customers={customers} limits={{ subjectMax: SUBJECT_MAX, messageMax: MESSAGE_MAX, nameMax: NAME_MAX }} />
       )}
       <h2>Your tries</h2>
       {tries.length === 0 ? (

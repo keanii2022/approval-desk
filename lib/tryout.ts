@@ -9,10 +9,40 @@ import { type PipelineResult, processRequest, utcNow } from "./pipeline.ts";
 // human queue), written to the same logbook. Tried requests get TRY- IDs so they
 // never mix with the seeded REQ- ones the practice cases use.
 
-export const SUBJECT_MAX = 120;
-export const MESSAGE_MAX = 2000;
+import { MESSAGE_MAX, NAME_MAX, NEW_CUSTOMER, type ReceiptCustomer, SUBJECT_MAX } from "./try-fields.ts";
 
-export type TryInput = { customerId: string; subject: string; message: string };
+export { MESSAGE_MAX, NAME_MAX, NEW_CUSTOMER, SUBJECT_MAX };
+
+export type TryInput = { customerId: string; subject: string; message: string; newName?: string };
+
+const dollars = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+
+// Every customer with what they bought, for the "receipt" shown on the try page.
+export function customerReceipts(db: DatabaseSync): ReceiptCustomer[] {
+  const customers = db.prepare("SELECT id, name FROM customers ORDER BY name").all() as { id: string; name: string }[];
+  const orders = db
+    .prepare(
+      `SELECT o.id, o.customer_id, o.item, o.placed_on, o.amount_paid_cents AS paid,
+              COALESCE((SELECT SUM(amount_cents) FROM refunds r WHERE r.order_id = o.id), 0) AS refunded
+       FROM orders o ORDER BY o.placed_on, o.id`,
+    )
+    .all() as { id: string; customer_id: string; item: string; placed_on: string; paid: number; refunded: number }[];
+  return customers.map((c) => ({
+    ...c,
+    orders: orders
+      .filter((o) => o.customer_id === c.id)
+      .map((o) => ({
+        id: o.id,
+        item: o.item,
+        placedOn: o.placed_on,
+        paid: dollars(o.paid),
+        refunded: dollars(o.refunded),
+        left: dollars(o.paid - o.refunded),
+        paidCents: o.paid,
+        leftCents: o.paid - o.refunded,
+      })),
+  }));
+}
 
 export type Tried = {
   requestId: string;
@@ -26,7 +56,11 @@ export type Tried = {
 
 // Checks what the person typed. Returns the problem in plain words, or null.
 export function tryInputProblem(db: DatabaseSync, input: TryInput): string | null {
-  if (!db.prepare("SELECT 1 FROM customers WHERE id = ?").get(input.customerId)) return "Pick a customer";
+  if (input.customerId === NEW_CUSTOMER) {
+    const name = (input.newName ?? "").trim();
+    if (name === "") return "Type a name for the new customer";
+    if (name.length > NAME_MAX) return `Keep the name under ${NAME_MAX} characters`;
+  } else if (!db.prepare("SELECT 1 FROM customers WHERE id = ?").get(input.customerId)) return "Pick a customer";
   if (input.message.trim() === "") return "Write a message";
   if (input.subject.length > SUBJECT_MAX) return `Keep the subject under ${SUBJECT_MAX} characters`;
   if (input.message.length > MESSAGE_MAX) return `Keep the message under ${MESSAGE_MAX} characters`;
@@ -42,10 +76,11 @@ export async function tryRequest(
   const problem = tryInputProblem(db, input);
   if (problem) throw new Error(problem);
 
+  const customerId = input.customerId === NEW_CUSTOMER ? addNewCustomer(db, (input.newName ?? "").trim()) : input.customerId;
   const requestId = nextTryId(db);
   db.prepare("INSERT INTO inbox (id, customer_id, received_on, subject, body) VALUES (?, ?, ?, ?, ?)").run(
     requestId,
-    input.customerId,
+    customerId,
     shopToday(db),
     input.subject.trim() || "(no subject)",
     input.message.trim(),
@@ -59,6 +94,16 @@ export async function tryRequest(
 function shopToday(db: DatabaseSync): string {
   const row = db.prepare("SELECT MAX(received_on) AS day FROM inbox WHERE id LIKE 'REQ-%'").get() as { day: string | null };
   return row.day ?? utcNow().slice(0, 10);
+}
+
+// New customers get N- IDs so they never clash with the seeded C- ones.
+function addNewCustomer(db: DatabaseSync, name: string): string {
+  const row = db.prepare("SELECT MAX(CAST(SUBSTR(id, 3) AS INTEGER)) AS n FROM customers WHERE id LIKE 'N-%'").get() as {
+    n: number | null;
+  };
+  const id = `N-${String((row.n ?? 0) + 1).padStart(3, "0")}`;
+  db.prepare("INSERT INTO customers (id, name, email) VALUES (?, ?, ?)").run(id, name, `${id.toLowerCase()}@example.com`);
+  return id;
 }
 
 function nextTryId(db: DatabaseSync): string {

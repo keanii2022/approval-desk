@@ -1,0 +1,12 @@
+.try-form select,
+.try-form input {
+  font: inherit;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  max-width: 40rem;
+}
+.try-form .starters { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin: 0.25rem 0; }
+.try-form button.starter { padding: 0.25rem 0.7rem; font-size: 0.9rem; }

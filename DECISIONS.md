@@ -228,3 +228,8 @@ Template:
 - The README says Node 24 or newer. The project runs `.ts` files directly and uses the SQLite built into Node; it was tested on Node 24.
 **Left for later:**
 - The fresh-copy check couldn't create `.env` (the session isn't allowed to touch it), so the "add your key" step was checked by hand earlier, not in the fresh copy.
+
+## Try page: receipt, examples, someone new (2026-11-16)
+
+**Built:** the owner's follow-ups from step 9. On `/try`, picking a customer shows their orders as a receipt (order number, item, date, paid, already refunded, what's left), so it's clear what to write about. Example buttons fill in a starter message for that customer: honest, asks for too much, fake authority, vague, and someone else's order. "Someone new (type any name)" makes a customer with an `N-` ID and no orders; any refund they ask for should be turned down, and a refund on another customer's order is blocked (R8). Tests cover the new customer and the receipt amounts.
+**Decided:** the form's shared limits and types live in `lib/try-fields.ts`, because the form runs in the browser and can't load the database code in `lib/tryout.ts`.
