@@ -1,5 +1,6 @@
 "use server";
 
+import { refresh } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { askClaude } from "../../lib/claude.ts";
@@ -8,7 +9,8 @@ import { tryInputProblem, tryRequest } from "../../lib/tryout.ts";
 import { newVisitorId, readVisitorId, spendingProblem, VISITOR_COOKIE, VISITOR_COOKIE_MAX_AGE } from "../../lib/visitor.ts";
 import { appDb } from "../approvals/db.ts";
 
-export type TryState = { error: string | null };
+// ranId is set only when the form asked to stay on its page (the village panel) instead of going to /try.
+export type TryState = { error: string | null; ranId?: string };
 
 const text = (formData: FormData, field: string) => String(formData.get(field) ?? "");
 
@@ -51,6 +53,10 @@ export async function tryAction(_previous: TryState, formData: FormData): Promis
     ({ requestId } = await tryRequest(db, input, askClaude, visit));
   } finally {
     db.close();
+  }
+  if (formData.get("stay") === "1") {
+    refresh(); // the page around the panel re-reads the visitor's tries and waiting requests
+    return { error: null, ranId: requestId };
   }
   redirect(`/try?ran=${requestId}`);
 }

@@ -4,18 +4,20 @@
 // instead of ids, and the drawing engine mounted in an effect. All the picture and the
 // stories live in engine.ts; this file only hands it the DOM and the page hook.
 import { useEffect, useRef } from "react";
-import { mountVillage, type VillageStage } from "./engine.ts";
+import { mountVillage, type VillagePlace, type VillageStage } from "./engine.ts";
 import "./canvas.css";
 
-export type { VillageStage } from "./engine.ts";
+export type { VillagePlace, VillageStage } from "./engine.ts";
 
 export interface VillageCanvasProps {
   /** The robot's stop changed (null while it walks between stops). */
   onStage?: (stage: VillageStage | null) => void;
+  /** The Inbox or the human desk was opened. Return true when the page showed its own window for it. */
+  onPlace?: (place: VillagePlace) => boolean;
   className?: string;
 }
 
-export default function VillageCanvas({ onStage, className }: VillageCanvasProps) {
+export default function VillageCanvas({ onStage, onPlace, className }: VillageCanvasProps) {
   const screen = useRef<HTMLCanvasElement>(null);
   const title = useRef<HTMLCanvasElement>(null);
   const logbook = useRef<HTMLCanvasElement>(null);
@@ -34,8 +36,9 @@ export default function VillageCanvas({ onStage, className }: VillageCanvasProps
 
   // The engine mounts once. The callback is read through a ref, so a parent that passes a
   // new function on every render never restarts the village.
-  const hooks = useRef({ onStage });
-  hooks.current = { onStage };
+  const hooks = useRef({ onStage, onPlace });
+  hooks.current = { onStage, onPlace };
+  const handlesPlaces = useRef(Boolean(onPlace));
 
   useEffect(() => {
     if (
@@ -59,6 +62,7 @@ export default function VillageCanvas({ onStage, className }: VillageCanvasProps
       },
       {
         onStage: (stage) => hooks.current.onStage?.(stage),
+        onPlace: handlesPlaces.current ? (place) => hooks.current.onPlace?.(place) ?? false : undefined,
       },
     );
     return () => handle.destroy();

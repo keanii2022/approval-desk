@@ -1,12 +1,6 @@
-// The village prototype, ported as it is: scripted invented data, view only.
-import VillageCanvas from "./VillageCanvas.tsx";
+import { redirect } from "next/navigation";
 
-export const metadata = { title: "Village | Approval Desk" };
-
+// The village moved to the front page in step 19; old links still land there.
 export default function VillagePage() {
-  return (
-    <main style={{ minHeight: "100vh", margin: 0, padding: "0 16px", background: "#24283f", boxSizing: "border-box" }}>
-      <VillageCanvas />
-    </main>
-  );
+  redirect("/");
 }

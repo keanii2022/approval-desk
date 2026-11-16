@@ -1,0 +1,91 @@
+/* The front page around the village, and the panel the Inbox and the human desk open.
+   Same dusk palette and hard pixel edges as canvas.css: no rounded corners, 2px steps. */
+body:has(.village-home) { margin: 0; background: #24283f; }
+.village-home {
+  --ink: #15102e; --deep: #0a0618; --plum: #2b2050; --plum-hi: #4a3a86; --plum-lo: #3b2d6e;
+  --cream: #f5efd6; --lemon: #f2e8a8; --coral: #e8806e; --gold: #e0b84a; --mint: #6cc48a; --lilac: #b2aad0;
+  min-height: 100vh; padding: 0 16px 24px; box-sizing: border-box; color: var(--cream);
+  font: 15px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  max-width: 1004px; margin: 0 auto;
+}
+.village-home a { color: var(--lemon); }
+.village-home a:focus-visible, .village-home button:focus-visible, .village-home select:focus-visible,
+.village-home input:focus-visible, .village-home textarea:focus-visible { outline: 2px solid var(--lemon); outline-offset: 2px; }
+
+.vh-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; padding: 16px 0 4px; }
+.vh-name { margin: 0; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--coral); }
+.vh-what { margin: 0; color: var(--lilac); flex: 1 1 24rem; }
+
+.vh-note { text-align: center; color: var(--lilac); max-width: 46rem; margin: 0 auto; }
+.vh-note p { margin: 4px 0; }
+.vh-note strong { color: var(--cream); }
+.vh-more { font-size: 0.9em; }
+.village-home .vh-link {
+  font: inherit; color: var(--lemon); background: none; border: 0; padding: 0; margin: 0; box-shadow: none;
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer; display: inline;
+}
+
+/* the panel: a window drawn like the village's device frame */
+.vh-backdrop {
+  position: fixed; inset: 0; z-index: 10; background: rgba(10, 6, 24, 0.72);
+  display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px 16px; box-sizing: border-box; overflow-y: auto;
+}
+.vh-panel {
+  width: 100%; max-width: 44rem; background: var(--plum); padding: 8px;
+  border: 4px solid var(--deep); box-shadow: inset 0 0 0 2px var(--plum-hi), 0 0 0 4px var(--plum-lo), 0 12px 0 4px rgba(10, 6, 24, 0.6);
+  box-sizing: border-box; outline: none;
+}
+.vh-panel-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 4px 8px; }
+.vh-panel-bar h2 { margin: 0; font-size: 1rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--lemon); }
+.vh-panel-body { background: var(--ink); padding: 14px 16px 16px; border: 2px solid var(--deep); }
+.vh-panel h3 { margin: 2px 0 8px; font-size: 1.05rem; color: var(--cream); }
+.vh-panel h4 { margin: 14px 0 4px; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); }
+.vh-panel p { margin: 6px 0; }
+.vh-lede, .vh-muted, .vh-panel .muted { color: var(--lilac); }
+.vh-kicker { color: var(--coral); font-size: 0.85em; letter-spacing: 0.06em; margin: 0 !important; }
+.vh-panel blockquote { margin: 6px 0; padding: 6px 10px; border-left: 4px solid var(--plum-hi); background: #1d1640; white-space: pre-wrap; }
+.vh-panel code { color: var(--lemon); word-break: break-all; }
+
+/* pixel buttons, like the village bar */
+.vh-panel button, .vh-button {
+  font: inherit; font-weight: 700; color: var(--ink); background: var(--cream); border: 2px solid var(--ink); border-radius: 0;
+  padding: 5px 12px; box-shadow: 0 4px 0 var(--deep); cursor: pointer; text-decoration: none; display: inline-block; margin-bottom: 4px;
+}
+.vh-panel button:hover, .vh-button:hover { background: var(--lemon); }
+.vh-panel button:active, .vh-button:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--deep); }
+.vh-panel button:disabled { opacity: 0.6; cursor: progress; transform: none; }
+.village-home a.vh-button { color: var(--ink); }
+.vh-panel .vh-button-go, .vh-panel button[type="submit"] { background: var(--mint); }
+.vh-panel .vh-button-go:hover, .vh-panel button[type="submit"]:hover { background: #92d8a8; }
+.vh-panel .vh-close { padding: 2px 9px; background: var(--coral); }
+.vh-panel .vh-close:hover { background: #f0aca0; }
+.vh-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+
+/* the try form, restyled for the panel */
+.vh-try { display: grid; gap: 6px; }
+.vh-try label { color: var(--gold); font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 6px; }
+.vh-try select, .vh-try input, .vh-try textarea {
+  font: inherit; color: var(--cream); background: #1d1640; border: 2px solid var(--plum-hi); border-radius: 0; padding: 6px 8px;
+  width: 100%; box-sizing: border-box;
+}
+.vh-try textarea { resize: vertical; }
+.vh-try .starters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0 0; }
+.vh-try .starters .muted { width: 100%; }
+.vh-try button.starter { font-weight: 400; padding: 3px 9px; font-size: 0.9em; }
+.vh-panel .problem { background: #e8988a; color: var(--ink); padding: 6px 10px; }
+.vh-panel table { width: 100%; border-collapse: collapse; font-size: 0.85rem; display: block; overflow-x: auto; margin: 4px 0; }
+.vh-panel th, .vh-panel td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--plum-lo); white-space: nowrap; }
+.vh-panel thead th { color: var(--gold); font-weight: 400; }
+.vh-form-table th { color: var(--gold); font-weight: 400; width: 1%; }
+.vh-form-table td { white-space: normal !important; }
+
+.vh-gate { display: flex; align-items: center; gap: 8px; }
+.vh-light { width: 12px; height: 12px; flex: none; border: 2px solid var(--deep); }
+.vh-light-go { background: var(--mint); }
+.vh-light-ask { background: var(--gold); }
+.vh-light-stop { background: var(--coral); }
+
+.vh-empty { border: 2px dashed var(--plum-hi); padding: 10px 12px; }
+.vh-waiting { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.vh-waiting li { background: #1d1640; border-left: 4px solid var(--gold); padding: 8px 10px; }
+.vh-waiting-subject { margin: 2px 0 !important; color: var(--cream); }

@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useState, type FormEvent } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState, type FormEvent } from "react";
 import { NEW_CUSTOMER, type ReceiptCustomer, type ReceiptOrder } from "../../lib/try-fields.ts";
 import { tryAction, type TryState } from "./actions.ts";
 
@@ -66,8 +66,22 @@ function Receipt({ customer, isNew }: { customer: ReceiptCustomer | undefined; i
   );
 }
 
-export function TryForm({ customers, limits }: { customers: ReceiptCustomer[]; limits: Limits }) {
+type TryFormProps = {
+  customers: ReceiptCustomer[];
+  limits: Limits;
+  /** Inside the village panel: stay on the page and hand back the new request's ID instead of going to /try. */
+  onRan?: (requestId: string) => void;
+  className?: string;
+};
+
+export function TryForm({ customers, limits, onRan, className = "card decision try-form" }: TryFormProps) {
   const [state, action, pending] = useActionState<TryState, FormData>(tryAction, { error: null });
+  const ranId = state.ranId;
+  const ranHandler = useRef(onRan);
+  ranHandler.current = onRan;
+  useEffect(() => {
+    if (ranId) ranHandler.current?.(ranId);
+  }, [ranId]);
   const [customerId, setCustomerId] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
@@ -89,7 +103,8 @@ export function TryForm({ customers, limits }: { customers: ReceiptCustomer[]; l
   }
 
   return (
-    <form className="card decision try-form" onSubmit={send}>
+    <form className={className} onSubmit={send}>
+      {onRan ? <input type="hidden" name="stay" value="1" /> : null}
       <label htmlFor="customerId">Write as</label>
       <select id="customerId" name="customerId" required value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
         <option value="" disabled>

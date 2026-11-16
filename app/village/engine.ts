@@ -52,7 +52,12 @@ export interface VillageOptions {
   onStage?: (stage: VillageStage | null) => void;
   /** Called once each time a control changes (scene, auto-play, palette, sound, speed, open windows). */
   onControls?: (controls: VillageControls) => void;
+  /** A visitor opened a place (click on it, or key I for the Inbox, H for the desk). Return true when the page handled it. */
+  onPlace?: (place: VillagePlace) => boolean;
 }
+
+/** The places a page can open its own window for. */
+export type VillagePlace = "inbox" | "desk";
 
 export interface VillageHandle {
   /** Stops the animation and the sound and removes every listener the engine added. */
@@ -977,8 +982,9 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     c.style.width=W*scale+'px';c.style.height=H*scale+'px'}
   function drawKeys(){
     const c=keysc,x=c.getContext('2d'),W=320,H=9;x.clearRect(0,0,W,H);
-    const parts=[['1 2 3','#f2e8a8'],['SCENE','#b2aad0'],['P','#f2e8a8'],['AUTO','#b2aad0'],['N','#f2e8a8'],['DAY','#b2aad0'],['SPACE','#f2e8a8'],['PAUSE','#b2aad0'],['A R','#f2e8a8'],['DECIDE','#b2aad0']];
-    const gap=[5,11,5,11,5,11,5,11,5,0];let tw=0;parts.forEach((p,i)=>tw+=textW(p[0])+gap[i]);
+    const parts=[['1 2 3','#f2e8a8'],['SCENE','#b2aad0'],['P','#f2e8a8'],['AUTO','#b2aad0'],['SPACE','#f2e8a8'],['PAUSE','#b2aad0'],['A R','#f2e8a8'],['DECIDE','#b2aad0']];
+    if(options.onPlace){parts.splice(2,2);parts.push(['I','#f2e8a8'],['INBOX','#b2aad0'],['H','#f2e8a8'],['DESK','#b2aad0'])} // P AUTO makes room: its button shows the state
+    const gap=parts.map((p,i)=>i===parts.length-1?0:(i%2?11:5));let tw=0;parts.forEach((p,i)=>tw+=textW(p[0])+gap[i]);
     let cx=Math.round((W-tw)/2);parts.forEach((p,i)=>{pxText(x,p[0],cx,1,p[1]);cx+=textW(p[0])+gap[i]});
     c.style.width=W*scale+'px';c.style.height=H*scale+'px'}
   function layout(){ // pixel scale from the device's own width (not the window): 1x to 3x, or ?scale=N
@@ -1016,7 +1022,8 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   on(scr,'click',ev=>{const[x,y]=toLogical(ev);
     if(app.logOpen||app.rulesOpen){app.logOpen=false;app.rulesOpen=false;return}
     if(winOpenNow()){for(const k of['A','R'])if(inR(BTN[k],x,y)){decide(k);return}return}
-    const h=HOT.find(q=>inR(q,x,y));if(h){if(h.id==='log'){app.logOpen=true;sfx('click')}else if(h.id==='gate'){app.rulesOpen=true;sfx('click')}else app.info={m:h.m,t0:performance.now(),until:performance.now()+9000}}});
+    const h=HOT.find(q=>inR(q,x,y));if(h&&(h.id==='inbox'||h.id==='desk')&&openPlace(h.id))return;
+    if(h){if(h.id==='log'){app.logOpen=true;sfx('click')}else if(h.id==='gate'){app.rulesOpen=true;sfx('click')}else app.info={m:h.m,t0:performance.now(),until:performance.now()+9000}}});
   b1.onclick=()=>setScene(1);b2.onclick=()=>setScene(2);b3.onclick=()=>setScene(3);
   bauto.onclick=()=>{app.auto=!app.auto;refreshLabels();sfx('click')};bday.onclick=()=>{toggleNight();sfx('click')};bsound.onclick=toggleSound;brules.onclick=()=>{app.logOpen=false;app.rulesOpen=!app.rulesOpen;sfx('click')};bspeed.onclick=()=>{app.pace=app.pace===0.5?0.25:(app.pace===0.25?1:0.5);refreshLabels();sfx('click')};bA.onclick=()=>decide('A');bR.onclick=()=>decide('R');
   on(window,'pointerdown',sfxArm);
@@ -1024,7 +1031,9 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   on(logc,'keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();ev.stopPropagation();app.logOpen=!app.logOpen}});
   // shortcuts stay quiet while a form field has focus or a modifier is held (hook 3)
   // the same shortcuts are reachable through handle.press(key), for a page that draws its own buttons
+  function openPlace(id){if(!options.onPlace)return false;app.logOpen=false;app.rulesOpen=false;app.info=null;const done=options.onPlace(id)===true;if(done)sfx('click');return done}
   function handleKey(k){
+    if(k==='i'){openPlace('inbox');return}if(k==='h'){openPlace('desk');return}
     if(k==='1'||k==='2'||k==='3')setScene(+k);else if(k==='a')decide('A');else if(k==='r')decide('R');else if(k==='n')toggleNight();else if(k==='p')bauto.onclick();else if(k==='m')toggleSound();else if(k==='s')bspeed.onclick();else if(k===' ')app.paused=!app.paused;else if(k==='l'){app.rulesOpen=false;app.logOpen=!app.logOpen}else if(k==='?'){app.logOpen=false;app.rulesOpen=!app.rulesOpen}else if(k==='escape'){app.logOpen=false;app.rulesOpen=false}}
   on(window,'keydown',ev=>{if(ev.ctrlKey||ev.metaKey||ev.altKey||isTypingTarget(ev.target))return;sfxArm();const k=ev.key.toLowerCase();if(k===' ')ev.preventDefault();handleKey(k)});
   // the scale follows the device's width; the relayout is deferred a frame so the observer never sees its own resize
