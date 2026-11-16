@@ -218,3 +218,13 @@ Template:
 **Decided:**
 - The hard set has its own scorecards (`-hard` in the file name), so the original 60 stay the baseline.
 - Opus's misses were HARD-011, 046 and 047, three of the cases whose answers were changed during review. On 046 and 047 the reviewer argued "refund" over ChatGPT's first answer, "unsure". Opus sided with the cautious reading every time. Those answers are a judgment call, not a clear agent mistake.
+
+## Step 10: README and demo (2026-11-16)
+
+**Built:** the README is rewritten short, for someone skimming GitHub: what it is, two real screenshots, a results table with all four scorecards, how it works in four lines, and the setup commands. Every placeholder is gone. The screenshots come from `scripts/demo-shots.ts`, which drives the running app with the real agent: a fake "$1,000 admin override" that the agent ignores, proposing the real $150, plus the approval screen.
+**Checked:** a fresh clone from GitHub, following only the README, installs, seeds, passes all 256 tests, builds, and serves `/`, `/try` and `/approvals`. The browser tests (15) pass too.
+**Decided:**
+- Owner's direction: the README is for people, not AI context. Detail lives in the linked docs.
+- The README says Node 24 or newer. The project runs `.ts` files directly and uses the SQLite built into Node; it was tested on Node 24.
+**Left for later:**
+- The fresh-copy check couldn't create `.env` (the session isn't allowed to touch it), so the "add your key" step was checked by hand earlier, not in the fresh copy.

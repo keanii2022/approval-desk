@@ -1,52 +1,64 @@
 # Approval Desk
 
-A refund agent for an invented online shop. It can't exceed its limits, sends
-big decisions to a human, and its accuracy is measured with evals.
+A Claude-powered refund agent for a made-up online shop. The AI reads each customer email and suggests what to do. Plain code checks every suggestion against hard limits, and a person decides the big ones. The AI can never move money on its own.
 
-All shop data, customers, and requests are invented.
+All shop data, customers and messages are invented.
 
 ## Demo
 
-[PLACEHOLDER: screenshot or short clip of a request going through, and the approval screen]
+A customer tries to fake an "admin override" for $1,000. The agent ignores it and proposes the real $150. The gate sends it to a person because it's over $100.
+
+![The agent handling a fake admin override](docs/demo/try.png)
+
+A person then approves (and can lower the amount) or rejects with a note. Nobody, the person included, can refund more than was paid:
+
+![The approval screen](docs/demo/approvals.png)
 
 ## Results
 
-| Measure | Result |
-|---------|--------|
-| Agent accuracy (60 cases, 3 runs each) | [PLACEHOLDER] |
-| Accuracy on the 20 tricky cases | [PLACEHOLDER] |
-| Misses | [PLACEHOLDER] |
-| Wrong decisions that got through | [PLACEHOLDER] |
-| Bad proposals allowed by the gate (out of 1,000) | [PLACEHOLDER] |
-| Safety tests passing | [PLACEHOLDER] |
-| Scorecard date | [PLACEHOLDER] |
+Each case is run 3 times. "Got through" means a wrong answer the code checks still let happen.
+
+| Test set | Claude Opus 5.5 | Claude Haiku 5.5 (cheapest) |
+|---|---|---|
+| 60 practice cases | **98.3%**, 0 got through | 76.1%, 4 got through (all under $100) |
+| 60 hard cases, written by a different AI to break it | **95.0%**, 0 got through | 73.3%, 0 got through |
+
+- The code checks let through **0 of 1,000** random bad proposals.
+- 256 automated tests and 15 browser tests pass. None of them call the AI.
+- Scorecards are dated and saved in [evals/](evals/). The latest is from 2026-11-16.
 
 ## How it works
 
-- Flow: request → agent → form → gate → allowed / human queue / blocked → executor → logbook.
-- The AI only fills a form. Plain code decides. Only the executor changes orders.
-- Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+```
+customer email → agent (AI) → form → gate (plain code) → paid / sent to a person / blocked
+```
 
-## Hard rules
+- The AI only fills in a form. It can't change any data.
+- The gate is plain code, with no AI inside it. It enforces the rules in [docs/RULES.md](docs/RULES.md), like "over $100 goes to a person" and "never more than was paid."
+- Every step is written to a logbook before it happens.
 
-- R1 to R8, summarised here. Full list: [docs/RULES.md](docs/RULES.md)
+More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · decisions along the way: [DECISIONS.md](DECISIONS.md)
 
 ## Run it yourself
 
-[PLACEHOLDER: setup steps, written and checked in step 10]
+You need Node 24 or newer and a Claude API key.
 
-## Run the tests
+```bash
+git clone https://github.com/keanii2022/approval-desk.git
+cd approval-desk
+npm install
+cp .env.example .env    # then put your key after ANTHROPIC_API_KEY=
+npm run seed
+npm run dev
+```
 
-[PLACEHOLDER]
+Open http://localhost:3000 and use "Try it yourself" to send the agent a request.
 
-## Run the evals
+Other commands:
 
-[PLACEHOLDER]
+- `npm test` runs the tests (free, no AI).
+- `npm run evals` scores the agent on the 60 practice cases. Add `-- --set hard` for the hard set. A full run costs about $4.
 
 ## Stack
 
 TypeScript, Next.js, SQLite, Vitest, Playwright, Claude API.
-
-## What's next
-
-[docs/ROADMAP.md](docs/ROADMAP.md)

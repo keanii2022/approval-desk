@@ -39,7 +39,7 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
   - **Goal:** Run every practice case 3 times through the agent and gate, and write a scorecard.
   - **Done when:** the scorecard shows accuracy, misses, and wrong decisions that got through; it is saved with a date.
 
-- [ ] **Step 10: README and demo**
+- [x] **Step 10: README and demo**
   - **Goal:** Replace every `[PLACEHOLDER]` in the README with real results, and add a demo.
   - **Done when:** a fresh copy runs from the README alone.
 
