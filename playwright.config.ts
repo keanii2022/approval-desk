@@ -15,6 +15,7 @@ export default defineConfig({
     url: "http://localhost:3100",
     reuseExistingServer: false,
     timeout: 120_000,
-    env: { APPROVAL_DESK_DB: "data/e2e.db", NEXT_TELEMETRY_DISABLED: "1" },
+    // AGENT_STAND_IN: sent requests get a fixed answer from lib/stand-in-agent.ts, never the real AI.
+    env: { APPROVAL_DESK_DB: "data/e2e.db", NEXT_TELEMETRY_DISABLED: "1", AGENT_STAND_IN: "1", TRY_DAILY_LIMIT: "100", TRY_VISITOR_HOURLY_LIMIT: "100" },
   },
 });

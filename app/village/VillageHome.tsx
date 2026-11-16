@@ -7,8 +7,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import type { ReceiptCustomer } from "../../lib/try-fields.ts";
 import { TryForm } from "../try/TryForm.tsx";
-import VillageCanvas, { type VillagePlace } from "./VillageCanvas.tsx";
-import type { AgentView, TryView, WaitingView } from "./views.ts";
+import VillageCanvas, { type VillagePlace, type VisitorRequest } from "./VillageCanvas.tsx";
+import { visitorRequest, type AgentView, type TryView, type WaitingView } from "./views.ts";
 import "./home.css";
 
 const GITHUB = "https://github.com/keanii2022/approval-desk";
@@ -46,7 +46,7 @@ function AgentAnswer({ agent }: { agent: AgentView }) {
 
 const LIGHT: Record<NonNullable<TryView["gateResult"]>, string> = { allow: "go", send_to_human: "ask", block: "stop" };
 
-function Result({ tried, onAnother }: { tried: TryView | undefined; onAnother: () => void }) {
+function Result({ tried, onAnother, onWatch }: { tried: TryView | undefined; onAnother: () => void; onWatch: () => void }) {
   if (!tried) return <p className="vh-muted">Reading the logbook…</p>;
   return (
     <article className="vh-result" aria-label={`${tried.requestId} result`}>
@@ -65,6 +65,11 @@ function Result({ tried, onAnother }: { tried: TryView | undefined; onAnother: (
       <h4>How it ended</h4>
       <p>{tried.outcome}</p>
       <div className="vh-actions">
+        {tried.gateResult ? (
+          <button type="button" className="vh-button-go" onClick={onWatch}>
+            Watch it in the village
+          </button>
+        ) : null}
         <button type="button" onClick={onAnother}>
           Send another
         </button>
@@ -118,6 +123,9 @@ export default function VillageHome({ customers, tries, waiting, problem, limits
   const [panel, setPanel] = useState<VillagePlace | null>(null);
   const [ranId, setRanId] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0);
+  // The visitor's last request waits here until the panel closes, then the village plays it.
+  const [queued, setQueued] = useState<VisitorRequest | null>(null);
+  const [play, setPlay] = useState<{ key: number; request: VisitorRequest } | null>(null);
   const dialog = useRef<HTMLDivElement>(null);
   const returnFocus = useRef<Element | null>(null);
 
@@ -140,6 +148,17 @@ export default function VillageHome({ customers, tries, waiting, problem, limits
     setRanId(null);
     setFormKey((k) => k + 1);
   };
+
+  const tried = ranId ? tries.find((t) => t.requestId === ranId) : undefined;
+  useEffect(() => {
+    const request = tried ? visitorRequest(tried) : null;
+    if (request) setQueued(request);
+  }, [tried]);
+  useEffect(() => {
+    if (panel || !queued) return;
+    setPlay((last) => ({ key: (last?.key ?? 0) + 1, request: queued }));
+    setQueued(null);
+  }, [panel, queued]);
 
   // Focus moves into the panel when it opens or changes, so keyboard and screen reader users land in it.
   useEffect(() => {
@@ -182,7 +201,7 @@ export default function VillageHome({ customers, tries, waiting, problem, limits
         </p>
       </header>
 
-      <VillageCanvas onPlace={openPlace} />
+      <VillageCanvas onPlace={openPlace} play={play} />
 
       <section className="vh-note" aria-label="About this page">
         <p>
@@ -226,7 +245,7 @@ export default function VillageHome({ customers, tries, waiting, problem, limits
                   {problem}
                 </p>
               ) : ranId ? (
-                <Result tried={tries.find((t) => t.requestId === ranId)} onAnother={another} />
+                <Result tried={tried} onAnother={another} onWatch={close} />
               ) : (
                 <>
                   <p className="vh-lede">

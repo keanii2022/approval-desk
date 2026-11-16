@@ -4,8 +4,9 @@ import { expect, test, type Page } from "@playwright/test";
 
 // The village is the front page. It plays three made-up stories on its own; the Inbox
 // stand opens the try form over it and the human desk lists the visitor's own waiting
-// requests. There is no API key in the test server, so a sent request always ends up
-// with a person as "AI unavailable" (R6): deterministic and free.
+// requests. The test server uses the stand-in agent (AGENT_STAND_IN=1, lib/stand-in-agent.ts):
+// a message with "small", "big" or "garbled" gets a fixed form, anything else gets no answer,
+// as if the AI were down (R6). Deterministic and free; the real AI is never called.
 
 const DB = "data/e2e.db";
 
@@ -140,4 +141,70 @@ test("Village: the human desk lists the visitor's own waiting requests, with a w
   await panel(page).getByRole("link", { name: /Open the approval screen/ }).click();
   await expect(page).toHaveURL(/\/approvals$/);
   await expect(page.getByRole("article", { name: new RegExp(requestId) })).toBeVisible();
+});
+
+// ---- the village plays the visitor's own request (step 20) ----
+
+const village = (page: Page) => page.locator(".village-canvas");
+const villageSays = (page: Page) => village(page).locator("[aria-live]");
+
+// ?speed=10 plays the village ten times faster, so a whole request plays in a few seconds.
+async function openFastVillage(page: Page) {
+  await page.goto("/?speed=10");
+  await expect(page.getByRole("button", { name: /^Scene 1/ }).locator("canvas")).toBeAttached();
+  await page.getByRole("button", { name: /^Scene 1/ }).click();
+}
+
+// Sends one request from the Inbox panel, checks the panel's result, then closes it to watch.
+async function sendAndWatch(page: Page, customer: string, message: string, outcome: string): Promise<string> {
+  await page.keyboard.press("i");
+  const inbox = panel(page);
+  await inbox.getByLabel("Write as").selectOption({ label: customer });
+  await inbox.getByLabel("Subject").fill("Village test");
+  await inbox.getByLabel("Message").fill(message);
+  await inbox.getByRole("button", { name: "Send to the agent" }).click();
+  const result = inbox.getByRole("article", { name: /TRY-\d+ result/ });
+  await expect(result).toBeVisible({ timeout: 30_000 });
+  await expect(result).toContainText(outcome);
+  const requestId = ((await result.getAttribute("aria-label")) ?? "").replace(" result", "");
+  await result.getByRole("button", { name: "Watch it in the village" }).click();
+  await expect(panel(page)).toBeHidden();
+  return requestId;
+}
+
+// Waits for the play to end, then opens the logbook window (key L) and reads it.
+async function expectInLogbook(page: Page, text: RegExp) {
+  await expect(village(page)).toHaveAttribute("data-visitor", "idle", { timeout: 60_000 });
+  await page.keyboard.press("l");
+  await expect(villageSays(page)).toContainText(text);
+  await page.keyboard.press("Escape");
+}
+
+test("Village: a small refund plays green and the factory pays (R1, R2 pass); the stories pause, then resume", async ({ page }) => {
+  await openFastVillage(page);
+  const id = await sendAndWatch(page, "Mara Lindqvist", "Two mugs came cracked, a small refund please.", "Refund paid.");
+  await expect(village(page)).toHaveAttribute("data-visitor", "playing");
+  // The scripted stories step aside: no scene button is pressed while the visitor's request plays.
+  for (const n of [1, 2, 3]) await expect(page.getByRole("button", { name: new RegExp(`^Scene ${n}`) })).toHaveAttribute("aria-pressed", "false");
+  await expect(villageSays(page)).toContainText(`YOUR REQUEST ${id} ARRIVES`);
+  await expect(village(page)).toHaveAttribute("data-gate-light", "green", { timeout: 30_000 });
+  await expect(village(page)).toHaveAttribute("data-robot-at", "factory", { timeout: 30_000 });
+  await expectInLogbook(page, new RegExp(`${id}, \\$24\\.00, order O1001\\..*Final: REFUND PAID`));
+  await expect(page.getByRole("button", { name: /^Scene 1/ })).toHaveAttribute("aria-pressed", "true");
+});
+
+test("Village: a big refund plays yellow and waits at the human desk (R2)", async ({ page }) => {
+  await openFastVillage(page);
+  const id = await sendAndWatch(page, "Theo Achterberg", "My lamp is dead, I want the big refund.", "Waiting for a person");
+  await expect(village(page)).toHaveAttribute("data-gate-light", "yellow", { timeout: 30_000 });
+  await expect(village(page)).toHaveAttribute("data-robot-at", "desk", { timeout: 30_000 });
+  await expect(villageSays(page)).toContainText("YOUR REQUEST WAITS AT THE HUMAN DESK");
+  await expectInLogbook(page, new RegExp(`${id}, \\$150\\.00, order O1002\\..*Gate: YELLOW\\. OVER \\$100.*WAITING FOR A PERSON`));
+});
+
+test("Village: a garbled answer plays red and nothing is paid (R5)", async ({ page }) => {
+  await openFastVillage(page);
+  const id = await sendAndWatch(page, "Theo Achterberg", "garbled garbled garbled", "Blocked");
+  await expect(village(page)).toHaveAttribute("data-gate-light", "red", { timeout: 30_000 });
+  await expectInLogbook(page, new RegExp(`${id}, NO AMOUNT, order NONE\\..*Gate: RED\\. NOT A PROPER FORM.*Final: BLOCKED`));
 });

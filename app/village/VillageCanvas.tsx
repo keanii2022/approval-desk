@@ -4,20 +4,22 @@
 // instead of ids, and the drawing engine mounted in an effect. All the picture and the
 // stories live in engine.ts; this file only hands it the DOM and the page hook.
 import { useEffect, useRef } from "react";
-import { mountVillage, type VillagePlace, type VillageStage } from "./engine.ts";
+import { mountVillage, type VillageHandle, type VillagePlace, type VillageStage, type VisitorRequest } from "./engine.ts";
 import "./canvas.css";
 
-export type { VillagePlace, VillageStage } from "./engine.ts";
+export type { VillagePlace, VillageStage, VisitorRequest } from "./engine.ts";
 
 export interface VillageCanvasProps {
   /** The robot's stop changed (null while it walks between stops). */
   onStage?: (stage: VillageStage | null) => void;
   /** The Inbox or the human desk was opened. Return true when the page showed its own window for it. */
   onPlace?: (place: VillagePlace) => boolean;
+  /** The visitor's request to play. A new key plays it (again); the scripted stories pause meanwhile. */
+  play?: { key: number; request: VisitorRequest } | null;
   className?: string;
 }
 
-export default function VillageCanvas({ onStage, onPlace, className }: VillageCanvasProps) {
+export default function VillageCanvas({ onStage, onPlace, play, className }: VillageCanvasProps) {
   const screen = useRef<HTMLCanvasElement>(null);
   const title = useRef<HTMLCanvasElement>(null);
   const logbook = useRef<HTMLCanvasElement>(null);
@@ -39,6 +41,7 @@ export default function VillageCanvas({ onStage, onPlace, className }: VillageCa
   const hooks = useRef({ onStage, onPlace });
   hooks.current = { onStage, onPlace };
   const handlesPlaces = useRef(Boolean(onPlace));
+  const village = useRef<VillageHandle | null>(null);
 
   useEffect(() => {
     if (
@@ -65,8 +68,18 @@ export default function VillageCanvas({ onStage, onPlace, className }: VillageCa
         onPlace: handlesPlaces.current ? (place) => hooks.current.onPlace?.(place) ?? false : undefined,
       },
     );
-    return () => handle.destroy();
+    village.current = handle;
+    return () => {
+      village.current = null;
+      handle.destroy();
+    };
   }, []);
+
+  const playKey = play?.key;
+  const playRequest = play?.request;
+  useEffect(() => {
+    if (playKey !== undefined && playRequest) village.current?.playVisitor(playRequest);
+  }, [playKey, playRequest]);
 
   return (
     <div className={className ? `village-canvas ${className}` : "village-canvas"}>

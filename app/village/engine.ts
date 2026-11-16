@@ -56,6 +56,27 @@ export interface VillageOptions {
   onPlace?: (place: VillagePlace) => boolean;
 }
 
+/** A visitor's real request, as the village plays it (scene 4). Built by the page from the real result. */
+export interface VisitorRequest {
+  /** The request's ID, like TRY-001. */
+  id: string;
+  customerName: string;
+  /** The gate's real decision. */
+  light: "allow" | "send_to_human" | "block";
+  /** The rules the gate named (R1 to R8). */
+  rules: string[];
+  orderId: string | null;
+  amountCents: number | null;
+  /** What the agent did, in a few words ("suggests $24.00 back on O1001"). */
+  agentSays: string;
+  /** How it ended, for the logbook ("Refund paid."). */
+  outcome: string;
+  /** The factory paid it. */
+  paid: boolean;
+  /** One or a few words for the logbook line: PAID, WAITING FOR A PERSON, BLOCKED, ... */
+  word: string;
+}
+
 /** The places a page can open its own window for. */
 export type VillagePlace = "inbox" | "desk";
 
@@ -68,6 +89,8 @@ export interface VillageHandle {
   press(key: string): void;
   /** True while the logbook or the rules window is open (Escape closes it instead of leaving). */
   overlayOpen(): boolean;
+  /** Pauses the scripted stories and plays the visitor's real request; the stories resume after it. */
+  playVisitor(request: VisitorRequest): void;
 }
 
 const SW=320,SH=240,LOGH=54;
@@ -516,7 +539,7 @@ function robot(ax,ay,dir,fr,o){ // 18 x 21 px chunky robot: antenna ball, big he
     if(o.hold)letter(0);
   }
 }
-function letterIcon(x,y){R(x,y,11,7,K);R(x+1,y+1,9,5,W);for(let i=0;i<4;i++){P(x+1+i,y+1+i,K);P(x+9-i,y+1+i,K)}P(x+5,y+4,R2);R(x+3,y+5,5,1,BL)}
+function letterIcon(x,y,gold){R(x,y,11,7,K);R(x+1,y+1,9,5,gold?Y2:W);for(let i=0;i<4;i++){P(x+1+i,y+1+i,K);P(x+9-i,y+1+i,K)}P(x+5,y+4,R2);R(x+3,y+5,5,1,BL)}
 function bubble(cx,by,w,h){RR(cx-(w>>1),by,w,h,K);RR(cx-(w>>1)+1,by+1,w-2,h-2,W);R(cx-1,by+h-1,3,1,W);P(cx-2,by+h,K);R(cx-1,by+h,3,1,W);P(cx+2,by+h,K);P(cx-1,by+h+1,K);P(cx,by+h+1,W);P(cx+1,by+h+1,K);P(cx,by+h+2,K)}
 const THUMB=['.....KKK..........','....KYYYK.........','....KYYYK.........','....KYYYK.........','....KYYYK.........','....KYYYKKKKKK....','....KYYYYYYYYYK...','KKKKKYYYYYYYYYYK..','KYYYYYYYYYYYYYYYK.','KYWYYYYYYYYYYYYOK.','KYYYYYYYYYKKKKKOK.','KYYYYYYYYYYYYYYOK.','KYYYYYYYYYKKKKKOK.','KYYYYYYYYYYYYYYOK.','KYYYYYYYYYKKKKKOK.','KYYYYYYYYYYYYYOOK.','KKYYYYYYYYYYOOOKK.','.KKKKKKKKKKKKKKK..'];
 function emote(n,cx,ty,t,amb){ // ty = y of the agent's antenna tip
@@ -553,6 +576,7 @@ function coin(x,y,ph){const w=[8,6,2,6][ph&3],cx=Math.round(x-w/2),cy=Math.round
   R(cx+1,cy+1,1,3,Y1);P(cx+2,cy+1,Y1);
   if(w===8){R(cx+3,cy+2,2,4,Y1);R(cx+4,cy+3,1,2,Y2)}else R(cx+2,cy+2,1,4,Y1);
   P(cx+w-2,cy+6,B1)}
+function starBadge(x,y){R(x+2,y,1,1,K);R(x+1,y+1,3,1,K);R(x,y+2,5,1,K);R(x+1,y+3,3,1,K);R(x,y+4,2,1,K);R(x+3,y+4,2,1,K);P(x+2,y+1,Y1);R(x+1,y+2,3,1,Y1);P(x+2,y+3,Y2)} // the visitor's robot wears this
 function spark(x,y,c=Y1){R(x-1,y,3,1,c);R(x,y-1,1,3,c)}
 function stampTool(x,y){R(x-8,y-5,16,5,K);R(x-7,y-4,14,3,R2);R(x-7,y-4,14,1,C1);R(x-3,y-13,6,8,K);R(x-2,y-12,4,6,B1);R(x-5,y-18,10,6,K);R(x-4,y-17,8,4,B1);R(x-4,y-17,8,1,W)}
 function stampMark(kind,cx,cy){ // solid-filled so it reads over anything it lands on
@@ -582,7 +606,7 @@ class TL{
 }
 const SC={1:{o:'O1001',tot:'$60.00',amt:'$24.00',id:'RF016',w:'ALLOWED'},2:{o:'O1002',tot:'$150.00',amt:'$150.00',id:'RF017'},3:{o:'O1003',tot:'$20.00',amt:'$500.00',id:'RF018',w:'BLOCKED'}};
 function build(sc,dec){
-  const T=new TL(sc),e=T.ev,I=SC[sc];
+  const T=new TL(sc),e=T.ev,I=SC[sc];T.kind='GYR'[sc-1];T.I=I;T.rows=ROWS[sc];
   T.stand(0.5,'down');e.letter=0.2;T.emo('!',0.25,1.2);
   e.walk1=T.t;T.go(RT.in);e.atInbox=T.t;T.stand(0.9,'up');e.grab=e.atInbox+0.3;e.grabDone=e.grab+0.45;
   e.walk2=T.t;T.go(RT.gate);e.arrive=T.t;
@@ -628,6 +652,57 @@ const TLS={};
 export interface VillageTimeline { sc: number; dec: string; dur: number; ev: Record<string, number>; seg: { t0: number; t1: number; x0: number; y0: number; x1: number; y1: number }[] }
 /** The timeline of a scene (1 to 3; scene 2 branches on the decision "A" or "R"). Built once and cached. */
 export const getTL=(sc: number,dec: string): VillageTimeline=>{const k=sc===2?'2'+dec:''+sc;return TLS[k]||(TLS[k]=build(sc,dec))};
+/* ================= the visitor's own request (scene 4): same walk and props, the real gate's decision ================= */
+const VKIND={allow:'G',send_to_human:'Y',block:'R'};
+const RSHORT={R1:'MORE THAN WAS PAID',R2:'OVER THE $100 LIMIT',R3:'ORDER OVER 30 DAYS',R4:'3+ RECENT REFUNDS',R5:'NOT A PROPER FORM',R6:'AI DOWN OR UNSURE',R8:'LOGBOOK FAILED'};
+const RWHY={R1:'MORE THAN WAS PAID',R2:'OVER $100',R3:'ORDER OVER 30 DAYS OLD',R4:'3+ REFUNDS IN 90 DAYS',R5:'NOT A PROPER FORM',R6:'THE AI WAS DOWN OR UNSURE',R8:'THE LOGBOOK FAILED'};
+// Visitor text goes through the pixel font, which only has capitals, digits and a little punctuation.
+const pix=(s,n=48)=>{s=String(s??'').toUpperCase().split('').filter(c=>FONT[c]).join('').replace(/\s+/g,' ').trim();return s.length>n?s.slice(0,n-1).trimEnd()+'.':s};
+/** The timeline of a visitor's real request: the walk of the scripted stories, lit by the real gate's decision. */
+export function buildVisitorTL(v: VisitorRequest): VillageTimeline {
+  const T=new TL(4),e=T.ev,k=VKIND[v.light]||'Y',amt=v.amountCents!=null?'$'+(v.amountCents/100).toFixed(2):'',id=pix(v.id,12),word=pix(v.word,24);
+  const why=(v.rules||[]).map(r=>RWHY[r]||r).join(', ');
+  T.kind=k;T.visitor=true;T.I={o:pix(v.orderId||'',8),amt,id};
+  T.rows=k==='G'?(amt?[['NOT MORE THAN PAID','WITHIN THE ORDER',1],['UNDER THE $100 LIMIT','NO HUMAN NEEDED',1]]:[['NO REFUND ASKED FOR','NOTHING TO PAY',1]])
+    :(v.rules||[]).slice(0,2).map(r=>[RSHORT[r]||pix(r,20),k==='R'?'BLOCKED':'NEEDS A HUMAN',k==='R'?-1:0]);
+  if(!T.rows.length)T.rows=[[k==='R'?'BLOCKED':'NEEDS A HUMAN','',k==='R'?-1:0]];
+  T.entry={id,o:T.I.o||'NONE',a:amt||'NO AMOUNT',ag:pix(v.agentSays,40),ga:pix((k==='G'?'GREEN. ':k==='Y'?'YELLOW. ':'RED. ')+(why||'WITHIN EVERY RULE.'),40),fi:pix(v.outcome,40),g:k==='G'&&v.paid?1:0,wd:word};
+  T.stand(0.5,'down');e.letter=0.2;T.emo('!',0.25,1.2);
+  e.walk1=T.t;T.go(RT.in);e.atInbox=T.t;T.stand(0.9,'up');e.grab=e.atInbox+0.3;e.grabDone=e.grab+0.45;
+  e.walk2=T.t;T.go(RT.gate);e.arrive=T.t;
+  const A=e.arrive;e.card=A+0.2;e.scan=A+0.8;e.lightFix=A+1.5;e.result=k;
+  T.say(0,'YOUR REQUEST '+id+' ARRIVES!','FROM '+pix(v.customerName,30)+'. THIS ONE IS REAL.');
+  T.say(e.walk1,'THE REFUND AGENT GOES TO FETCH IT.');
+  T.say(e.grab,'AGENT: '+pix(v.agentSays,40),'NOW THE GATE DECIDES. NO AI INSIDE IT.');
+  T.say(e.scan,'THE GATE CHECKS THE REAL RULES...');
+  const home=(r,fromFac)=>{e.walkHome=T.t;T.go(r);e.atHome=T.t;if(!fromFac)e.giveHome=T.t+0.3;e.giveEnd=fromFac?e.give:e.giveHome+0.4;
+    T.stand(5.0,'up');e.write=e.atHome+0.5;e.log=e.atHome+1.9;e.word=word;e.tag=word.split(' ')[0];
+    T.say(e.walkHome,'BACK HOME. THE LOGBOOK RECORDS IT.');T.say(e.log,'LOGBOOK: '+id+' '+word,'THE STORIES PICK UP AGAIN IN A MOMENT.')};
+  if(k==='G'){
+    e.arm=A+1.6;e.stamp=A+1.85;e.stampKind='ok';e.thumb=A+2.4;e.cardEnd=A+4.4;
+    T.emo('thumb',e.thumb,A+5.0);T.stand(2.7,'up');T.stand(3.1,'down');e.leave=T.t;e.lightOff=e.leave+0.8;
+    T.say(e.lightFix,'GREEN LIGHT! THE GATE ALLOWS IT.',v.paid?'NEXT: THE FACTORY PAYS '+amt+'.':'THERE IS NOTHING TO PAY.');
+    if(v.paid){T.go(RT.fac);e.atFac=T.t;e.give=T.t+0.3;e.coins=T.t+0.8;e.tagAt=T.t+1.2;T.pay=true;T.stand(5.2,'down');e.coinsEnd=T.t;T.say(e.coins,amt+' REFUNDED! THE FACTORY PAID IT.');home(RT.homeFromFac,true)}
+    else home(RT.homeFromGate,false);
+  }else if(k==='Y'){
+    e.freak=A+1.8;e.freakEnd=A+3.8;e.cardEnd=A+4.4;
+    T.emo('!!',e.freak,e.freakEnd);T.stand(2.2,'up');T.stand(2.8,'down');e.run=T.t;e.lightOff=e.run+1.3;
+    T.say(e.lightFix,'YELLOW! A PERSON MUST DECIDE THIS ONE.',why?pix('WHY: '+why):'');
+    T.say(e.run,'THE AGENT RUNS TO THE HUMAN DESK.');
+    T.go(RT.desk,RUN);T.stand(0.15,'right');e.atDesk=T.t;e.deskOn=T.t;
+    T.emo('think',e.atDesk+0.3,e.atDesk+6.0);T.stand(6.0,'right');
+    T.say(e.atDesk,'YOUR REQUEST WAITS AT THE HUMAN DESK.','YOU ARE THE PERSON. PRESS H TO DECIDE IT.');
+    home(RT.homeFromDesk,false);
+  }else{
+    e.stamp=A+2.2;e.stampKind='block';e.cardEnd=A+5.6;
+    T.emo('sweat',A+3.0,A+6.0);T.stand(2.9,'up');T.stand(5.0,'down');e.leave=T.t;e.lightOff=e.leave+0.8;
+    T.say(e.lightFix,'RED! THE GATE BLOCKS IT.',why?pix('WHY: '+why):'');T.say(e.stamp,'BLOCKED. NOTHING GETS PAID.');
+    home(RT.homeFromGate,false);
+  }
+  e.red=e.lightFix;T.dur=T.t;T.dec='A';return T;
+}
+/** The gate light at scene time t: off, cycling while it checks, then R, Y or G. */
+function lightAt(tl,t){const e=tl.ev;if(!(t>=e.scan&&t<e.lightOff))return 'off';return t<e.lightFix?'RYG'[(((t-e.scan)/0.13)|0)%3]:e.result}
 function agentAt(tl,t){
   let s=tl.seg[tl.seg.length-1];for(const q of tl.seg)if(t<q.t1){s=q;break}
   const u=s.t1>s.t0?clamp((t-s.t0)/(s.t1-s.t0)):1;
@@ -737,12 +812,16 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   const qs=new URLSearchParams(window.location.search);
   const app={scene:1,pace:0.5,paused:false,logOpen:false,rulesOpen:false,hist:[],runRF:16,rt:0,dk:'',dt0:0,dec:'A',lastDec:'A',t:0,amb:0,auto:!(typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches),frozen:false,decided:false,info:null,hover:null,hoverBtn:null,pressed:null};
   let night=qs.get('day')!=='1';
+  // ?speed=N plays everything N times faster (browser tests); the speed button still works on top of it
+  const boost=Math.max(1,Math.min(20,+qs.get('speed')||1));
   // every listener, timer and observer is recorded here and undone in destroy()
   const listeners=[];const on=(t,type,fn,opts)=>{t.addEventListener(type,fn,opts);listeners.push([t,type,fn,opts])};
   let raf=0,roRaf=0,ro=null,dead=false,lastStage,lastCtl;
-  function logLines(tl,t){const l=app.hist.map(en=>en.id+' '+en.a+' '+en.wd);
-    const nl=t>=tl.ev.log?rfid(app.runRF)+' '+SC[tl.sc].amt+' '+tl.ev.word:null;return{l,nl}}
-  function logEntries(tl,t){return t>=tl.ev.log?[...app.hist,makeEntry(tl.sc,tl.dec,app.runRF)]:app.hist.slice()}
+  const entryOf=tl=>tl.visitor?tl.entry:makeEntry(tl.sc,tl.dec,app.runRF);
+  const lineOf=en=>en.id+' '+en.a+' '+en.wd;
+  function logLines(tl,t){const l=app.hist.map(lineOf);
+    const nl=t>=tl.ev.log?lineOf(entryOf(tl)):null;return{l,nl}}
+  function logEntries(tl,t){return t>=tl.ev.log?[...app.hist,entryOf(tl)]:app.hist.slice()}
   function logSummary(tl,t){const l=logEntries(tl,t);return l.length?'Logbook, newest first. '+l.slice(-4).reverse().map(d=>d.id+', '+d.a+', order '+d.o+'. Agent: '+d.ag+' Gate: '+d.ga+' Final: '+d.fi).join(' '):'The logbook is empty. Run a scene and its entry appears.'}
   function drawLogWin(tl,t){
     const x=12,y=8,w=296,h=186,list=logEntries(tl,t).slice(-4).reverse();
@@ -761,7 +840,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   function bookPage(n,pen){R(72,158,16,7,K);R(73,159,14,5,W);R(79,159,2,5,K);R(79,159,1,5,BL);R(74,160,4,1,BL);R(74,162,3,1,BL);R(82,160,4,1,BL);if(n>0)R(82,162,Math.min(5,Math.ceil(n*5)),1,R1);
     if(pen){const px=82+Math.round(n*4),py=161+(((app.amb*10)|0)&1);R(px,py-1,1,2,K);P(px+1,py-2,R2);P(px+2,py-3,R2);P(px+2,py-4,Y1)}}
   function renderWorld(tl,t,amb){
-    const e=tl.ev,s=night?0:1,sc=tl.sc,I=SC[sc];
+    const e=tl.ev,s=night?0:1,sc=tl.sc,I=tl.I,gold=!!tl.visitor;
     WB.set(STATIC[s]);B=WB;
     for(const[x,y,k]of FLOWERS[s])drawFlower(x,y,k,((amb*1.4+x*0.13)|0)&1);
     WINS.forEach((w,i)=>winGlass(w[0],w[1],w[2],w[3],night,night&&hs((amb*0.6)|0,i,9)>0.84?1+(i&1):0));
@@ -771,20 +850,19 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     // gate
     let armF=0;if(e.arm!==undefined)armF=clamp((t-e.arm)/0.45)-clamp((t-(e.leave+0.5))/0.45);
     gateArm(Math.round(clamp(armF)*3)/3);
-    let ls='off';if(t>=e.scan&&t<e.lightOff)ls=t<e.lightFix?'RYG'[(((t-e.scan)/0.13)|0)%3]:e.result;
-    gateLights(ls,amb);
-    if(sc===3&&t>=e.lightFix&&t<e.lightFix+1.7)bzzt(t,t-e.lightFix);
-    const winOn=e.win!==undefined&&t>=e.win&&t<e.close+0.4;
+    gateLights(lightAt(tl,t),amb);
+    if(tl.kind==='R'&&t>=e.lightFix&&t<e.lightFix+1.7)bzzt(t,t-e.lightFix);
+    const winOn=(e.win!==undefined&&t>=e.win&&t<e.close+0.4)||(e.deskOn!==undefined&&t>=e.deskOn);
     deskScreen(winOn?1:0,amb);
     drawBelt(payOn&&t>=e.atFac+0.2,amb);
     // inbox letter + flight to the agent
     if(t>=e.letter&&t<e.grabDone){let lx=39,ly=62;
       if(t<e.grab){const u=clamp((t-e.letter)/0.55),d=1-u;ly-=Math.round(d*d*22);if(u>=1){const k=((amb*5)|0)&1;R(46,56,1,5,k?Y1:Y2);R(44,58,5,1,k?Y1:Y2);P(46,58,W)}}
       else{const p=fly(39,62,A.x+1,A.y-9,clamp((t-e.grab)/0.45));lx=Math.round(p[0]);ly=Math.round(p[1])}
-      letterIcon(lx,ly)}
+      letterIcon(lx,ly,gold)}
     // letter given to the factory / the logbook
-    if(tl.pay&&t>=e.give&&t<e.give+0.45){const p=fly(A.x+1,A.y-9,FX-3,FY+9,(t-e.give)/0.45);letterIcon(Math.round(p[0]),Math.round(p[1]))}
-    if(e.giveHome!==undefined&&t>=e.giveHome&&t<e.giveHome+0.45){const p=fly(A.x+1,A.y-9,76,156,(t-e.giveHome)/0.45);letterIcon(Math.round(p[0]),Math.round(p[1]))}
+    if(tl.pay&&t>=e.give&&t<e.give+0.45){const p=fly(A.x+1,A.y-9,FX-3,FY+9,(t-e.give)/0.45);letterIcon(Math.round(p[0]),Math.round(p[1]),gold)}
+    if(e.giveHome!==undefined&&t>=e.giveHome&&t<e.giveHome+0.45){const p=fly(A.x+1,A.y-9,76,156,(t-e.giveHome)/0.45);letterIcon(Math.round(p[0]),Math.round(p[1]),gold)}
     // coins
     if(tl.pay&&t>=e.coins){const vanish=t>=e.coinsEnd;for(let i=0;i<7;i++){const tau=t-(e.coins+i*COIN_GAP);if(tau<0)continue;
       if(vanish&&((((t-e.coinsEnd)*14)|0)&1))continue;if(t>e.coinsEnd+0.7)continue;
@@ -795,7 +873,8 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
       coin(x,y,ph);
       if(tau>=BELT_T-0.04&&tau<BELT_T+0.16)spark(207,by-6+(((tau*20)|0)&1));
       if(tau>=BELT_T+ARC_T&&tau<BELT_T+ARC_T+1.05&&((((amb*6)|0)+i*3)%8)===0)spark(lx+4,ly-6)}}
-    if(tl.pay&&t>=e.tag&&t<e.tag+3.4){const by=127-(Math.min(5,(t-e.tag)*14)|0),w=55;
+    const tagT=tl.visitor?e.tagAt:e.tag;
+    if(tl.pay&&t>=tagT&&t<tagT+3.4){const by=127-(Math.min(5,(t-tagT)*14)|0),w=55;
       RR(186,by,w,21,K);RR(187,by+1,w-2,19,W);R(188,by+1,w-4,1,WH);
       R(GX-2,by+21,5,1,W);P(GX-3,by+21,K);P(GX+3,by+21,K);R(GX-1,by+22,3,1,W);P(GX-2,by+22,K);P(GX+2,by+22,K);P(GX-1,by+23,K);P(GX,by+23,W);P(GX+1,by+23,K);P(GX,by+24,K);
       const ax=Math.round(213.5-textW(I.amt)/2);text(I.amt,ax,by+4,RG1);text(I.amt,ax+1,by+4,RG1);
@@ -803,7 +882,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     // lectern book
     const wp=e.write===undefined?0:clamp((t-e.write)/1.3);
     bookPage(t>=e.log?1:wp,e.write!==undefined&&t>=e.write&&t<e.log+0.5);
-    if(e.log!==undefined&&t>=e.log&&t<e.log+3.2){const s2=rfid(app.runRF)+' '+e.word.split(' ').pop(),w=textW(s2)+10,y=189-(Math.max(0,1-(t-e.log)*6)*3|0),x=80-(w>>1),bad=/BLOCKED|REJECTED/.test(s2);
+    if(e.log!==undefined&&t>=e.log&&t<e.log+3.2){const s2=tl.visitor?tl.entry.id+' '+e.tag:rfid(app.runRF)+' '+e.word.split(' ').pop(),w=textW(s2)+10,y=189-(Math.max(0,1-(t-e.log)*6)*3|0),x=80-(w>>1),bad=/BLOCKED|REJECTED|NOT/.test(s2);
       RR(x,y,w,12,K);RR(x+1,y+1,w-2,10,W);R(x+2,y+1,w-4,1,WH);text(s2,x+5,y+3,bad?R1:RG1)}
     // gate card + stamp (drawn under the agent so emotes stay on top)
     drawCard(tl,t,sc);
@@ -814,6 +893,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     if(e.laugh!==undefined&&t>=e.laugh&&t<e.laugh+5)oy=(((t*13)|0)&1)?-1:0;
     const fr=A.mv?((((t*(A.run?11:6.5))|0)&1)+1):0;
     agentShadow(A.x+ox,A.y);robot(A.x+ox,A.y,A.f,fr,{hold,blink:(t%3.3)<0.12,dy:oy});
+    if(gold)starBadge(A.x+ox+(A.f==='right'?-15:10),A.y-20+oy-(((amb*3)|0)&1));
     for(const em of tl.em)if(t>=em.a&&t<em.b)emote(em.n,A.x+ox,A.y-21+oy,t,amb);
     // ambient life: fireflies at dusk, butterflies by day
     for(const f of FF){const x=Math.round(f[0]+Math.sin(amb*0.7+f[2])*9),y=Math.round(f[1]+Math.cos(amb*0.9+f[3])*6);
@@ -824,17 +904,17 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   }
   function drawCard(tl,t,sc){
     const e=tl.ev;if(t<e.card||t>=e.cardEnd+0.3)return;
-    const I=SC[sc],u=Math.min(1,(t-e.card)/0.3),v=Math.max(0,(t-e.cardEnd)/0.3);let p=v>0?1-v:u;p=Math.ceil(p*4)/4;
+    const I=tl.I,u=Math.min(1,(t-e.card)/0.3),v=Math.max(0,(t-e.cardEnd)/0.3);let p=v>0?1-v:u;p=Math.ceil(p*4)/4;
     const cw=Math.round(CARD.w*p),ch=Math.round(CARD.h*p),x=CARDX-(cw>>1),y=CARDTOP+((CARD.h-ch)>>1);
     R(x+2,y+2,cw,ch,K);R(x,y,cw,ch,K);if(cw>4&&ch>4)R(x+1,y+1,cw-2,ch-2,W);
     if(p<1){if(cw>8&&ch>8)FR(x+2,y+2,cw-4,ch-4,K);return}
     FR(x+2,y+2,cw-4,ch-4,K);
-    textC('REFUND '+I.o,CARDX,y+6,R1);R(x+9,y+15,cw-18,1,BL);
-    textC(I.amt,CARDX,y+19,sc===3?R2:K,2);R(x+9,y+36,cw-18,1,BL);
-    ROWS[sc].forEach((r,i)=>{const ry=y+40+i*20,shown=t>=e.scan+0.25+i*0.3;
+    textC(tl.visitor?(I.o?I.id+' REFUND '+I.o:'YOUR REQUEST '+I.id):'REFUND '+I.o,CARDX,y+6,R1);R(x+9,y+15,cw-18,1,BL);
+    textC(I.amt||'NO AMOUNT',CARDX,y+19,tl.kind==='R'?R2:K,2);R(x+9,y+36,cw-18,1,BL);
+    tl.rows.forEach((r,i)=>{const ry=y+40+i*20,shown=t>=e.scan+0.25+i*0.3;
       ruleBox(x+9,ry+2,r[2],shown,app.amb);text(r[0],x+25,ry,shown&&r[2]<0?R1:K);text(r[1],x+25,ry+9,shown&&r[2]<0?R1:BL)});
     const zy=y+ch-14;                                    // bottom strip: tag or stamp
-    if(sc===2&&t>=e.lightFix){const tw=textW('NEEDS A HUMAN');R(CARDX-(tw>>1)-5,zy-7,tw+10,13,K);R(CARDX-(tw>>1)-4,zy-6,tw+8,11,Y2);text('NEEDS A HUMAN',CARDX-(tw>>1),zy-4,K)}
+    if(tl.kind==='Y'&&t>=e.lightFix){const tw=textW('NEEDS A HUMAN');R(CARDX-(tw>>1)-5,zy-7,tw+10,13,K);R(CARDX-(tw>>1)-4,zy-6,tw+8,11,Y2);text('NEEDS A HUMAN',CARDX-(tw>>1),zy-4,K)}
     if(e.stamp!==undefined){
       const sx=CARDX,sy=zy,dt=t-e.stamp;
       if(dt>=0)stampMark(e.stampKind,sx,sy);
@@ -891,7 +971,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     renderWorld(tl,t,amb);
     const[dx,dy]=shakeAt(tl,t);compose(dx,dy);B=OUT;
     const e=tl.ev;
-    if(e.red!==undefined&&tl.sc===3&&t>=e.red&&t<e.red+1.9){const k=t-e.red;
+    if(e.red!==undefined&&tl.kind==='R'&&t>=e.red&&t<e.red+1.9){const k=t-e.red;
       if(k<0.12||(k>0.28&&k<0.4))for(let y=0;y<SH;y++)for(let x=0;x<SW;x++)if(((x+y)&1)===0)OUT[y*SW+x]=R1;
       if((((k*4)|0)&1)===0){for(let y=0;y<SH;y++)for(let x=0;x<SW;x++)if(x<4||y<4||x>=SW-4||y>=SH-4)OUT[y*SW+x]=(((x+y)>>2)&1)?R2:K}}
     drawHumanWin(tl,t,amb);
@@ -911,7 +991,11 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     const waiting=app.scene===2&&!app.frozen&&t>=e.winOpen&&t<e.decide&&!app.decided&&!app.logOpen&&!app.rulesOpen;
     bA.hidden=!waiting;bR.hidden=!waiting;
     // hook 2: tell the page when the robot's stop changes (once per change, derived from the timeline)
-    const st=stageAt(tl,t);if(st!==lastStage){lastStage=st;if(options.onStage)options.onStage(st)}
+    // the gate light and the visitor's play, readable without the pixels (tests, tools)
+    const gl={off:'off',R:'red',Y:'yellow',G:'green'}[lightAt(tl,t)]||'checking',vs=tl.visitor?'playing':'idle';
+    if(root.dataset.gateLight!==gl)root.dataset.gateLight=gl;if(root.dataset.visitor!==vs)root.dataset.visitor=vs;
+    const st=stageAt(tl,t),ra=st||'walking';if(root.dataset.robotAt!==ra)root.dataset.robotAt=ra;
+    if(st!==lastStage){lastStage=st;if(options.onStage)options.onStage(st)}
     // hook 4: tell the page when a control changes (once per change), so it can draw its own buttons
     const ck=[app.scene,app.auto,night,sfxOn,app.pace,app.logOpen,app.rulesOpen].join('|');
     if(ck!==lastCtl){lastCtl=ck;if(options.onControls)options.onControls({scene:app.scene,auto:app.auto,night,sound:sfxOn,pace:app.pace,logOpen:app.logOpen,rulesOpen:app.rulesOpen})}
@@ -1005,7 +1089,13 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     bday.setAttribute('aria-label',night?'Switch to the day palette':'Switch to the night palette');
     bsound.setAttribute('aria-label',sfxOn?'Sound effects on. Press to mute':'Sound effects off. Press to unmute');
   }
-  function commitRun(){if(app.frozen)return;const tl=getTL(app.scene,app.dec);if(app.t>=tl.ev.log){app.hist.push(makeEntry(app.scene,app.dec,app.runRF));app.runRF++;if(app.hist.length>12)app.hist.shift()}}
+  function commitRun(){if(app.frozen)return;const tl=getTL(app.scene,app.dec);if(app.t>=tl.ev.log){app.hist.push(entryOf(tl));if(!tl.visitor)app.runRF++;if(app.hist.length>12)app.hist.shift()}}
+  function playVisitor(v){
+    if(app.frozen)return;commitRun();
+    if(app.scene!==4)app.resume=app.scene;
+    TLS['4']=buildVisitorTL(v);
+    app.scene=4;app.t=0;app.dk='';app.dec='A';app.decided=false;app.info=null;app.logOpen=false;app.rulesOpen=false;app.paused=false;refreshLabels();
+  }
   function setScene(n,quiet){commitRun();if(!quiet)sfx('click');if(app.scene===2)app.lastDec=app.dec;app.scene=n;app.t=0;app.dec='A';app.decided=false;app.info=null;refreshLabels()}
   function decide(d){
     if(app.frozen||app.scene!==2||app.decided||app.logOpen||app.rulesOpen)return;const tl=getTL(2,'A'),e=tl.ev;
@@ -1054,10 +1144,10 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   function tick(now){
     if(dead)return;
     const dt=Math.min(0.1,(now-last)/1000);last=now;app.amb+=dt;if(!(app.paused||app.logOpen||app.rulesOpen))app.rt+=dt;
-    const tl=getTL(app.scene,app.dec);const mv=agentAt(tl,app.t).mv;let nt=app.t+((app.paused||app.logOpen||app.rulesOpen)?0:dt*app.pace*(mv?1:DWELL));
+    const tl=getTL(app.scene,app.dec);const mv=agentAt(tl,app.t).mv;let nt=app.t+((app.paused||app.logOpen||app.rulesOpen)?0:dt*app.pace*boost*(mv?1:DWELL));
     if(app.scene===2&&!app.decided&&app.t<tl.ev.decide&&nt>=tl.ev.decide)nt=tl.ev.decide-0.001;
     app.t=nt;
-    if(app.t>=tl.dur){if(app.auto)setScene(app.scene%3+1,true);else setScene(app.scene,true)}
+    if(app.t>=tl.dur){if(app.scene===4)setScene(app.resume||1,true);else if(app.auto)setScene(app.scene%3+1,true);else setScene(app.scene,true)}
     sfxRun(getTL(app.scene,app.dec),Math.min(app.t,getTL(app.scene,app.dec).dur));
     frameRender();raf=requestAnimationFrame(tick);
   }
@@ -1067,6 +1157,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     setScene(n){if(dead)return;if(n===1||n===2||n===3){sfxArm();setScene(n)}},
     press(key){if(dead)return;sfxArm();handleKey(String(key).toLowerCase())},
     overlayOpen(){return !dead&&(app.logOpen||app.rulesOpen)},
+    playVisitor(v){if(!dead)playVisitor(v)},
     destroy(){
     if(dead)return;dead=true;
     cancelAnimationFrame(raf);if(roRaf)cancelAnimationFrame(roRaf);if(ro)ro.disconnect();
