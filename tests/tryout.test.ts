@@ -4,7 +4,7 @@ import type { AskModel } from "../lib/agent.ts";
 import { openDatabase } from "../lib/db.ts";
 import { seed } from "../lib/seed.ts";
 import { customerReceipts, MESSAGE_MAX, NEW_CUSTOMER, recentTries, tryInputProblem, tryRequest } from "../lib/tryout.ts";
-import { DAILY_LIMIT_WORDS, HOURLY_LIMIT_WORDS, readVisitorId, spendingProblem, SWITCHED_OFF_WORDS, tryLimits } from "../lib/visitor.ts";
+import { DAILY_LIMIT_WORDS, HOURLY_LIMIT_WORDS, readVisitorId, spendingProblem, SWITCHED_OFF_WORDS, tryLimits, triesLeft } from "../lib/visitor.ts";
 
 // "Try it yourself" runs a typed-in request down the same path as any Inbox
 // request. A stand-in plays the agent: no AI calls.
@@ -183,6 +183,20 @@ describe("try it yourself: spending limits on the real agent", () => {
     // An hour after the first try, one slot is free again.
     await tryRequest(db, request, ask, { visitorId: ME, now: "2026-11-16T13:00:01Z", limits });
     expect(calls.n).toBe(4);
+  });
+
+  it("tries left is the smaller of the day's and the visitor's hour, and 0 when switched off", async () => {
+    const db = freshDb();
+    const limits = { daily: 3, visitorHourly: 2 };
+    const { ask } = countingAgent();
+    expect(triesLeft(db, null, NOW, limits)).toBe(2);
+    await tryRequest(db, request, ask, { visitorId: ME, now: NOW, limits });
+    expect(triesLeft(db, ME, NOW, limits)).toBe(1);
+    expect(triesLeft(db, SOMEONE_ELSE, NOW, limits)).toBe(2);
+    await tryRequest(db, request, ask, { visitorId: SOMEONE_ELSE, now: NOW, limits });
+    await tryRequest(db, request, ask, { visitorId: SOMEONE_ELSE, now: NOW, limits });
+    expect(triesLeft(db, ME, NOW, limits)).toBe(0); // the day is used up
+    expect(triesLeft(db, null, NOW, { ...limits, enabled: false })).toBe(0);
   });
 
   it("the limits default to 20 a day and 5 per visitor per hour, and can be set from the environment", () => {

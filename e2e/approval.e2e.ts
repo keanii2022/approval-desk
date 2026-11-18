@@ -33,7 +33,7 @@ const card = (page: Page, requestId: string) => page.getByRole("article", { name
 
 test("Approval screen: shows what a person needs: the message, why, what the agent said, and what was paid and what is left", async ({ page }) => {
   await page.goto("/approvals");
-  await expect(page.getByRole("heading", { name: "Waiting for you (3)" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Practice requests (3)" })).toBeVisible();
 
   const theo = card(page, "REQ-002");
   await expect(theo).toContainText("Theo Achterberg");
@@ -54,7 +54,7 @@ test("Approval screen: approve: the refund is paid, the request leaves the queue
   await press(page, card(page, "REQ-002").getByRole("button", { name: "Approve and pay" }));
 
   await expect(page.getByRole("status")).toHaveText("Approved and paid. Refund RF016 is done.");
-  await expect(page.getByRole("heading", { name: "Waiting for you (2)" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Practice requests (2)" })).toBeVisible();
   await expect(card(page, "REQ-002")).toHaveCount(0);
 
   expect(newRefunds()).toEqual([{ id: "RF016", order_id: "O1002", amount_cents: 15000 }]);
@@ -78,7 +78,7 @@ test("Approval screen: reject without a note is refused, and nothing changes (RE
 
   await expect(theo.getByRole("alert")).toHaveText("A note is required to reject a refund");
   await expect(theo).toBeVisible(); // still waiting
-  await expect(page.getByRole("heading", { name: "Waiting for you (3)" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Practice requests (3)" })).toBeVisible();
 
   // A note of only spaces is the same as no note.
   await theo.getByLabel(/Why are you rejecting/).fill("    ");
@@ -170,7 +170,8 @@ test("Approval screen: when nothing is waiting, the page says so", async ({ page
   }
   await card(page, "REQ-018").getByLabel(/Why are you rejecting/).fill("No");
   await press(page, card(page, "REQ-018").getByRole("button", { name: "Reject" }));
-  await expect(page.getByText("Nothing is waiting for you.")).toBeVisible();
+  await expect(page.getByText(/Nothing of yours is waiting/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Practice requests/ })).toHaveCount(0);
 });
 
 test("Approval screen: an approval the executor can't pay is shown as unpaid, and can be paid again once the problem is fixed (REQ-002)", async ({ page }) => {

@@ -25,6 +25,27 @@ body:has(.village-home) { margin: 0; background: #24283f; }
   text-decoration: underline; text-underline-offset: 3px; cursor: pointer; display: inline;
 }
 
+/* quick tests: three pixel buttons under the village, each a real request */
+.vh-tests { max-width: 46rem; margin: 4px auto 18px; text-align: center; }
+.vh-tests h2 { margin: 0 0 2px; font-size: 1rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--lemon); }
+.vh-tests-sub { margin: 0 0 12px; color: var(--lilac); }
+.vh-left { color: var(--cream); white-space: nowrap; }
+.vh-test-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.village-home .vh-test {
+  font: inherit; color: var(--ink); background: var(--cream); border: 2px solid var(--ink); border-radius: 0;
+  box-shadow: 0 4px 0 var(--deep); padding: 10px 8px 8px; cursor: pointer; display: grid; gap: 2px; text-align: center;
+}
+.village-home .vh-test:hover { background: var(--lemon); }
+.village-home .vh-test:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--deep); }
+.village-home .vh-test:disabled { opacity: 0.55; cursor: not-allowed; transform: none; background: var(--cream); }
+.vh-test-name { font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.vh-test-price { color: #a3262f; }
+.vh-test-hint { font-size: 0.8em; color: #4a3f6e; }
+.vh-tests-status { min-height: 1.6em; margin-top: 10px; }
+.vh-tests-status p { margin: 0; }
+.vh-tests-own { margin: 6px 0 0; color: var(--lilac); }
+@media (max-width: 560px) { .vh-test-buttons { grid-template-columns: 1fr; } .village-home .vh-test { grid-template-columns: 1fr auto; text-align: left; align-items: center; } }
+
 /* the panel: a window drawn like the village's device frame */
 .vh-backdrop {
   position: fixed; inset: 0; z-index: 10; background: rgba(10, 6, 24, 0.72);

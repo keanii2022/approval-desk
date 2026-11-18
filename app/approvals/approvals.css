@@ -1,91 +1,143 @@
+/* The approval screen and the try page. Same dusk palette as the village, with a plain,
+   readable font for the words a person decides with. Dark only, like the village. */
 :root {
-  --bg: #f6f5fa;
-  --fg: #1d1b2b;
-  --muted: #5d5a73;
-  --card: #ffffff;
-  --line: #d9d6e6;
-  --accent: #4a3f9f;
-  --good: #1f6b3a;
-  --good-bg: #e3f3e8;
-  --bad: #a3262f;
-  --bad-bg: #fbe7e8;
-  --warn-bg: #fff3d6;
-  --warn: #7a5200;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #16142a;
-    --fg: #ecebf5;
-    --muted: #a9a6c4;
-    --card: #211f3a;
-    --line: #3a3760;
-    --accent: #9d93f0;
-    --good: #7be08a;
-    --good-bg: #17331f;
-    --bad: #ff9aa0;
-    --bad-bg: #3b1a1d;
-    --warn-bg: #3a2f10;
-    --warn: #ffd37a;
-  }
+  --bg: #24283f;
+  --fg: #f5efd6;
+  --muted: #b2aad0;
+  --card: #2b2050;
+  --card-hi: #4a3a86;
+  --well: #1d1640;
+  --line: #4a3a86;
+  --deep: #0a0618;
+  --accent: #f2e8a8;
+  --coral: #e8806e;
+  --good: #6cc48a;
+  --good-ink: #0d2a17;
+  --bad: #ff9aa0;
+  --bad-bg: #3b1a1d;
+  --warn: #e0b84a;
+  --warn-bg: #3a2f10;
 }
 body:has(.approvals) {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
+  color-scheme: dark;
   font: 16px/1.5 system-ui, sans-serif;
 }
 main.approvals {
-  max-width: 62rem;
+  max-width: 56rem;
   margin: 0 auto;
-  padding: 1.5rem 1rem 4rem;
+  padding: 1.25rem 16px 4rem;
 }
 .approvals a { color: var(--accent); }
-.approvals h1 { margin: 0.25rem 0; }
-.approvals h2 { margin-top: 2rem; }
+.approvals h1 { margin: 0.5rem 0 0.25rem; font-size: 1.9rem; letter-spacing: -0.01em; }
+.approvals h2 { margin: 2.25rem 0 0.25rem; font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem; }
 .approvals h3, .approvals h4 { margin: 0.75rem 0 0.25rem; }
 .approvals .lede, .approvals .muted { color: var(--muted); }
+.approvals .lede { margin: 0; max-width: 40rem; }
+.approvals .back { font-size: 0.9rem; margin: 0; }
+.approvals .section-sub { margin: 0 0 0.75rem; color: var(--muted); font-size: 0.92rem; }
+.approvals .guards { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.75rem 0 0; padding: 0; list-style: none; }
+.approvals .guards li { font-size: 0.82rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 0.15rem 0.6rem; }
+
+/* a card: hard edges and an offset shadow, like the village's windows */
 .approvals .card {
   background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 1rem 1.25rem;
-  margin: 1rem 0;
+  border: 2px solid var(--deep);
+  box-shadow: inset 0 0 0 1px var(--card-hi), 0 4px 0 var(--deep);
+  padding: 1.1rem 1.25rem 1.25rem;
+  margin: 1rem 0 1.25rem;
 }
 .approvals .card.warn { background: var(--warn-bg); color: var(--warn); }
+
+/* one waiting request */
+.case-head { display: flex; align-items: center; gap: 0.75rem; }
+.case-head h3 { margin: 0; font-size: 1.1rem; }
+.case-head .meta { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.avatar {
+  flex: none; width: 2.4rem; height: 2.4rem; display: grid; place-items: center; font-weight: 700; font-size: 0.9rem;
+  background: var(--coral); color: var(--deep); border: 2px solid var(--deep);
+}
+.approvals .why { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.85rem 0 0; padding: 0; list-style: none; }
+.approvals .why li {
+  font-size: 0.85rem; font-weight: 600; padding: 0.2rem 0.6rem;
+  background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn);
+}
 .approvals blockquote {
-  margin: 0.5rem 0;
-  padding: 0.5rem 0.75rem;
-  border-left: 4px solid var(--line);
+  margin: 0.85rem 0 0;
+  padding: 0.65rem 0.85rem;
+  background: var(--well);
+  border-left: 4px solid var(--card-hi);
   color: var(--fg);
+  white-space: pre-wrap;
 }
-.approvals table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 0.75rem; display: block; max-width: 100%; overflow-x: auto; }
-.approvals th, .approvals td { padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
-.approvals .decision { margin-top: 1rem; padding-top: 0.5rem; border-top: 1px dashed var(--line); display: grid; gap: 0.35rem; }
-.approvals .decision textarea { max-width: 40rem; width: 100%; box-sizing: border-box; }
-.approvals input[name="amount"], .approvals textarea {
+.approvals blockquote .subject { display: block; font-weight: 700; margin-bottom: 0.15rem; }
+.approvals .agent { margin: 0.85rem 0 0; padding: 0.65rem 0.85rem; border: 1px dashed var(--line); }
+.approvals .agent .label { margin: 0; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--warn); font-weight: 700; }
+.approvals .agent p { margin: 0.15rem 0 0; }
+.approvals .agent .reason { color: var(--muted); font-size: 0.92rem; }
+
+/* the two decisions side by side on a wide screen, stacked on a phone */
+.approvals .decide { display: grid; gap: 1rem; margin-top: 1rem; }
+@media (min-width: 760px) { .approvals .decide { grid-template-columns: 3fr 2fr; align-items: start; } }
+.approvals .decision { display: grid; gap: 0.4rem; padding: 0.85rem; background: var(--well); border: 1px solid var(--line); margin: 0; }
+.approvals .decide .decision h3 { margin: 0; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.approvals form[aria-label="Approve this refund"] h3 { color: var(--good); }
+.approvals form[aria-label="Reject this refund"] h3 { color: var(--bad); }
+.approvals .decision label { font-size: 0.9rem; color: var(--muted); }
+.approvals .decision textarea { width: 100%; box-sizing: border-box; }
+.approvals .pay-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+
+.approvals table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-bottom: 0.4rem; }
+.approvals th, .approvals td { padding: 0.35rem 0.45rem; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.approvals thead th { font-size: 0.75rem; font-weight: 600; color: var(--muted); }
+.approvals td.most { font-weight: 700; color: var(--good); }
+/* on a phone each order becomes a little block of labelled lines instead of a wide table */
+@media (max-width: 640px) {
+  .approvals .orders thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .approvals .orders, .approvals .orders tbody, .approvals .orders tr, .approvals .orders th, .approvals .orders td { display: block; }
+  .approvals .orders tr { padding: 0.35rem 0; border-bottom: 1px solid var(--line); }
+  .approvals .orders th, .approvals .orders td { border: 0; padding: 0.1rem 0; white-space: normal; }
+  .approvals .orders td::before { content: attr(data-label) ": "; color: var(--muted); }
+}
+/* the try page's receipt table stays a table, scrolling sideways if it must */
+.approvals .try-form table { display: block; overflow-x: auto; }
+
+.approvals input[name="amount"], .approvals textarea, .approvals select, .approvals input:not([type]), .approvals input[type="text"] {
   font: inherit;
-  padding: 0.4rem 0.5rem;
+  padding: 0.45rem 0.55rem;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--bg);
+  border-radius: 0;
+  background: var(--deep);
   color: var(--fg);
 }
-.approvals input[name="amount"] { max-width: 12rem; }
+.approvals input[name="amount"] { width: 8rem; }
 .approvals button {
   font: inherit;
+  font-weight: 700;
   padding: 0.5rem 1rem;
-  border-radius: 6px;
-  border: 1px solid var(--line);
-  background: var(--card);
-  color: var(--fg);
+  border-radius: 0;
+  border: 2px solid var(--deep);
+  box-shadow: 0 3px 0 var(--deep);
+  background: var(--fg);
+  color: var(--deep);
   cursor: pointer;
   justify-self: start;
 }
-.approvals button.approve { background: var(--good-bg); border-color: var(--good); color: var(--good); }
-.approvals button.reject { background: var(--bad-bg); border-color: var(--bad); color: var(--bad); }
-.approvals button:disabled { opacity: 0.6; cursor: progress; }
-.approvals button:focus-visible, .approvals input:focus-visible, .approvals textarea:focus-visible, .approvals a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.approvals .problem { color: var(--bad); background: var(--bad-bg); padding: 0.4rem 0.6rem; border-radius: 6px; margin: 0.25rem 0; }
-.approvals .banner { background: var(--good-bg); color: var(--good); padding: 0.6rem 0.8rem; border-radius: 6px; }
+.approvals button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--deep); }
+.approvals button.approve { background: var(--good); color: var(--good-ink); }
+.approvals button.reject { background: var(--bad); color: var(--deep); }
+.approvals button:disabled { opacity: 0.6; cursor: progress; transform: none; }
+.approvals button:focus-visible, .approvals input:focus-visible, .approvals textarea:focus-visible, .approvals select:focus-visible,
+.approvals a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.approvals .problem { color: var(--bad); background: var(--bad-bg); padding: 0.4rem 0.6rem; margin: 0.25rem 0; }
+.approvals .banner { background: var(--good); color: var(--good-ink); font-weight: 600; padding: 0.6rem 0.8rem; border: 2px solid var(--deep); }
 .approvals .banner.warn { background: var(--warn-bg); color: var(--warn); }
-.approvals .empty { padding: 1rem; border: 1px dashed var(--line); border-radius: 8px; color: var(--muted); }
+.approvals .empty { padding: 1rem 1.1rem; border: 2px dashed var(--line); color: var(--muted); margin: 0.75rem 0; }
+.approvals .empty p { margin: 0 0 0.6rem; }
+.approvals .empty p:last-child { margin: 0; }
+.approvals .empty a {
+  display: inline-block; font-weight: 700; text-decoration: none; padding: 0.45rem 0.9rem;
+  background: var(--good); color: var(--good-ink); border: 2px solid var(--deep); box-shadow: 0 3px 0 var(--deep);
+}

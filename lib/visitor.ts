@@ -65,19 +65,31 @@ export const SWITCHED_OFF_WORDS = "The live agent is switched off right now. The
 export const DAILY_LIMIT_WORDS = "The agent is done for today, come back tomorrow.";
 export const HOURLY_LIMIT_WORDS = "That's all your tries for this hour. Come back in a bit.";
 
+function triedCounts(db: DatabaseSync, visitorId: string | null, now: string): { today: number; thisHour: number } {
+  ensureVisitorTable(db);
+  const { n: today } = db.prepare("SELECT COUNT(*) AS n FROM try_owners WHERE substr(tried_at, 1, 10) = ?").get(now.slice(0, 10)) as { n: number };
+  if (visitorId === null) return { today, thisHour: 0 };
+  const hourAgo = new Date(Date.parse(now) - 60 * 60 * 1000).toISOString().slice(0, 19) + "Z";
+  const { n: thisHour } = db
+    .prepare("SELECT COUNT(*) AS n FROM try_owners WHERE visitor_id = ? AND tried_at > ?")
+    .get(visitorId, hourAgo) as { n: number };
+  return { today, thisHour };
+}
+
 // Says in plain words why one more try isn't allowed right now, or null if it is.
 // "A day" is the UTC calendar day; "an hour" is the last 60 minutes.
 export function spendingProblem(db: DatabaseSync, visitorId: string, now: string, limits: TryLimits = tryLimits()): string | null {
   if (limits.enabled === false) return SWITCHED_OFF_WORDS;
-  ensureVisitorTable(db);
-  const today = now.slice(0, 10);
-  const { n: triedToday } = db.prepare("SELECT COUNT(*) AS n FROM try_owners WHERE substr(tried_at, 1, 10) = ?").get(today) as { n: number };
-  if (triedToday >= limits.daily) return DAILY_LIMIT_WORDS;
-
-  const hourAgo = new Date(Date.parse(now) - 60 * 60 * 1000).toISOString().slice(0, 19) + "Z";
-  const { n: triedThisHour } = db
-    .prepare("SELECT COUNT(*) AS n FROM try_owners WHERE visitor_id = ? AND tried_at > ?")
-    .get(visitorId, hourAgo) as { n: number };
-  if (triedThisHour >= limits.visitorHourly) return HOURLY_LIMIT_WORDS;
+  const tried = triedCounts(db, visitorId, now);
+  if (tried.today >= limits.daily) return DAILY_LIMIT_WORDS;
+  if (tried.thisHour >= limits.visitorHourly) return HOURLY_LIMIT_WORDS;
   return null;
+}
+
+// How many more tries this visitor gets right now: the smaller of what's left today (for
+// everyone) and what's left of their hour. A visitor with no cookie yet has a full hour.
+export function triesLeft(db: DatabaseSync, visitorId: string | null, now: string, limits: TryLimits = tryLimits()): number {
+  if (limits.enabled === false) return 0;
+  const tried = triedCounts(db, visitorId, now);
+  return Math.max(0, Math.min(limits.daily - tried.today, limits.visitorHourly - tried.thisHour));
 }

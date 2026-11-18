@@ -13,6 +13,8 @@
 .village-canvas button[aria-pressed=true]{background:#e8806e}
 .village-canvas .village-bsound[aria-pressed=true],.village-canvas .village-bauto[aria-pressed=true]{background:#6cc48a}
 .village-canvas button[hidden]{visibility:hidden}
+.village-bar button[hidden]{display:none}
+@media (hover:none){.village-keys{display:none}} /* key hints mean nothing on a phone */
 .village-canvas .village-bA{background:#6cc48a}.village-canvas .village-bA:hover{background:#92d8a8}
 .village-canvas .village-bR{background:#e8988a}.village-canvas .village-bR:hover{background:#f0aca0}
 .village-canvas button:focus-visible{outline:calc(var(--s)*1px) solid #f2e8a8;outline-offset:calc(var(--s)*1px)}

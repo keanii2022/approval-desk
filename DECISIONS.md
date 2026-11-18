@@ -244,3 +244,9 @@ Template:
 **Left for later:**
 - `.env.example` should list the optional settings (`AGENT_MODEL`, `TRY_ENABLED`, `TRY_DAILY_LIMIT`, `TRY_VISITOR_HOURLY_LIMIT`, `APPROVAL_DESK_DB`). This session isn't allowed to edit that file; the owner can add them.
 - The per-step calls are listed under "Calls to review" in `docs/PLAN.md`.
+
+## Front page polish before going live (2026-11-18)
+
+**Built:** the three scene buttons and auto-play are gone from the front page. One Demo button (key D) plays the three made-up stories in a row with no AI, as a fallback if the live agent is off or out of tries. Next to it, three quick tests (Small refund $24, Big refund $150, Sneaky $500) each send a ready-made request to the real agent in one tap, and the village plays what really happened. The page shows how many tries a visitor has left. Between requests the robot waits at home. The approval screen got the village's look: your own waiting requests come first (with a clear empty state on a first visit), and the shop's made-up ones sit below under "Practice requests". Each card shows why a person must decide as a tag, the message, the agent's suggestion, then approve and reject side by side.
+**Decided (owner):** quick tests count against the same limits as typed requests (5 per visitor per hour, 20 a day for everyone).
+**Decided:** the quick tests don't promise an outcome. They're real calls, so the agent may answer differently than the labels suggest, and that's the point.

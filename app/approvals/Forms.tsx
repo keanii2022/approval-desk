@@ -46,7 +46,7 @@ export function ApproveForm(props: {
     <form onSubmit={sendWith(action)} className="decision" noValidate aria-label="Approve this refund">
       <input type="hidden" name="gateEntryId" value={props.gateEntryId} />
       <h3>Approve</h3>
-      <table>
+      <table className="orders">
         <thead>
           <tr>
             <th scope="col">{props.fixed ? "Order" : "Choose the order"}</th>
@@ -71,21 +71,25 @@ export function ApproveForm(props: {
                   {o.id}
                 </label>
               </th>
-              <td>{o.item}</td>
-              <td>{o.placedOn}</td>
-              <td>{o.paid}</td>
-              <td>{o.refunded}</td>
-              <td>{o.left}</td>
+              <td data-label="Item">{o.item}</td>
+              <td data-label="Placed">{o.placedOn}</td>
+              <td data-label="Customer paid">{o.paid}</td>
+              <td data-label="Already refunded">{o.refunded}</td>
+              <td data-label="Most you can refund" className="most">
+                {o.left}
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
       <label htmlFor={`amount-${props.gateEntryId}`}>Refund amount (dollars). You can change it.</label>
-      <input id={`amount-${props.gateEntryId}`} name="amount" inputMode="decimal" defaultValue={props.suggestedAmount} autoComplete="off" />
+      <div className="pay-row">
+        <input id={`amount-${props.gateEntryId}`} name="amount" inputMode="decimal" defaultValue={props.suggestedAmount} autoComplete="off" />
+        <button type="submit" className="approve" disabled={pending || !ready}>
+          Approve and pay
+        </button>
+      </div>
       <Problem state={state} />
-      <button type="submit" className="approve" disabled={pending || !ready}>
-        Approve and pay
-      </button>
     </form>
   );
 }

@@ -2,9 +2,9 @@ import { execFileSync } from "node:child_process";
 import { DatabaseSync } from "node:sqlite";
 import { expect, test, type Page } from "@playwright/test";
 
-// The village is the front page. It plays three made-up stories on its own; the Inbox
-// stand opens the try form over it and the human desk lists the visitor's own waiting
-// requests. The test server uses the stand-in agent (AGENT_STAND_IN=1, lib/stand-in-agent.ts):
+// The village is the front page. It plays only the visitor's own, real requests: three quick
+// tests under it send ready-made ones, the Inbox stand opens the try form over it, and the
+// human desk lists the visitor's own waiting requests. The test server uses the stand-in agent (AGENT_STAND_IN=1, lib/stand-in-agent.ts):
 // a message with "small", "big" or "garbled" gets a fixed form, anything else gets no answer,
 // as if the AI were down (R6). Deterministic and free; the real AI is never called.
 
@@ -27,13 +27,11 @@ test.beforeEach(() => {
 const scene = (page: Page) => page.getByRole("img", { name: /Pixel-art village/ });
 const panel = (page: Page) => page.getByRole("dialog");
 
-// The engine draws a small canvas label into each scene button once it has mounted,
+// The engine draws a small canvas label into each of its buttons once it has mounted,
 // so from then on its keys and clicks are listened to.
-async function openVillage(page: Page) {
-  await page.goto("/");
-  await expect(page.getByRole("button", { name: /^Scene 1/ }).locator("canvas")).toBeAttached();
-  // Scene 1 never opens the approve/reject window, which would catch a click on the picture instead.
-  await page.getByRole("button", { name: /^Scene 1/ }).click();
+async function openVillage(page: Page, path = "/") {
+  await page.goto(path);
+  await expect(page.getByRole("button", { name: /palette/ }).locator("canvas")).toBeAttached();
 }
 
 // Clicks a spot given in the 320 x 240 picture's own pixels.
@@ -43,28 +41,34 @@ async function clickPicture(page: Page, x: number, y: number) {
   await scene(page).click({ position: { x: (x / 320) * box.width, y: (y / 240) * box.height } });
 }
 
-test("Village: the front page plays the three scripted stories", async ({ page }) => {
+test("Village: the front page has no made-up scenes; the robot waits for a real request", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await openVillage(page);
   await expect(scene(page)).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Scene/ })).toHaveCount(0);
+  // One demo button plays the three made-up stories (no AI), then the robot waits again.
   const frame = () => scene(page).evaluate((c) => (c as HTMLCanvasElement).toDataURL());
-  for (const n of [1, 2, 3]) {
-    const button = page.getByRole("button", { name: new RegExp(`^Scene ${n}`) });
-    await button.click();
-    await expect(button).toHaveAttribute("aria-pressed", "true");
-    const first = await frame();
-    await expect.poll(frame, { timeout: 5000 }).not.toBe(first);
-  }
+  const demo = page.getByRole("button", { name: /Play a demo/ });
+  await demo.click();
+  await expect(page.getByRole("button", { name: "Stop the demo" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".village-canvas [aria-live]")).toContainText("A NEW LETTER ARRIVES");
+  const first = await frame();
+  await expect.poll(frame, { timeout: 5000 }).not.toBe(first);
+  await page.getByRole("button", { name: "Stop the demo" }).click();
+  await expect(page.locator(".village-canvas [aria-live]")).toContainText("SEND THE AGENT A REAL REQUEST");
+  await expect(page.getByRole("button", { name: "Auto-play" })).toHaveCount(0);
+  await expect(page.locator(".village-canvas [aria-live]")).toContainText("SEND THE AGENT A REAL REQUEST");
   expect(errors).toEqual([]);
 });
 
-test("Village: says what this is, links to GitHub, and says the stories are made up", async ({ page }) => {
+// The browser tests raise the limits to 100 (playwright.config.ts), so the count starts there.
+test("Village: says what this is, links to GitHub, and offers the real agent", async ({ page }) => {
   await openVillage(page);
   await expect(page.getByText(/A refund agent for an invented shop/)).toBeVisible();
   await expect(page.getByRole("link", { name: "Code on GitHub" })).toHaveAttribute("href", "https://github.com/keanii2022/approval-desk");
-  await expect(page.getByText(/stories playing above are made up/)).toBeVisible();
-  await expect(page.getByText(/Your requests are real/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Test the real agent" })).toBeVisible();
+  await expect(page.getByText("100 tries left for you right now.")).toBeVisible();
 });
 
 test("Village: the old /village address lands on the front page", async ({ page }) => {
@@ -93,9 +97,10 @@ test("Village: key I opens the Inbox; a sent request shows its result in the pan
   await inbox.getByLabel("Write as").selectOption({ label: "Theo Achterberg" });
   await expect(inbox.getByRole("table", { name: "Theo Achterberg's orders" })).toBeVisible();
   await inbox.getByRole("button", { name: "Honest" }).click();
-  // Typing in the form never reaches the village's own keys (1 2 3 would switch the story).
+  // Typing in the form never reaches the village's own keys (L would open the logbook).
+  await inbox.getByLabel("Subject").press("L");
   await inbox.getByLabel("Subject").fill("Lamp 123 broke");
-  await expect(page.getByRole("button", { name: /^Scene 1/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(villageSays(page)).not.toContainText("Logbook");
   await inbox.getByRole("button", { name: "Send to the agent" }).click();
 
   const result = inbox.getByRole("article", { name: /TRY-\d+ result/ });
@@ -150,9 +155,7 @@ const villageSays = (page: Page) => village(page).locator("[aria-live]");
 
 // ?speed=10 plays the village ten times faster, so a whole request plays in a few seconds.
 async function openFastVillage(page: Page) {
-  await page.goto("/?speed=10");
-  await expect(page.getByRole("button", { name: /^Scene 1/ }).locator("canvas")).toBeAttached();
-  await page.getByRole("button", { name: /^Scene 1/ }).click();
+  await openVillage(page, "/?speed=10");
 }
 
 // Sends one request from the Inbox panel, checks the panel's result, then closes it to watch.
@@ -180,17 +183,27 @@ async function expectInLogbook(page: Page, text: RegExp) {
   await page.keyboard.press("Escape");
 }
 
-test("Village: a small refund plays green and the factory pays (R1, R2 pass); the stories pause, then resume", async ({ page }) => {
+test("Village: a small refund plays green and the factory pays (R1, R2 pass); then the robot waits again", async ({ page }) => {
   await openFastVillage(page);
   const id = await sendAndWatch(page, "Mara Lindqvist", "Two mugs came cracked, a small refund please.", "Refund paid.");
   await expect(village(page)).toHaveAttribute("data-visitor", "playing");
-  // The scripted stories step aside: no scene button is pressed while the visitor's request plays.
-  for (const n of [1, 2, 3]) await expect(page.getByRole("button", { name: new RegExp(`^Scene ${n}`) })).toHaveAttribute("aria-pressed", "false");
   await expect(villageSays(page)).toContainText(`YOUR REQUEST ${id} ARRIVES`);
   await expect(village(page)).toHaveAttribute("data-gate-light", "green", { timeout: 30_000 });
   await expect(village(page)).toHaveAttribute("data-robot-at", "factory", { timeout: 30_000 });
   await expectInLogbook(page, new RegExp(`${id}, \\$24\\.00, order O1001\\..*Final: REFUND PAID`));
-  await expect(page.getByRole("button", { name: /^Scene 1/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(villageSays(page)).toContainText("SEND THE AGENT A REAL REQUEST");
+});
+
+test("Village: a quick test sends a real request in one tap, plays it, and counts against the limit (R1, R2 pass)", async ({ page }) => {
+  await openFastVillage(page);
+  await page.getByRole("button", { name: /Small refund/ }).click();
+  const status = page.locator(".vh-tests-status");
+  await expect(status).toContainText("TRY-001: Refund paid.", { timeout: 30_000 });
+  await expect(page.getByText("99 tries left for you right now.")).toBeVisible();
+  await expect(village(page)).toHaveAttribute("data-visitor", "playing");
+  await expect(village(page)).toHaveAttribute("data-gate-light", "green", { timeout: 30_000 });
+  await status.getByRole("button", { name: "See what the agent filled in" }).click();
+  await expect(panel(page).getByRole("article", { name: "TRY-001 result" })).toContainText("Mara Lindqvist");
 });
 
 test("Village: a big refund plays yellow and waits at the human desk (R2)", async ({ page }) => {

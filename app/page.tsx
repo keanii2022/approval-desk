@@ -2,20 +2,22 @@ import { cookies } from "next/headers";
 import { getWaitingCases } from "../lib/approval.ts";
 import type { ReceiptCustomer } from "../lib/try-fields.ts";
 import { customerReceipts, MESSAGE_MAX, NAME_MAX, recentTries, SUBJECT_MAX } from "../lib/tryout.ts";
-import { readVisitorId, VISITOR_COOKIE } from "../lib/visitor.ts";
+import { utcNow } from "../lib/pipeline.ts";
+import { readVisitorId, triesLeft, VISITOR_COOKIE } from "../lib/visitor.ts";
 import { appDb } from "./approvals/db.ts";
 import VillageHome from "./village/VillageHome.tsx";
 import { tryView, waitingViews, type TryView, type WaitingView } from "./village/views.ts";
 
 export const dynamic = "force-dynamic";
 
-// The front door: the village plays its scripted stories, and the Inbox and the human desk
-// open panels with the visitor's own, real requests.
+// The front door: the village plays the visitor's own, real requests. Quick tests and the Inbox
+// send them; the human desk lists the ones waiting for a person.
 export default async function Home() {
   const visitor = readVisitorId((await cookies()).get(VISITOR_COOKIE)?.value);
   let customers: ReceiptCustomer[] = [];
   let tries: TryView[] = [];
   let waiting: WaitingView[] = [];
+  let left = 0;
   let problem: string | null = null;
   try {
     const db = appDb();
@@ -23,6 +25,7 @@ export default async function Home() {
       customers = customerReceipts(db);
       tries = recentTries(db, visitor).map(tryView);
       waiting = visitor ? waitingViews(getWaitingCases(db, visitor)) : [];
+      left = triesLeft(db, visitor, utcNow());
     } finally {
       db.close();
     }
@@ -34,6 +37,7 @@ export default async function Home() {
       customers={customers}
       tries={tries}
       waiting={waiting}
+      triesLeft={left}
       problem={problem}
       limits={{ subjectMax: SUBJECT_MAX, messageMax: MESSAGE_MAX, nameMax: NAME_MAX }}
     />

@@ -54,6 +54,8 @@ export interface VillageOptions {
   onControls?: (controls: VillageControls) => void;
   /** A visitor opened a place (click on it, or key I for the Inbox, H for the desk). Return true when the page handled it. */
   onPlace?: (place: VillagePlace) => boolean;
+  /** Live mode: no scripted stories. The robot waits at home until the page plays a real request. */
+  live?: boolean;
 }
 
 /** A visitor's real request, as the village plays it (scene 4). Built by the page from the real result. */
@@ -651,7 +653,13 @@ const TLS={};
 /** A built story: how long it runs, its named moments (ev), and the robot's walk as segments. */
 export interface VillageTimeline { sc: number; dec: string; dur: number; ev: Record<string, number>; seg: { t0: number; t1: number; x0: number; y0: number; x1: number; y1: number }[] }
 /** The timeline of a scene (1 to 3; scene 2 branches on the decision "A" or "R"). Built once and cached. */
-export const getTL=(sc: number,dec: string): VillageTimeline=>{const k=sc===2?'2'+dec:''+sc;return TLS[k]||(TLS[k]=build(sc,dec))};
+export const getTL=(sc: number,dec: string): VillageTimeline=>{const k=sc===2?'2'+dec:''+sc;return TLS[k]||(TLS[k]=sc===0?buildIdle():build(sc,dec))};
+/** Live mode's resting state (scene 0): the robot waits at its door and nothing is logged. */
+function buildIdle(){
+  const T=new TL(0);T.kind='G';T.I={o:'',amt:'',id:''};T.rows=[];T.ev.log=Infinity;T.ev.card=Infinity; // moments that never come; drawCard skips only when t<card
+  T.stand(12,'down');T.say(0,'SEND THE AGENT A REAL REQUEST!','PICK A TEST BELOW, OR WRITE ONE AT THE INBOX.');
+  T.dur=T.t;T.dec='A';return T;
+}
 /* ================= the visitor's own request (scene 4): same walk and props, the real gate's decision ================= */
 const VKIND={allow:'G',send_to_human:'Y',block:'R'};
 const RSHORT={R1:'MORE THAN WAS PAID',R2:'OVER THE $100 LIMIT',R3:'ORDER OVER 30 DAYS',R4:'3+ RECENT REFUNDS',R5:'NOT A PROPER FORM',R6:'AI DOWN OR UNSURE',R8:'LOGBOOK FAILED'};
@@ -659,7 +667,7 @@ const RWHY={R1:'MORE THAN WAS PAID',R2:'OVER $100',R3:'ORDER OVER 30 DAYS OLD',R
 // Visitor text goes through the pixel font, which only has capitals, digits and a little punctuation.
 const pix=(s,n=48)=>{s=String(s??'').toUpperCase().split('').filter(c=>FONT[c]).join('').replace(/\s+/g,' ').trim();return s.length>n?s.slice(0,n-1).trimEnd()+'.':s};
 /** The timeline of a visitor's real request: the walk of the scripted stories, lit by the real gate's decision. */
-export function buildVisitorTL(v: VisitorRequest): VillageTimeline {
+export function buildVisitorTL(v: VisitorRequest, live = false): VillageTimeline {
   const T=new TL(4),e=T.ev,k=VKIND[v.light]||'Y',amt=v.amountCents!=null?'$'+(v.amountCents/100).toFixed(2):'',id=pix(v.id,12),word=pix(v.word,24);
   const why=(v.rules||[]).map(r=>RWHY[r]||r).join(', ');
   T.kind=k;T.visitor=true;T.I={o:pix(v.orderId||'',8),amt,id};
@@ -677,7 +685,7 @@ export function buildVisitorTL(v: VisitorRequest): VillageTimeline {
   T.say(e.scan,'THE GATE CHECKS THE REAL RULES...');
   const home=(r,fromFac)=>{e.walkHome=T.t;T.go(r);e.atHome=T.t;if(!fromFac)e.giveHome=T.t+0.3;e.giveEnd=fromFac?e.give:e.giveHome+0.4;
     T.stand(5.0,'up');e.write=e.atHome+0.5;e.log=e.atHome+1.9;e.word=word;e.tag=word.split(' ')[0];
-    T.say(e.walkHome,'BACK HOME. THE LOGBOOK RECORDS IT.');T.say(e.log,'LOGBOOK: '+id+' '+word,'THE STORIES PICK UP AGAIN IN A MOMENT.')};
+    T.say(e.walkHome,'BACK HOME. THE LOGBOOK RECORDS IT.');T.say(e.log,'LOGBOOK: '+id+' '+word,live?'SEND ANOTHER WHENEVER YOU LIKE.':'THE STORIES PICK UP AGAIN IN A MOMENT.')};
   if(k==='G'){
     e.arm=A+1.6;e.stamp=A+1.85;e.stampKind='ok';e.thumb=A+2.4;e.cardEnd=A+4.4;
     T.emo('thumb',e.thumb,A+5.0);T.stand(2.7,'up');T.stand(3.1,'down');e.leave=T.t;e.lightOff=e.leave+0.8;
@@ -691,7 +699,7 @@ export function buildVisitorTL(v: VisitorRequest): VillageTimeline {
     T.say(e.run,'THE AGENT RUNS TO THE HUMAN DESK.');
     T.go(RT.desk,RUN);T.stand(0.15,'right');e.atDesk=T.t;e.deskOn=T.t;
     T.emo('think',e.atDesk+0.3,e.atDesk+6.0);T.stand(6.0,'right');
-    T.say(e.atDesk,'YOUR REQUEST WAITS AT THE HUMAN DESK.','YOU ARE THE PERSON. PRESS H TO DECIDE IT.');
+    T.say(e.atDesk,'YOUR REQUEST WAITS AT THE HUMAN DESK.','YOU ARE THE PERSON. OPEN THE DESK TO DECIDE.');
     home(RT.homeFromDesk,false);
   }else{
     e.stamp=A+2.2;e.stampKind='block';e.cardEnd=A+5.6;
@@ -810,7 +818,8 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   let scale=2;
   const WB=new Uint8Array(SW*SH),OUT=new Uint8Array(SW*SH),LB=new Uint8Array(SW*LOGH);
   const qs=new URLSearchParams(window.location.search);
-  const app={scene:1,pace:0.5,paused:false,logOpen:false,rulesOpen:false,hist:[],runRF:16,rt:0,dk:'',dt0:0,dec:'A',lastDec:'A',t:0,amb:0,auto:!(typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches),frozen:false,decided:false,info:null,hover:null,hoverBtn:null,pressed:null};
+  const liveOnly=options.live===true;
+  const app={scene:liveOnly?0:1,pace:0.5,paused:false,logOpen:false,rulesOpen:false,hist:[],runRF:16,rt:0,dk:'',dt0:0,dec:'A',lastDec:'A',t:0,amb:0,auto:!(typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches),frozen:false,decided:false,info:null,hover:null,hoverBtn:null,pressed:null};
   let night=qs.get('day')!=='1';
   // ?speed=N plays everything N times faster (browser tests); the speed button still works on top of it
   const boost=Math.max(1,Math.min(20,+qs.get('speed')||1));
@@ -822,13 +831,13 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   function logLines(tl,t){const l=app.hist.map(lineOf);
     const nl=t>=tl.ev.log?lineOf(entryOf(tl)):null;return{l,nl}}
   function logEntries(tl,t){return t>=tl.ev.log?[...app.hist,entryOf(tl)]:app.hist.slice()}
-  function logSummary(tl,t){const l=logEntries(tl,t);return l.length?'Logbook, newest first. '+l.slice(-4).reverse().map(d=>d.id+', '+d.a+', order '+d.o+'. Agent: '+d.ag+' Gate: '+d.ga+' Final: '+d.fi).join(' '):'The logbook is empty. Run a scene and its entry appears.'}
+  function logSummary(tl,t){const l=logEntries(tl,t);return l.length?'Logbook, newest first. '+l.slice(-4).reverse().map(d=>d.id+', '+d.a+', order '+d.o+'. Agent: '+d.ag+' Gate: '+d.ga+' Final: '+d.fi).join(' '):(liveOnly?'The logbook is empty. Send a request and its entry appears.':'The logbook is empty. Run a scene and its entry appears.')}
   function drawLogWin(tl,t){
     const x=12,y=8,w=296,h=186,list=logEntries(tl,t).slice(-4).reverse();
     R(x+3,y+3,w,h,K);R(x,y,w,h,K);R(x+1,y+1,w-2,h-2,W);FR(x+2,y+2,w-4,h-4,K);
     R(x+3,y+3,w-6,11,BL);for(let j=0;j<9;j+=2)R(x+3,y+4+j,w-6,1,WH);
     const ttl='LOGBOOK: RECENT DECISIONS',tw=textW(ttl);R(x+(w>>1)-(tw>>1)-4,y+3,tw+8,11,W);textC(ttl,x+(w>>1),y+6,K);
-    if(!list.length){textC('NOTHING HERE YET.',x+(w>>1),y+70,K);textC('RUN A SCENE AND ITS ENTRY APPEARS.',x+(w>>1),y+84,BL)}
+    if(!list.length){textC('NOTHING HERE YET.',x+(w>>1),y+70,K);textC(liveOnly?'SEND A REQUEST AND ITS ENTRY APPEARS.':'RUN A SCENE AND ITS ENTRY APPEARS.',x+(w>>1),y+84,BL)}
     list.forEach((en,i)=>{const ey=y+19+i*37,lx=x+9,vx=lx+40;
       text(en.id,lx,ey,R1);text(en.a+'  ORDER '+en.o,lx+textW(en.id)+8,ey,K);
       text('AGENT:',lx,ey+9,BL);text(en.ag,vx,ey+9,K);
@@ -960,7 +969,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     B=LB;R(0,0,SW,LOGH,K);R(1,1,SW-2,LOGH-2,W);R(2,2,SW-4,LOGH-4,K);R(3,3,SW-6,LOGH-6,W);
     text('LOGBOOK',12,7,R1);R(12,15,textW('LOGBOOK'),1,BL);text('ADD-ONLY. CLICK FOR DETAILS',SW-12-textW('ADD-ONLY. CLICK FOR DETAILS'),7,BL);
     const{l,nl}=logLines(tl,t),all=nl?[...l,nl]:l,show=all.slice(-3);
-    if(!all.length)text('NO ENTRIES YET. RUN A SCENE.',20,25,BL);
+    if(!all.length)text(liveOnly?'NO ENTRIES YET. SEND A REQUEST.':'NO ENTRIES YET. RUN A SCENE.',20,25,BL);
     show.forEach((s,i)=>{const yy=21+i*10,isNew=nl&&i===show.length-1;
       if(isNew){const k=Math.floor((t-tl.ev.log)*34);s=s.slice(0,Math.max(0,k));text(s,20,yy,R1);if(((amb*3)|0)&1)text('>',11,yy,R1)}
       else text(s,20,yy,K)});
@@ -1067,7 +1076,8 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   function drawKeys(){
     const c=keysc,x=c.getContext('2d'),W=320,H=9;x.clearRect(0,0,W,H);
     const parts=[['1 2 3','#f2e8a8'],['SCENE','#b2aad0'],['P','#f2e8a8'],['AUTO','#b2aad0'],['SPACE','#f2e8a8'],['PAUSE','#b2aad0'],['A R','#f2e8a8'],['DECIDE','#b2aad0']];
-    if(options.onPlace){parts.splice(2,2);parts.push(['I','#f2e8a8'],['INBOX','#b2aad0'],['H','#f2e8a8'],['DESK','#b2aad0'])} // P AUTO makes room: its button shows the state
+    if(liveOnly)parts.splice(0,4,['L','#f2e8a8'],['LOGBOOK','#b2aad0'],['?','#f2e8a8'],['RULES','#b2aad0']),parts.splice(6,2); // no scenes, no auto-play, no in-village decisions
+    if(options.onPlace){if(!liveOnly)parts.splice(2,2);parts.push(['I','#f2e8a8'],['INBOX','#b2aad0'],['H','#f2e8a8'],['DESK','#b2aad0'])} // P AUTO makes room: its button shows the state
     const gap=parts.map((p,i)=>i===parts.length-1?0:(i%2?11:5));let tw=0;parts.forEach((p,i)=>tw+=textW(p[0])+gap[i]);
     let cx=Math.round((W-tw)/2);parts.forEach((p,i)=>{pxText(x,p[0],cx,1,p[1]);cx+=textW(p[0])+gap[i]});
     c.style.width=W*scale+'px';c.style.height=H*scale+'px'}
@@ -1080,11 +1090,12 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   }
   function refreshLabels(){
     const ink='#15102e';
-    label(b1,['SCENE 1','$24 SMALL'],ink);label(b2,['SCENE 2','$150 BIG'],ink);label(b3,['SCENE 3','$500 SILLY'],ink);
+    if(liveOnly){const on=app.scene>=1&&app.scene<=3;label(b1,['DEMO',on?'STOP':'NO AI'],ink);b1.setAttribute('aria-label',on?'Stop the demo':'Play a demo: three made-up stories, no AI')}
+    else label(b1,['SCENE 1','$24 SMALL'],ink);label(b2,['SCENE 2','$150 BIG'],ink);label(b3,['SCENE 3','$500 SILLY'],ink);
     label(bauto,['AUTO-PLAY',app.auto?'ON':'OFF'],ink);label(bday,[night?'DAY':'NIGHT','KEY N'],ink);label(bsound,['SOUND',sfxOn?'ON':'OFF'],ink);label(brules,['RULES','KEY ?'],ink);label(bspeed,['SPEED',app.pace===1?'NORMAL':(app.pace===0.5?'SLOW':'SLOWER')],ink);
     bspeed.setAttribute('aria-label','Playback speed: '+(app.pace===1?'normal':(app.pace===0.5?'slow':'slower'))+'. Press to change');
     label(bA,'APPROVE (A)',ink);label(bR,'REJECT (R)',ink);
-    [b1,b2,b3].forEach((b,i)=>b.setAttribute('aria-pressed',app.scene===i+1?'true':'false'));
+    [b1,b2,b3].forEach((b,i)=>b.setAttribute('aria-pressed',(liveOnly?app.scene>=1&&app.scene<=3:app.scene===i+1)?'true':'false'));
     bauto.setAttribute('aria-pressed',app.auto?'true':'false');bday.setAttribute('aria-pressed',night?'false':'true');bsound.setAttribute('aria-pressed',sfxOn?'true':'false');
     bday.setAttribute('aria-label',night?'Switch to the day palette':'Switch to the night palette');
     bsound.setAttribute('aria-label',sfxOn?'Sound effects on. Press to mute':'Sound effects off. Press to unmute');
@@ -1093,7 +1104,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   function playVisitor(v){
     if(app.frozen)return;commitRun();
     if(app.scene!==4)app.resume=app.scene;
-    TLS['4']=buildVisitorTL(v);
+    TLS['4']=buildVisitorTL(v,liveOnly);
     app.scene=4;app.t=0;app.dk='';app.dec='A';app.decided=false;app.info=null;app.logOpen=false;app.rulesOpen=false;app.paused=false;refreshLabels();
   }
   function setScene(n,quiet){commitRun();if(!quiet)sfx('click');if(app.scene===2)app.lastDec=app.dec;app.scene=n;app.t=0;app.dec='A';app.decided=false;app.info=null;refreshLabels()}
@@ -1114,7 +1125,8 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     if(winOpenNow()){for(const k of['A','R'])if(inR(BTN[k],x,y)){decide(k);return}return}
     const h=HOT.find(q=>inR(q,x,y));if(h&&(h.id==='inbox'||h.id==='desk')&&openPlace(h.id))return;
     if(h){if(h.id==='log'){app.logOpen=true;sfx('click')}else if(h.id==='gate'){app.rulesOpen=true;sfx('click')}else app.info={m:h.m,t0:performance.now(),until:performance.now()+9000}}});
-  b1.onclick=()=>setScene(1);b2.onclick=()=>setScene(2);b3.onclick=()=>setScene(3);
+  // live mode has one demo button: it plays the three made-up stories in a row, or stops them
+  b1.onclick=()=>liveOnly?setScene(app.scene>=1&&app.scene<=3?0:1):setScene(1);b2.onclick=()=>setScene(2);b3.onclick=()=>setScene(3);
   bauto.onclick=()=>{app.auto=!app.auto;refreshLabels();sfx('click')};bday.onclick=()=>{toggleNight();sfx('click')};bsound.onclick=toggleSound;brules.onclick=()=>{app.logOpen=false;app.rulesOpen=!app.rulesOpen;sfx('click')};bspeed.onclick=()=>{app.pace=app.pace===0.5?0.25:(app.pace===0.25?1:0.5);refreshLabels();sfx('click')};bA.onclick=()=>decide('A');bR.onclick=()=>decide('R');
   on(window,'pointerdown',sfxArm);
   logc.style.cursor='pointer';on(logc,'click',()=>{app.rulesOpen=false;app.logOpen=!app.logOpen;sfx('click')});
@@ -1124,6 +1136,8 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   function openPlace(id){if(!options.onPlace)return false;app.logOpen=false;app.rulesOpen=false;app.info=null;const done=options.onPlace(id)===true;if(done)sfx('click');return done}
   function handleKey(k){
     if(k==='i'){openPlace('inbox');return}if(k==='h'){openPlace('desk');return}
+    if(liveOnly&&k==='d'){b1.onclick();return}
+    if(liveOnly&&(k==='1'||k==='2'||k==='3'||k==='p'))return;
     if(k==='1'||k==='2'||k==='3')setScene(+k);else if(k==='a')decide('A');else if(k==='r')decide('R');else if(k==='n')toggleNight();else if(k==='p')bauto.onclick();else if(k==='m')toggleSound();else if(k==='s')bspeed.onclick();else if(k===' ')app.paused=!app.paused;else if(k==='l'){app.rulesOpen=false;app.logOpen=!app.logOpen}else if(k==='?'){app.logOpen=false;app.rulesOpen=!app.rulesOpen}else if(k==='escape'){app.logOpen=false;app.rulesOpen=false}}
   on(window,'keydown',ev=>{if(ev.ctrlKey||ev.metaKey||ev.altKey||isTypingTarget(ev.target))return;sfxArm();const k=ev.key.toLowerCase();
     // I and H open a panel whose first field takes focus; without this the same key press is typed into it.
@@ -1134,7 +1148,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
 
   // URL parameters: ?scene=N&t=SECONDS freezes the game at that exact moment (scene 2 frozen assumes APPROVE unless &d=R)
   const pScene=+qs.get('scene')||0,pT=qs.get('t');
-  if(pScene>=1&&pScene<=3)app.scene=pScene;
+  if(!liveOnly&&pScene>=1&&pScene<=3)app.scene=pScene;
   if(pT!==null){app.frozen=true;app.t=Math.max(0,+pT||0);if(qs.get('d')==='R'){app.dec='R';app.lastDec='R'}
     const ck=qs.get('click');if(ck){const h=HOT.find(q=>q.id===ck);if(h&&h.m)app.info={m:h.m}}}
   if(qs.get('bare'))root.classList.add('village-bare');
@@ -1149,14 +1163,14 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     const tl=getTL(app.scene,app.dec);const mv=agentAt(tl,app.t).mv;let nt=app.t+((app.paused||app.logOpen||app.rulesOpen)?0:dt*app.pace*boost*(mv?1:DWELL));
     if(app.scene===2&&!app.decided&&app.t<tl.ev.decide&&nt>=tl.ev.decide)nt=tl.ev.decide-0.001;
     app.t=nt;
-    if(app.t>=tl.dur){if(app.scene===4)setScene(app.resume||1,true);else if(app.auto)setScene(app.scene%3+1,true);else setScene(app.scene,true)}
+    if(app.t>=tl.dur){if(liveOnly)setScene(app.scene===1||app.scene===2?app.scene+1:0,true);else if(app.scene===4)setScene(app.resume||1,true);else if(app.auto)setScene(app.scene%3+1,true);else setScene(app.scene,true)}
     sfxRun(getTL(app.scene,app.dec),Math.min(app.t,getTL(app.scene,app.dec).dur));
     frameRender();raf=requestAnimationFrame(tick);
   }
   if(app.frozen)frameRender();else raf=requestAnimationFrame(tick);
 
   return {
-    setScene(n){if(dead)return;if(n===1||n===2||n===3){sfxArm();setScene(n)}},
+    setScene(n){if(dead||liveOnly)return;if(n===1||n===2||n===3){sfxArm();setScene(n)}},
     press(key){if(dead)return;sfxArm();handleKey(String(key).toLowerCase())},
     overlayOpen(){return !dead&&(app.logOpen||app.rulesOpen)},
     playVisitor(v){if(!dead)playVisitor(v)},

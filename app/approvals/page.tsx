@@ -50,16 +50,21 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
   const banner =
     result === "paid" ? (refundIsReal ? `Approved and paid. Refund ${refund} is done.` : undefined) : result ? BANNERS.get(result) : undefined;
 
+  const yours = cases.filter((c) => c.requestId.startsWith("TRY-"));
+  const practice = cases.filter((c) => !c.requestId.startsWith("TRY-"));
+
   return (
     <main className="approvals">
-      <p>
-        <Link href="/">← Approval Desk</Link>
+      <p className="back">
+        <Link href="/">← Back to the village</Link>
       </p>
       <h1>Approvals</h1>
-      <p className="lede">
-        Requests the gate sent to a person. You decide. Nothing is paid until you approve, and no one, including you, can
-        refund more than was paid or refund someone else’s order.
-      </p>
+      <p className="lede">The gate sends some refunds to a person instead of paying them. Here, that person is you.</p>
+      <ul className="guards" aria-label="What no one can do, you included">
+        <li>Nothing is paid until you approve</li>
+        <li>No refund over what was paid</li>
+        <li>No refund on someone else’s order</li>
+      </ul>
 
       {banner && (
         <p className={result === "unpaid" ? "banner warn" : "banner"} role="status">
@@ -92,58 +97,94 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
       )}
 
       <section aria-labelledby="waiting-title">
-        <h2 id="waiting-title">Waiting for you ({cases.length})</h2>
-        {!problem && cases.length === 0 && <p className="empty">Nothing is waiting for you.</p>}
-        {cases.map((c) => (
-          <article key={c.gateEntryId} className="card" aria-label={`Request ${c.requestId} from ${c.customer.name}`}>
-            <header>
-              <h3>
-                {c.customer.name} <span className="muted">· {c.requestId} · received {c.request.receivedOn}</span>
-              </h3>
-            </header>
-            <blockquote>
-              <strong>{c.request.subject}</strong>
-              <br />
-              {c.request.body}
-            </blockquote>
-            <h4>Why a person must decide</h4>
-            <ul>
-              {c.why.map((w) => (
-                <li key={w}>{w}</li>
-              ))}
-            </ul>
-            <h4>What the agent said</h4>
+        <h2 id="waiting-title">Waiting for you ({yours.length})</h2>
+        {!problem && yours.length === 0 && (
+          <div className="empty">
+            <p>Nothing of yours is waiting. Send a big refund to the agent and it lands here for you to decide.</p>
             <p>
-              {agentSays(c)}
-              {c.agent.reason && (
-                <>
-                  {" "}
-                  Its reason: “{c.agent.reason}”{c.agent.policyLine ? ` (policy ${c.agent.policyLine})` : ""}
-                </>
-              )}
+              <Link href="/">Send one from the village →</Link>
             </p>
-            {c.orders.length === 0 ? (
-              <p className="problem">This customer has no orders, so there is nothing to refund. You can only reject.</p>
-            ) : (
-              <ApproveForm
-                gateEntryId={c.gateEntryId}
-                fixed={c.orderFixed}
-                suggestedOrderId={c.suggestedOrderId}
-                suggestedAmount={c.agent.suggestedAmountCents === null ? "" : (c.agent.suggestedAmountCents / 100).toFixed(2)}
-                orders={c.orders.map((o) => ({
-                  id: o.id,
-                  item: o.item,
-                  placedOn: o.placedOn,
-                  paid: dollars(o.paidCents),
-                  refunded: dollars(o.refundedCents),
-                  left: dollars(o.leftCents),
-                }))}
-              />
-            )}
-            <RejectForm gateEntryId={c.gateEntryId} />
-          </article>
+          </div>
+        )}
+        {yours.map((c) => (
+          <WaitingCard key={c.gateEntryId} c={c} />
         ))}
       </section>
+
+      {practice.length > 0 && (
+        <section aria-labelledby="practice-title">
+          <h2 id="practice-title">Practice requests ({practice.length})</h2>
+          <p className="section-sub">Made-up requests from the invented shop, so there is always something to decide.</p>
+          {practice.map((c) => (
+            <WaitingCard key={c.gateEntryId} c={c} />
+          ))}
+        </section>
+      )}
     </main>
+  );
+}
+
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join("");
+
+function WaitingCard({ c }: { c: WaitingCase }) {
+  return (
+    <article className="card" aria-label={`Request ${c.requestId} from ${c.customer.name}`}>
+      <header className="case-head">
+        <span className="avatar" aria-hidden="true">
+          {initials(c.customer.name)}
+        </span>
+        <div>
+          <h3>{c.customer.name}</h3>
+          <p className="meta">
+            {c.requestId} · received {c.request.receivedOn}
+          </p>
+        </div>
+      </header>
+      <ul className="why" aria-label="Why a person must decide">
+        {c.why.map((w) => (
+          <li key={w}>{w}</li>
+        ))}
+      </ul>
+      <blockquote>
+        <span className="subject">{c.request.subject || "(no subject)"}</span>
+        {c.request.body}
+      </blockquote>
+      <div className="agent">
+        <p className="label">What the agent said</p>
+        <p>{agentSays(c)}</p>
+        {c.agent.reason && (
+          <p className="reason">
+            “{c.agent.reason}”{c.agent.policyLine ? ` · policy ${c.agent.policyLine}` : ""}
+          </p>
+        )}
+      </div>
+      <div className="decide">
+        {c.orders.length === 0 ? (
+          <p className="problem">This customer has no orders, so there is nothing to refund. You can only reject.</p>
+        ) : (
+          <ApproveForm
+            gateEntryId={c.gateEntryId}
+            fixed={c.orderFixed}
+            suggestedOrderId={c.suggestedOrderId}
+            suggestedAmount={c.agent.suggestedAmountCents === null ? "" : (c.agent.suggestedAmountCents / 100).toFixed(2)}
+            orders={c.orders.map((o) => ({
+              id: o.id,
+              item: o.item,
+              placedOn: o.placedOn,
+              paid: dollars(o.paidCents),
+              refunded: dollars(o.refundedCents),
+              left: dollars(o.leftCents),
+            }))}
+          />
+        )}
+        <RejectForm gateEntryId={c.gateEntryId} />
+      </div>
+    </article>
   );
 }

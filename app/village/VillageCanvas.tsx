@@ -16,10 +16,12 @@ export interface VillageCanvasProps {
   onPlace?: (place: VillagePlace) => boolean;
   /** The visitor's request to play. A new key plays it (again); the scripted stories pause meanwhile. */
   play?: { key: number; request: VisitorRequest } | null;
+  /** No scripted stories or scene buttons: the robot waits until a real request is played. */
+  live?: boolean;
   className?: string;
 }
 
-export default function VillageCanvas({ onStage, onPlace, play, className }: VillageCanvasProps) {
+export default function VillageCanvas({ onStage, onPlace, play, live: isLive = false, className }: VillageCanvasProps) {
   const screen = useRef<HTMLCanvasElement>(null);
   const title = useRef<HTMLCanvasElement>(null);
   const logbook = useRef<HTMLCanvasElement>(null);
@@ -41,6 +43,7 @@ export default function VillageCanvas({ onStage, onPlace, play, className }: Vil
   const hooks = useRef({ onStage, onPlace });
   hooks.current = { onStage, onPlace };
   const handlesPlaces = useRef(Boolean(onPlace));
+  const liveMode = useRef(isLive);
   const village = useRef<VillageHandle | null>(null);
 
   useEffect(() => {
@@ -66,6 +69,7 @@ export default function VillageCanvas({ onStage, onPlace, play, className }: Vil
       {
         onStage: (stage) => hooks.current.onStage?.(stage),
         onPlace: handlesPlaces.current ? (place) => hooks.current.onPlace?.(place) ?? false : undefined,
+        live: liveMode.current,
       },
     );
     village.current = handle;
@@ -105,10 +109,10 @@ export default function VillageCanvas({ onStage, onPlace, play, className }: Vil
         />
       </div>
       <div className="village-bar">
-        <button ref={b1} type="button" aria-label="Scene 1: small $24 refund, allowed" />
-        <button ref={b2} type="button" aria-label="Scene 2: big $150 refund, needs a human" />
-        <button ref={b3} type="button" aria-label="Scene 3: ridiculous $500 request, blocked" />
-        <button ref={bauto} type="button" className="village-bauto" aria-pressed="true" aria-label="Auto-play" />
+        <button ref={b1} type="button" aria-label={isLive ? "Play a demo: three made-up stories, no AI" : "Scene 1: small $24 refund, allowed"} />
+        <button ref={b2} type="button" hidden={isLive} aria-label="Scene 2: big $150 refund, needs a human" />
+        <button ref={b3} type="button" hidden={isLive} aria-label="Scene 3: ridiculous $500 request, blocked" />
+        <button ref={bauto} type="button" hidden={isLive} className="village-bauto" aria-pressed="true" aria-label="Auto-play" />
         <button ref={bday} type="button" aria-pressed="false" aria-label="Day palette" />
         <button ref={bsound} type="button" className="village-bsound" aria-pressed="true" aria-label="Sound effects" />
         <button ref={bspeed} type="button" aria-label="Playback speed" />
