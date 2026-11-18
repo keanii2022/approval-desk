@@ -1125,7 +1125,9 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   function handleKey(k){
     if(k==='i'){openPlace('inbox');return}if(k==='h'){openPlace('desk');return}
     if(k==='1'||k==='2'||k==='3')setScene(+k);else if(k==='a')decide('A');else if(k==='r')decide('R');else if(k==='n')toggleNight();else if(k==='p')bauto.onclick();else if(k==='m')toggleSound();else if(k==='s')bspeed.onclick();else if(k===' ')app.paused=!app.paused;else if(k==='l'){app.rulesOpen=false;app.logOpen=!app.logOpen}else if(k==='?'){app.logOpen=false;app.rulesOpen=!app.rulesOpen}else if(k==='escape'){app.logOpen=false;app.rulesOpen=false}}
-  on(window,'keydown',ev=>{if(ev.ctrlKey||ev.metaKey||ev.altKey||isTypingTarget(ev.target))return;sfxArm();const k=ev.key.toLowerCase();if(k===' ')ev.preventDefault();handleKey(k)});
+  on(window,'keydown',ev=>{if(ev.ctrlKey||ev.metaKey||ev.altKey||isTypingTarget(ev.target))return;sfxArm();const k=ev.key.toLowerCase();
+    // I and H open a panel whose first field takes focus; without this the same key press is typed into it.
+    if(k===' '||k==='i'||k==='h')ev.preventDefault();handleKey(k)});
   // the scale follows the device's width; the relayout is deferred a frame so the observer never sees its own resize
   if(typeof ResizeObserver==='function'){ro=new ResizeObserver(()=>{if(dead||roRaf)return;roRaf=requestAnimationFrame(()=>{roRaf=0;if(!dead)layout()})});ro.observe(device,{box:'border-box'})}
   else on(window,'resize',layout);

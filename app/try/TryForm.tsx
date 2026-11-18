@@ -126,9 +126,30 @@ export function TryForm({ customers, limits, onRan, className = "card decision t
 
       <Receipt customer={customer} isNew={isNew} />
 
+      <label htmlFor="subject">Subject</label>
+      <input
+        id="subject"
+        name="subject"
+        maxLength={limits.subjectMax}
+        value={subject}
+        placeholder="Anything you like"
+        onChange={(e) => setSubject(e.target.value)}
+      />
+      <label htmlFor="message">Your message (write anything)</label>
+      <textarea
+        id="message"
+        name="message"
+        rows={5}
+        required
+        maxLength={limits.messageMax}
+        value={message}
+        placeholder="Write it like a customer email. Be honest, be sneaky, lie about the order, demand too much. Try to break it."
+        onChange={(e) => setMessage(e.target.value)}
+      />
+
       {starters.length > 0 ? (
-        <div className="starters" role="group" aria-label="Start from an example">
-          <span className="muted">Start from an example:</span>
+        <div className="starters" role="group" aria-label="Need an idea? Fill in an example">
+          <span className="muted">Need an idea? Fill in an example, then change it:</span>
           {starters.map((s) => (
             <button
               key={s.label}
@@ -142,13 +163,20 @@ export function TryForm({ customers, limits, onRan, className = "card decision t
               {s.label}
             </button>
           ))}
+          {message || subject ? (
+            <button
+              type="button"
+              className="starter"
+              onClick={() => {
+                setSubject("");
+                setMessage("");
+              }}
+            >
+              Clear
+            </button>
+          ) : null}
         </div>
       ) : null}
-
-      <label htmlFor="subject">Subject</label>
-      <input id="subject" name="subject" maxLength={limits.subjectMax} value={subject} onChange={(e) => setSubject(e.target.value)} />
-      <label htmlFor="message">Message</label>
-      <textarea id="message" name="message" rows={5} required maxLength={limits.messageMax} value={message} onChange={(e) => setMessage(e.target.value)} />
       {state.error ? (
         <p className="problem" role="alert">
           {state.error}
