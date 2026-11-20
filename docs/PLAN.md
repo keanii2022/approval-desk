@@ -59,7 +59,7 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
   - **Goal:** Change the agent's prompt twice, each time writing down a guess of what will change before running the evals. Record all three scores (baseline and two changes) in `EVALS.md`, with the guess next to each result.
   - **Done when:** `EVALS.md` holds three dated scorecards with a written guess for each prompt change; a test fails if the prompt file changed but `EVALS.md` did not.
 
-- [ ] **Step 15: Tracing** (builds on step 5; moved below on 2026-11-19, after step 21)
+- [x] **Step 15: Tracing** (builds on step 5; moved below on 2026-11-19, after step 21)
   - **Goal:** Every Claude call logs tokens in and out, cost, latency and the gate's result, on the gate's logbook line. One command prints a summary: calls, total cost, average latency, results by gate verdict.
   - **Done when:** the summary command runs on the seeded database and matches the logbook by hand for five calls; a test checks the line is written on success and on an AI outage.
 
@@ -118,7 +118,7 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **Done when:** a test where visitor A approves REQ-002 and visitor B still sees REQ-002 waiting with the order untouched; a test that tries by two visitors both count toward the one daily limit; the template file is byte-for-byte unchanged after visitors act; the copy cap and the 7-day cleanup are tested; all unit and browser tests pass.
 
 ### 15. Tracing
-- **Status:** current
+- **Status:** done
 - **Goal:** Every Claude call writes down tokens in and out, cost, how long it took, the model that answered, and the gate's verdict, on the gate's logbook line for that request. A call that fails (AI down) is written too, with its time and error and no tokens. One command (`npm run trace`) prints a summary for a database: number of calls, total cost, average time, and calls by gate verdict (allow, send to a person, block, AI down). Cost uses a price table in code, per million tokens: Claude Opus 5.5 $4 in / $20 out (cache reads $0.20), Claude Sonnet 5.5 $2 / $10 (cache reads $0.10), Claude Haiku 5.5 $0.10 / $0.50 (prompts up to 100K tokens). An unknown model shows its tokens with the cost left blank, never a guess. The stand-in agent and the overnight requests make no Claude call, so they write no trace.
 - **Scope:** `lib/claude.ts`, `lib/agent.ts`, `lib/pipeline.ts`, `lib/logbook.ts` (only to carry the trace on the gate line), `lib/trace.ts` (new: the price table, cost and the summary), `scripts/trace.ts` (new), `package.json` (the `trace` script), `tests/trace.test.ts` (new)
 - **Out of scope:** the gate's decisions, the hard rules, the village and screens, the README cost table (added after this step, from real numbers).
@@ -148,3 +148,7 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **21:** Copies live at `data/<template name>-visitors/<id>.db` and the shared try counts at `data/<template name>-limits.db`, so the test shop and the real one never share copies or counts.
 - **21:** A try with bad input still makes the visitor's copy and sets their cookie, because the cookie is set before the input is checked. Harmless: the copy is just the fresh shop.
 - **21:** A fresh shop (`npm start` on a new host, `npm run demo`) removes old copies and counts, since they were made from the previous shop.
+- **15:** Cache writes are priced at 1.25x the input price (the published rate for 5-minute cache writes). It costs nothing today, since the agent sets no cache points.
+- **15:** Haiku has no listed cache-read price, so a Haiku call with cache reads, or with a prompt over 100K tokens, gets a blank cost instead of a guess.
+- **15:** A refusal keeps its tokens and cost (they were billed) but still counts as AI down, which sends it to a person.
+- **15:** The summary reads: Trace summary for <path> (and N visitor copies), Calls, Tokens, Total cost (with any unpriced calls left out and noted), Average time, and By gate verdict: allow, send to a person, block, AI down.
