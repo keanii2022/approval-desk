@@ -1,16 +1,11 @@
 "use server";
 
 import { refresh, revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import type { DatabaseSync } from "node:sqlite";
 import { approveAndPay, rejectRequest, retryPayment, type Decision } from "../../lib/approval.ts";
 import { utcNow } from "../../lib/pipeline.ts";
-import { readVisitorId, VISITOR_COOKIE } from "../../lib/visitor.ts";
-import { appDb } from "./db.ts";
-
-async function currentVisitor(): Promise<string | null> {
-  return readVisitorId((await cookies()).get(VISITOR_COOKIE)?.value);
-}
+import { visitorShop } from "./db.ts";
 
 // What each form gets back when a person's decision is refused: the reason, in
 // plain words. When the decision goes through, the page reloads with a banner.
@@ -38,18 +33,18 @@ function finish(decision: Decision, stay = false, amountCents: number | null = n
 
 const NO_DATABASE: FormState = { error: "The shop data isn't set up yet. Run npm run seed, then try again." };
 
-// Opens the database for one decision, and always closes it.
-function withDb(run: (db: ReturnType<typeof appDb>) => FormState): FormState {
-  let db;
+// Opens the visitor's own shop for one decision, and always closes it.
+async function withDb(run: (db: DatabaseSync, visitor: string) => FormState): Promise<FormState> {
+  let shop;
   try {
-    db = appDb();
+    shop = await visitorShop();
   } catch {
     return NO_DATABASE;
   }
   try {
-    return run(db);
+    return run(shop.db, shop.visitorId);
   } finally {
-    db.close();
+    shop.db.close();
   }
 }
 
@@ -63,24 +58,21 @@ const text = (formData: FormData, field: string) => String(formData.get(field) ?
 export async function approveAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const gateEntryId = entryId(formData, "gateEntryId");
   if (gateEntryId === null) return { error: "That request could not be found" };
-  const visitor = await currentVisitor();
   const input = { orderId: text(formData, "orderId"), amount: text(formData, "amount"), note: text(formData, "amountNote") };
   const cents = Math.round(Number(input.amount) * 100);
   const stay = formData.get("stay") === "1";
-  return withDb((db) => finish(approveAndPay(db, gateEntryId, input, utcNow(), visitor), stay, Number.isFinite(cents) ? cents : null));
+  return withDb((db, visitor) => finish(approveAndPay(db, gateEntryId, input, utcNow(), visitor), stay, Number.isFinite(cents) ? cents : null));
 }
 
 export async function rejectAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const gateEntryId = entryId(formData, "gateEntryId");
   if (gateEntryId === null) return { error: "That request could not be found" };
-  const visitor = await currentVisitor();
   const stay = formData.get("stay") === "1";
-  return withDb((db) => finish(rejectRequest(db, gateEntryId, text(formData, "note"), utcNow(), visitor), stay));
+  return withDb((db, visitor) => finish(rejectRequest(db, gateEntryId, text(formData, "note"), utcNow(), visitor), stay));
 }
 
 export async function retryAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const approvalEntryId = entryId(formData, "approvalEntryId");
   if (approvalEntryId === null) return { error: "That approval could not be found" };
-  const visitor = await currentVisitor();
-  return withDb((db) => finish(retryPayment(db, approvalEntryId, utcNow(), visitor)));
+  return withDb((db, visitor) => finish(retryPayment(db, approvalEntryId, utcNow(), visitor)));
 }

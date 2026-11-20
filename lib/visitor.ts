@@ -6,8 +6,10 @@ import type { DatabaseSync } from "node:sqlite";
 // belong to no one, so everyone sees them and local demos keep working.
 //
 // Ownership lives in its own table (created here if missing) so the seed schema
-// stays as it is. Each row also records the real UTC time of the try: the inbox
-// date is the invented shop's calendar, which can't be used for spending limits.
+// stays as it is. The spending limits count tries in a separate table, try_counts,
+// which the app keeps in one file shared by every visitor's copy of the shop
+// (lib/visitor-db.ts). Both record the real UTC time of the try: the inbox date is
+// the invented shop's calendar, which can't be used for spending limits.
 
 export const VISITOR_COOKIE = "visitor";
 export const VISITOR_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
@@ -65,13 +67,22 @@ export const SWITCHED_OFF_WORDS = "The live agent is switched off right now. The
 export const DAILY_LIMIT_WORDS = "The agent is done for today, come back tomorrow.";
 export const HOURLY_LIMIT_WORDS = "That's all your tries for this hour. Come back in a bit.";
 
+function ensureCountTable(counts: DatabaseSync): void {
+  counts.exec("CREATE TABLE IF NOT EXISTS try_counts (visitor_id TEXT NOT NULL, tried_at TEXT NOT NULL)");
+}
+
+export function countTry(counts: DatabaseSync, visitorId: string, triedAt: string): void {
+  ensureCountTable(counts);
+  counts.prepare("INSERT INTO try_counts (visitor_id, tried_at) VALUES (?, ?)").run(visitorId, triedAt);
+}
+
 function triedCounts(db: DatabaseSync, visitorId: string | null, now: string): { today: number; thisHour: number } {
-  ensureVisitorTable(db);
-  const { n: today } = db.prepare("SELECT COUNT(*) AS n FROM try_owners WHERE substr(tried_at, 1, 10) = ?").get(now.slice(0, 10)) as { n: number };
+  ensureCountTable(db);
+  const { n: today } = db.prepare("SELECT COUNT(*) AS n FROM try_counts WHERE substr(tried_at, 1, 10) = ?").get(now.slice(0, 10)) as { n: number };
   if (visitorId === null) return { today, thisHour: 0 };
   const hourAgo = new Date(Date.parse(now) - 60 * 60 * 1000).toISOString().slice(0, 19) + "Z";
   const { n: thisHour } = db
-    .prepare("SELECT COUNT(*) AS n FROM try_owners WHERE visitor_id = ? AND tried_at > ?")
+    .prepare("SELECT COUNT(*) AS n FROM try_counts WHERE visitor_id = ? AND tried_at > ?")
     .get(visitorId, hourAgo) as { n: number };
   return { today, thisHour };
 }

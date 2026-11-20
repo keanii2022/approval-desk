@@ -1,6 +1,9 @@
 import { execFileSync } from "node:child_process";
+import { readdirSync, rmSync } from "node:fs";
+import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { countsPath, visitorFolder } from "../lib/visitor-db.ts";
 
 // The approval screen, in a real browser. Before each test the database is rebuilt
 // with three requests waiting for a person (a stand-in agent, no AI calls):
@@ -11,10 +14,20 @@ const DB = "data/e2e.db";
 
 test.beforeEach(() => {
   execFileSync("node", ["scripts/prepare-queue.ts", DB], { stdio: "pipe" });
+  // Each browser is a new visitor with their own copy of the shop; the last test's copies and try counts go too.
+  rmSync(visitorFolder(DB), { recursive: true, force: true });
+  rmSync(countsPath(DB), { force: true });
 });
 
+// The test's visitor's own copy of the shop, made by the server on their first decision.
+function visitorCopy(): string {
+  const copies = readdirSync(visitorFolder(DB)).filter((name) => name.endsWith(".db"));
+  if (copies.length !== 1) throw new Error(`Expected one visitor copy, found ${copies.length}`);
+  return join(visitorFolder(DB), copies[0]);
+}
+
 function rows(sql: string): Record<string, unknown>[] {
-  const db = new DatabaseSync(DB, { readOnly: true });
+  const db = new DatabaseSync(visitorCopy(), { readOnly: true });
   try {
     return db.prepare(sql).all() as Record<string, unknown>[];
   } finally {
@@ -191,7 +204,7 @@ test("Approval screen: an approval the executor can't pay is shown as unpaid, an
   await expect(card(page, "REQ-002")).toHaveCount(0); // a person's decision counts once
   expect(newRefunds()).toEqual([]);
 
-  const fix = new DatabaseSync(DB);
+  const fix = new DatabaseSync(visitorCopy()); // the copy was made from the template with the trigger in it
   fix.exec("DROP TRIGGER e2e_no_payment");
   fix.close();
   await press(page, page.getByRole("button", { name: "Try paying again" }));

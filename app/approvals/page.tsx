@@ -3,7 +3,7 @@ import Link from "next/link";
 import { approvedNotPaid, getWaitingCases, type WaitingCase } from "../../lib/approval.ts";
 import { dollars } from "../../lib/money.ts";
 import { readVisitorId, VISITOR_COOKIE } from "../../lib/visitor.ts";
-import { appDb } from "./db.ts";
+import { pageDb } from "./db.ts";
 import { RetryForm } from "./Forms.tsx";
 import { WaitingCard } from "./WaitingCard.tsx";
 import "./approvals.css";
@@ -25,7 +25,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
   let problem: string | null = null;
   let paid: { amount_cents: number; name: string } | undefined;
   try {
-    const db = appDb();
+    const db = pageDb(visitor);
     try {
       cases = getWaitingCases(db, visitor);
       unpaid = approvedNotPaid(db, visitor);

@@ -4,7 +4,7 @@ import type { ReceiptCustomer } from "../lib/try-fields.ts";
 import { customerReceipts, MESSAGE_MAX, NAME_MAX, recentTries, SUBJECT_MAX } from "../lib/tryout.ts";
 import { utcNow } from "../lib/pipeline.ts";
 import { readVisitorId, triesLeft, VISITOR_COOKIE } from "../lib/visitor.ts";
-import { appDb } from "./approvals/db.ts";
+import { countsDb, pageDb } from "./approvals/db.ts";
 import VillageHome from "./village/VillageHome.tsx";
 import { tryView, type TryView } from "./village/views.ts";
 
@@ -20,15 +20,20 @@ export default async function Home() {
   let left = 0;
   let problem: string | null = null;
   try {
-    const db = appDb();
+    const db = pageDb(visitor);
     try {
       customers = customerReceipts(db);
       tries = recentTries(db, visitor).map(tryView);
       // the visitor's own plus the ones that came in overnight; database rows become plain objects for the browser
       waiting = structuredClone(getWaitingCases(db, visitor));
-      left = triesLeft(db, visitor, utcNow());
     } finally {
       db.close();
+    }
+    const counts = countsDb();
+    try {
+      left = triesLeft(counts, visitor, utcNow());
+    } finally {
+      counts.close();
     }
   } catch {
     problem = "The shop data couldn't be read. If it isn't set up yet, run npm run seed, then reload this page.";

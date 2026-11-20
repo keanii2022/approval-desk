@@ -3,7 +3,7 @@ import type { AskModel } from "./agent.ts";
 import type { AgentOutput, GateDecision } from "./gate.ts";
 import { type GateDecisionDetails, readEntries } from "./logbook.ts";
 import { type PipelineResult, processRequest, utcNow } from "./pipeline.ts";
-import { ensureVisitorTable, recordTry, spendingProblem, type TryLimits } from "./visitor.ts";
+import { countTry, ensureVisitorTable, recordTry, spendingProblem, type TryLimits } from "./visitor.ts";
 
 // "Try it yourself": a person writes a request as one of the shop's customers,
 // and it runs the same path as any Inbox request (agent -> gate -> executor or
@@ -68,7 +68,8 @@ export function tryInputProblem(db: DatabaseSync, input: TryInput): string | nul
   return null;
 }
 
-export type Visit = { visitorId: string; now?: string; limits?: TryLimits };
+// counts is where the site-wide try counts live (lib/visitor-db.ts openCounts); without it they're kept in db.
+export type Visit = { visitorId: string; now?: string; limits?: TryLimits; counts?: DatabaseSync };
 
 // Adds the request to the Inbox, owned by the visitor, and runs it. Throws if the
 // input is bad or a spending limit is reached; check both first. Both checks come
@@ -82,7 +83,8 @@ export async function tryRequest(
   const problem = tryInputProblem(db, input);
   if (problem) throw new Error(problem);
   const now = visit.now ?? utcNow();
-  const overLimit = spendingProblem(db, visit.visitorId, now, visit.limits);
+  const counts = visit.counts ?? db;
+  const overLimit = spendingProblem(counts, visit.visitorId, now, visit.limits);
   if (overLimit) throw new Error(overLimit);
 
   const customerId = input.customerId === NEW_CUSTOMER ? addNewCustomer(db, (input.newName ?? "").trim()) : input.customerId;
@@ -95,6 +97,7 @@ export async function tryRequest(
     input.message.trim(),
   );
   recordTry(db, requestId, visit.visitorId, now);
+  countTry(counts, visit.visitorId, now);
   return { requestId, result: await processRequest(db, requestId, askModel, now) };
 }
 

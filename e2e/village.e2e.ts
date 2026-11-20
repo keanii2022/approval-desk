@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
-import { DatabaseSync } from "node:sqlite";
+import { rmSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+import { countsPath, visitorFolder } from "../lib/visitor-db.ts";
 
 // The village is the front page. The robot waits until something is sent. The Inbox opens a
 // panel with three made-up stories (no AI) and the try form (the agent); the human desk is the
@@ -12,16 +13,9 @@ const DB = "data/e2e.db";
 
 test.beforeEach(() => {
   execFileSync("node", ["scripts/prepare-queue.ts", DB], { stdio: "pipe" });
-  // prepare-queue rebuilds the Inbox but not the table of who sent which try, so the next
-  // TRY-001 would collide with the last test's. Clear it too.
-  const db = new DatabaseSync(DB);
-  try {
-    db.exec("DELETE FROM try_owners");
-  } catch {
-    // no try was ever made on this file, so the table doesn't exist yet
-  } finally {
-    db.close();
-  }
+  // Each browser is a new visitor with their own copy of the shop; the last test's copies and try counts go too.
+  rmSync(visitorFolder(DB), { recursive: true, force: true });
+  rmSync(countsPath(DB), { force: true });
 });
 
 const scene = (page: Page) => page.getByRole("img", { name: /Pixel-art village/ });
