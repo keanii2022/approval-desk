@@ -4,7 +4,9 @@
 import { existsSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { DB_PATH, openDatabase } from "../lib/db.ts";
+import { rmSync } from "node:fs";
 import { queueOvernight } from "../lib/overnight.ts";
+import { countsPath, visitorFolder } from "../lib/visitor-db.ts";
 import { seed } from "../lib/seed.ts";
 
 const path = process.env.APPROVAL_DESK_DB ?? DB_PATH;
@@ -15,6 +17,9 @@ if (existsSync(path)) {
   // A mounted volume path like /data/approval-desk.db may not have its folder yet.
   mkdirSync(dirname(path), { recursive: true });
   const db = openDatabase(path);
+  // Copies made from an earlier shop would no longer match this one.
+  rmSync(visitorFolder(path), { recursive: true, force: true });
+  rmSync(countsPath(path), { force: true });
   seed(db);
   await queueOvernight(db); // so the human desk has what came in overnight
   db.close();
