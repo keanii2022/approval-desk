@@ -264,3 +264,11 @@ Template:
 **Changed (owner):** the front page now has two ways in. The Inbox holds the three made-up stories ($24 paid, $150 waits for a person, $500 blocked), which the village plays without the AI, and "Try it yourself" with the real agent, the tries left, and a list of ideas to try that the visitor writes up themselves. Nothing fills in the message anymore. The human desk is the approval screen (key H, the desk in the picture, or the button), now titled "The human desk". The Demo button and the quick tests are gone, and `/try` goes to the front page.
 **Changed (owner):** speed is a slider that starts at full speed. On phones the key legend is hidden, and the buttons read DAY MODE and THE RULES instead of key hints. The legend had never hidden on phones, because a more specific rule overrode it.
 **Decided:** real AI calls happen only when a visitor writes their own request, so the stories always work and cost nothing.
+
+## Deciding at the desk, overnight requests, tap hints (2026-11-19)
+
+**Changed (owner):** when your own request needs a person, the robot now holds at the desk with APPROVE and REJECT buttons. Either one, or tapping the desk, opens the real approval card over the village (same rules: the amount can't exceed what's left, and a reject needs a note). Once you decide, the robot carries on: approved goes to the factory and pays, rejected goes home, and the logbook says "APPROVED BY YOU" or "REJECTED BY YOU".
+**Changed (owner):** the host's first start queues three requests that "came in overnight" (`lib/overnight.ts`, fixed forms, no AI), so the human desk shows what an unattended agent leaves for a person. The desk page lists "Your requests", then "Came in overnight".
+**Changed (owner):** taps are obvious without reading anything: a bouncing TAP arrow over the Inbox while the robot waits (and over the desk while it holds your request), a LOGBOOK button in the bar, and "TAP TO OPEN" on the logbook strip on phones.
+**Decided:** the approval card moved to `app/approvals/WaitingCard.tsx` so the village and the desk page share it. From the village, the forms send `stay=1` and get the outcome back instead of leaving the page.
+**Left for later:** the overnight requests are shared by every visitor until the host sleeps and resets, so once someone decides one, it's gone for everyone else until then.

@@ -6,10 +6,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import type { WaitingCase } from "../../lib/approval.ts";
 import type { ReceiptCustomer } from "../../lib/try-fields.ts";
+import type { Decided } from "../approvals/actions.ts";
+import { WaitingCard } from "../approvals/WaitingCard.tsx";
 import { TryForm } from "../try/TryForm.tsx";
 import VillageCanvas, { type VillagePlace, type VisitorRequest } from "./VillageCanvas.tsx";
-import { visitorRequest, type AgentView, type TryView, type WaitingView } from "./views.ts";
+import { visitorRequest, type AgentView, type TryView } from "./views.ts";
+import "../approvals/approvals.css";
 import "./home.css";
 
 const GITHUB = "https://github.com/keanii2022/approval-desk";
@@ -17,7 +21,8 @@ const GITHUB = "https://github.com/keanii2022/approval-desk";
 type Props = {
   customers: ReceiptCustomer[];
   tries: TryView[];
-  waiting: WaitingView[];
+  /** Everything waiting for a person: the visitor's own and the ones that came in overnight. */
+  waiting: WaitingCase[];
   triesLeft: number;
   problem: string | null;
   limits: { subjectMax: number; messageMax: number; nameMax: number };
@@ -103,7 +108,10 @@ const IDEAS = [
 ];
 
 export default function VillageHome({ customers, tries, waiting, triesLeft, problem, limits }: Props) {
-  const [panel, setPanel] = useState<VillagePlace | null>(null);
+  const [panel, setPanel] = useState<VillagePlace | "decide" | null>(null);
+  // The visitor's own request the robot holds at the desk, and the decision once it went through.
+  const [deciding, setDeciding] = useState<WaitingCase | null>(null);
+  const [decided, setDecided] = useState<{ key: number; choice: "A" | "R"; paidCents: number | null } | null>(null);
   const [ranId, setRanId] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0);
   // The visitor's last request waits here until the panel closes, then the village plays it.
@@ -191,7 +199,25 @@ export default function VillageHome({ customers, tries, waiting, triesLeft, prob
     }
   }
 
-  const title = ranId ? "What happened" : "The Inbox";
+  const title = panel === "decide" ? "Your call" : ranId ? "What happened" : "The Inbox";
+  // A copy taken when the panel opens: once decided, the page's fresh data no longer lists it,
+  // and the card must stay to report back.
+  const decidingCase = deciding;
+  const latestWaiting = useRef(waiting);
+  latestWaiting.current = waiting;
+  const onDecide = useCallback((requestId: string) => {
+    returnFocus.current = document.activeElement;
+    setDeciding(latestWaiting.current.find((c) => c.requestId === requestId) ?? null);
+    setPanel("decide");
+  }, []);
+  // Paid or rejected: close the panel and let the robot carry on from the desk.
+  const onDecided = (done: Decided) => {
+    if (done.outcome === "paid" || done.outcome === "rejected") {
+      setDecided((last) => ({ key: (last?.key ?? 0) + 1, choice: done.outcome === "paid" ? "A" : "R", paidCents: done.amountCents }));
+    }
+    setDeciding(null);
+    close();
+  };
   // A story plays once the panel is out of the way; on a phone, the robot comes back into view.
   const playStory = (scene: 1 | 2 | 3) => {
     close();
@@ -209,7 +235,7 @@ export default function VillageHome({ customers, tries, waiting, triesLeft, prob
         </p>
       </header>
 
-      <VillageCanvas onPlace={openPlace} play={play} story={story} live />
+      <VillageCanvas onPlace={openPlace} onDecide={onDecide} decided={decided} play={play} story={story} live />
 
       <section className="vh-start" aria-label="Start here">
         <button type="button" className="vh-test" onClick={() => openPlace("inbox")}>
@@ -244,7 +270,18 @@ export default function VillageHome({ customers, tries, waiting, triesLeft, prob
               </button>
             </div>
             <div className="vh-panel-body">
-              {problem ? (
+              {panel === "decide" ? (
+                decidingCase ? (
+                  <>
+                    <p className="vh-lede">The gate sent this to a person. Approve and the factory pays; reject and nothing moves.</p>
+                    <div className="approvals vh-decide">
+                      <WaitingCard c={decidingCase} onDone={onDecided} />
+                    </div>
+                  </>
+                ) : (
+                  <p className="vh-muted">This request is no longer waiting.</p>
+                )
+              ) : problem ? (
                 <p className="problem" role="alert">
                   {problem}
                 </p>

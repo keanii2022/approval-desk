@@ -98,3 +98,7 @@ body:has(.village-home) { margin: 0; background: #24283f; }
 .vh-light-ask { background: var(--gold); }
 .vh-light-stop { background: var(--coral); }
 
+
+/* the real approval card, inside the decide panel */
+.vh-decide { font: 15px/1.5 system-ui, sans-serif; color: #f5efd6; }
+.vh-decide .card { margin: 4px 0 0; }

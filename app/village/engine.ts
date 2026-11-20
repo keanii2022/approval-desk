@@ -30,6 +30,8 @@ export interface VillageElements {
     brules: HTMLButtonElement;
     bA: HTMLButtonElement;
     bR: HTMLButtonElement;
+    /** Opens the logbook window, for people who would never think to tap the strip. */
+    blog?: HTMLButtonElement;
   };
   live: HTMLElement;
 }
@@ -54,6 +56,8 @@ export interface VillageOptions {
   onControls?: (controls: VillageControls) => void;
   /** A visitor opened a place (click on it, or key I for the Inbox, H for the desk). Return true when the page handled it. */
   onPlace?: (place: VillagePlace) => boolean;
+  /** The robot holds at the desk with the visitor's request; they pressed approve (A) or reject (R), or tapped the desk. */
+  onDecide?: (requestId: string, choice: "A" | "R") => void;
   /** Live mode: no scripted stories. The robot waits at home until the page plays a real request. */
   live?: boolean;
 }
@@ -77,6 +81,8 @@ export interface VisitorRequest {
   paid: boolean;
   /** One or a few words for the logbook line: PAID, WAITING FOR A PERSON, BLOCKED, ... */
   word: string;
+  /** Waiting for a person and the visitor may decide it: the robot holds at the desk until they do. */
+  decidable?: boolean;
 }
 
 /** The places a page can open its own window for. */
@@ -95,6 +101,8 @@ export interface VillageHandle {
   playVisitor(request: VisitorRequest): void;
   /** Sets the playback speed, from 0.25 to 1. */
   setPace(pace: number): void;
+  /** The visitor decided their waiting request: the robot carries on from the desk (A paid, R rejected). */
+  visitorDecided(choice: "A" | "R", paidCents: number | null): void;
 }
 
 const SW=320,SH=240,LOGH=54;
@@ -669,14 +677,17 @@ const RWHY={R1:'MORE THAN WAS PAID',R2:'OVER $100',R3:'ORDER OVER 30 DAYS OLD',R
 // Visitor text goes through the pixel font, which only has capitals, digits and a little punctuation.
 const pix=(s,n=48)=>{s=String(s??'').toUpperCase().split('').filter(c=>FONT[c]).join('').replace(/\s+/g,' ').trim();return s.length>n?s.slice(0,n-1).trimEnd()+'.':s};
 /** The timeline of a visitor's real request: the walk of the scripted stories, lit by the real gate's decision. */
-export function buildVisitorTL(v: VisitorRequest, live = false): VillageTimeline {
-  const T=new TL(4),e=T.ev,k=VKIND[v.light]||'Y',amt=v.amountCents!=null?'$'+(v.amountCents/100).toFixed(2):'',id=pix(v.id,12),word=pix(v.word,24);
+export function buildVisitorTL(v: VisitorRequest, live = false, dec: "A" | "R" | null = null, paidCents: number | null = null): VillageTimeline {
+  const T=new TL(4),e=T.ev,k=VKIND[v.light]||'Y',amt=v.amountCents!=null?'$'+(v.amountCents/100).toFixed(2):'',id=pix(v.id,12);
+  const held=k==='Y'&&v.decidable===true,paidAmt=paidCents!=null?'$'+(paidCents/100).toFixed(2):amt;
+  const word=held&&dec==='A'?'APPROVED BY YOU - PAID':held&&dec==='R'?'REJECTED BY YOU':pix(v.word,24);
   const why=(v.rules||[]).map(r=>RWHY[r]||r).join(', ');
   T.kind=k;T.visitor=true;T.I={o:pix(v.orderId||'',8),amt,id};
   T.rows=k==='G'?(amt?[['NOT MORE THAN PAID','WITHIN THE ORDER',1],['UNDER THE $100 LIMIT','NO HUMAN NEEDED',1]]:[['NO REFUND ASKED FOR','NOTHING TO PAY',1]])
     :(v.rules||[]).slice(0,2).map(r=>[RSHORT[r]||pix(r,20),k==='R'?'BLOCKED':'NEEDS A HUMAN',k==='R'?-1:0]);
   if(!T.rows.length)T.rows=[[k==='R'?'BLOCKED':'NEEDS A HUMAN','',k==='R'?-1:0]];
-  T.entry={id,o:T.I.o||'NONE',a:amt||'NO AMOUNT',ag:pix(v.agentSays,40),ga:pix((k==='G'?'GREEN. ':k==='Y'?'YELLOW. ':'RED. ')+(why||'WITHIN EVERY RULE.'),40),fi:pix(v.outcome,40),g:k==='G'&&v.paid?1:0,wd:word};
+  const fi=held&&dec==='A'?'APPROVED BY YOU. '+paidAmt+' PAID.':held&&dec==='R'?'REJECTED BY YOU. NOTHING PAID.':pix(v.outcome,40);
+  T.entry={id,o:T.I.o||'NONE',a:(held&&dec==='A'?paidAmt:amt)||'NO AMOUNT',ag:pix(v.agentSays,40),ga:pix((k==='G'?'GREEN. ':k==='Y'?'YELLOW. ':'RED. ')+(why||'WITHIN EVERY RULE.'),40),fi,g:(k==='G'&&v.paid)||(held&&dec==='A')?1:0,wd:word};
   T.stand(0.5,'down');e.letter=0.2;T.emo('!',0.25,1.2);
   e.walk1=T.t;T.go(RT.in);e.atInbox=T.t;T.stand(0.9,'up');e.grab=e.atInbox+0.3;e.grabDone=e.grab+0.45;
   e.walk2=T.t;T.go(RT.gate);e.arrive=T.t;
@@ -700,16 +711,26 @@ export function buildVisitorTL(v: VisitorRequest, live = false): VillageTimeline
     T.say(e.lightFix,'YELLOW! A PERSON MUST DECIDE THIS ONE.',why?pix('WHY: '+why):'');
     T.say(e.run,'THE AGENT RUNS TO THE HUMAN DESK.');
     T.go(RT.desk,RUN);T.stand(0.15,'right');e.atDesk=T.t;e.deskOn=T.t;
-    T.emo('think',e.atDesk+0.3,e.atDesk+6.0);T.stand(6.0,'right');
-    T.say(e.atDesk,'YOUR REQUEST WAITS AT THE HUMAN DESK.','YOU ARE THE PERSON. OPEN THE DESK TO DECIDE.');
-    home(RT.homeFromDesk,false);
+    if(held){ // the visitor is the person: the play holds at e.decide until they approve or reject
+      T.emo('think',e.atDesk+0.3,e.atDesk+1.2);T.stand(1.0,'right');e.decide=T.t;
+      T.say(e.atDesk,'YOUR REQUEST NEEDS A PERSON. THAT IS YOU.','APPROVE OR REJECT IT BELOW.');
+      if(dec==='A'){T.emo('thumb',e.decide+0.3,e.decide+1.4);T.say(e.decide,'APPROVED! NOW THE FACTORY CAN PAY.');T.stand(1.0,'down');
+        T.go(RT.facFromDesk);e.atFac=T.t;e.give=T.t+0.3;e.coins=T.t+0.8;e.tagAt=T.t+1.2;T.pay=true;T.stand(5.2,'down');e.coinsEnd=T.t;
+        T.say(e.coins,paidAmt+' REFUNDED! THE FACTORY PAID IT.');home(RT.homeFromFac,true)}
+      else if(dec==='R'){T.emo('sweat',e.decide+0.3,e.decide+1.4);T.say(e.decide,'REJECTED. NO MONEY MOVES.');T.stand(1.5,'down');home(RT.homeFromDesk,false)}
+      else{T.stand(1.0,'right');home(RT.homeFromDesk,false)} // never reached: the play holds before this
+    }else{
+      T.emo('think',e.atDesk+0.3,e.atDesk+6.0);T.stand(6.0,'right');
+      T.say(e.atDesk,'YOUR REQUEST WAITS AT THE HUMAN DESK.','YOU ARE THE PERSON. OPEN THE DESK TO DECIDE.');
+      home(RT.homeFromDesk,false);
+    }
   }else{
     e.stamp=A+2.2;e.stampKind='block';e.cardEnd=A+5.6;
     T.emo('sweat',A+3.0,A+6.0);T.stand(2.9,'up');T.stand(5.0,'down');e.leave=T.t;e.lightOff=e.leave+0.8;
     T.say(e.lightFix,'RED! THE GATE BLOCKS IT.',why?pix('WHY: '+why):'');T.say(e.stamp,'BLOCKED. NOTHING GETS PAID.');
     home(RT.homeFromGate,false);
   }
-  e.red=e.lightFix;T.dur=T.t;T.dec='A';return T;
+  e.red=e.lightFix;T.dur=T.t;T.dec=dec||'A';return T;
 }
 /** The gate light at scene time t: off, cycling while it checks, then R, Y or G. */
 function lightAt(tl,t){const e=tl.ev;if(!(t>=e.scan&&t<e.lightOff))return 'off';return t<e.lightFix?'RYG'[(((t-e.scan)/0.13)|0)%3]:e.result}
@@ -813,7 +834,7 @@ function drawDialog(l1,l2,el,amb,full){
 // same). destroy() undoes every listener, the animation frame and the sound.
 export function mountVillage(els: VillageElements, options: VillageOptions = {}): VillageHandle {
   const scr=els.screen,sctx=scr.getContext('2d'),logc=els.logbook,lctx=logc.getContext('2d'),ttl=els.title,keysc=els.keys,live=els.live;
-  const {b1,b2,b3,bauto,bday,bsound,bspeed,brules,bA,bR}=els.buttons;
+  const {b1,b2,b3,bauto,bday,bsound,bspeed,brules,bA,bR,blog}=els.buttons;
   const device=scr.parentElement,root=scr.closest('.village-canvas')||device; // --s and the bare/crop styles go on the component root, not on <html>
   sctx.imageSmoothingEnabled=false;lctx.imageSmoothingEnabled=false;
   const img=sctx.createImageData(SW,SH),u32=new Uint32Array(img.data.buffer),limg=lctx.createImageData(SW,LOGH),lu32=new Uint32Array(limg.data.buffer);
@@ -821,6 +842,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   const WB=new Uint8Array(SW*SH),OUT=new Uint8Array(SW*SH),LB=new Uint8Array(SW*LOGH);
   const qs=new URLSearchParams(window.location.search);
   const liveOnly=options.live===true;
+  let curVisitor=null; // the visitor's request now playing (scene 4)
   const touch=typeof window.matchMedia==='function'&&window.matchMedia('(hover: none)').matches; // phones get no key hints
   const app={scene:liveOnly?0:1,pace:1,paused:false,logOpen:false,rulesOpen:false,hist:[],runRF:16,rt:0,dk:'',dt0:0,dec:'A',lastDec:'A',t:0,amb:0,auto:!(typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches),frozen:false,decided:false,info:null,hover:null,hoverBtn:null,pressed:null};
   let night=qs.get('day')!=='1';
@@ -965,12 +987,24 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
       textC(label[k],bx+(b.w>>1)+off,by+4+off,K,2)}
     const wait=t<e.decide,ly=y+h-17;
     if(wait){const el=Math.max(0,e.decide-t),auto=app.frozen;
-      textC('YOUR CALL. (KEYS: A OR R)',x+(w>>1),ly,K)}
+      textC(touch?'YOUR CALL. TAP ONE BELOW.':'YOUR CALL. (KEYS: A OR R)',x+(w>>1),ly,K)}
     else textC(chosen==='A'?'APPROVED. SENT TO THE FACTORY.':'REJECTED. NOTHING IS PAID.',x+(w>>1),ly,chosen==='A'?RG1:R1);
+  }
+  // A bouncing arrow over the place to tap: the Inbox while the robot waits, the desk while it holds a request for the visitor.
+  function drawHint(amb){
+    if(app.logOpen||app.rulesOpen||app.frozen)return;
+    let cx,top;
+    if(liveOnly&&app.scene===0){cx=59;top=28}
+    else if(visitorHolding()){cx=144;top=106}
+    else return;
+    const y=top+((((amb*3)|0)&1)?2:0),ay=y+8;
+    textC(touch?'TAP':'CLICK',cx,y,Y1,1,K);
+    for(let i=0;i<5;i++)R(cx-4+i,ay+i,9-2*i,1,K);
+    for(let i=0;i<4;i++)R(cx-3+i,ay+i,7-2*i,1,Y1);
   }
   function drawLog(tl,t,amb){
     B=LB;R(0,0,SW,LOGH,K);R(1,1,SW-2,LOGH-2,W);R(2,2,SW-4,LOGH-4,K);R(3,3,SW-6,LOGH-6,W);
-    text('LOGBOOK',12,7,R1);R(12,15,textW('LOGBOOK'),1,BL);text('ADD-ONLY. CLICK FOR DETAILS',SW-12-textW('ADD-ONLY. CLICK FOR DETAILS'),7,BL);
+    text('LOGBOOK',12,7,R1);R(12,15,textW('LOGBOOK'),1,BL);const tip=touch?'ADD-ONLY. TAP TO OPEN':'ADD-ONLY. CLICK TO OPEN';text(tip,SW-12-textW(tip),7,BL);
     const{l,nl}=logLines(tl,t),all=nl?[...l,nl]:l,show=all.slice(-3);
     if(!all.length)text(liveOnly?'NO ENTRIES YET. SEND A REQUEST.':'NO ENTRIES YET. RUN A SCENE.',20,25,BL);
     show.forEach((s,i)=>{const yy=21+i*10,isNew=nl&&i===show.length-1;
@@ -987,6 +1021,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
       if(k<0.12||(k>0.28&&k<0.4))for(let y=0;y<SH;y++)for(let x=0;x<SW;x++)if(((x+y)&1)===0)OUT[y*SW+x]=R1;
       if((((k*4)|0)&1)===0){for(let y=0;y<SH;y++)for(let x=0;x<SW;x++)if(x<4||y<4||x>=SW-4||y>=SH-4)OUT[y*SW+x]=(((x+y)>>2)&1)?R2:K}}
     drawHumanWin(tl,t,amb);
+    drawHint(amb);
     if(app.paused)textO('PAUSED',6,6,W,K);
     if(app.logOpen)drawLogWin(tl,t);
     if(app.rulesOpen)drawRulesWin();
@@ -1000,7 +1035,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     const lut=LUT[night?0:1];for(let i=0;i<OUT.length;i++)u32[i]=lut[OUT[i]];sctx.putImageData(img,0,0);
     drawLog(tl,t,amb);for(let i=0;i<LB.length;i++)lu32[i]=lut[LB[i]];lctx.putImageData(limg,0,0);
     // HTML approve / reject buttons only while the human is needed
-    const waiting=app.scene===2&&!app.frozen&&t>=e.winOpen&&t<e.decide&&!app.decided&&!app.logOpen&&!app.rulesOpen;
+    const waiting=(app.scene===2&&!app.frozen&&t>=e.winOpen&&t<e.decide&&!app.decided&&!app.logOpen&&!app.rulesOpen)||visitorHolding();
     bA.hidden=!waiting;bR.hidden=!waiting;
     // hook 2: tell the page when the robot's stop changes (once per change, derived from the timeline)
     // the gate light and the visitor's play, readable without the pixels (tests, tools)
@@ -1094,7 +1129,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   function refreshLabels(){
     const ink='#15102e';
     label(b1,['SCENE 1','$24 SMALL'],ink);label(b2,['SCENE 2','$150 BIG'],ink);label(b3,['SCENE 3','$500 SILLY'],ink);
-    label(bauto,['AUTO-PLAY',app.auto?'ON':'OFF'],ink);label(bday,[night?'DAY':'NIGHT',touch?'MODE':'KEY N'],ink);label(bsound,['SOUND',sfxOn?'ON':'OFF'],ink);label(brules,touch?['THE','RULES']:['RULES','KEY ?'],ink);label(bspeed,['SPEED',Math.round(app.pace*100)+'%'],ink);
+    label(bauto,['AUTO-PLAY',app.auto?'ON':'OFF'],ink);label(bday,[night?'DAY':'NIGHT',touch?'MODE':'KEY N'],ink);label(bsound,['SOUND',sfxOn?'ON':'OFF'],ink);label(brules,touch?['THE','RULES']:['RULES','KEY ?'],ink);if(blog){label(blog,touch?['THE','LOGBOOK']:['LOGBOOK','KEY L'],ink);blog.setAttribute('aria-pressed',app.logOpen?'true':'false')}label(bspeed,['SPEED',Math.round(app.pace*100)+'%'],ink);
     bspeed.setAttribute('aria-label','Playback speed: '+Math.round(app.pace*100)+' percent. Press to change');
     label(bA,'APPROVE (A)',ink);label(bR,'REJECT (R)',ink);
     [b1,b2,b3].forEach((b,i)=>b.setAttribute('aria-pressed',app.scene===i+1?'true':'false'));
@@ -1106,11 +1141,14 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   function playVisitor(v){
     if(app.frozen)return;commitRun();
     if(app.scene!==4)app.resume=app.scene;
-    TLS['4']=buildVisitorTL(v,liveOnly);
+    curVisitor=v;TLS['4']=buildVisitorTL(v,liveOnly);
     app.scene=4;app.t=0;app.dk='';app.dec='A';app.decided=false;app.info=null;app.logOpen=false;app.rulesOpen=false;app.paused=false;refreshLabels();
   }
   function setScene(n,quiet){commitRun();if(!quiet)sfx('click');if(app.scene===2)app.lastDec=app.dec;app.scene=n;app.t=0;app.dec='A';app.decided=false;app.info=null;refreshLabels()}
+  // The visitor's own request holding at the desk: approve and reject open the real decision on the page.
+  function visitorHolding(){if(app.scene!==4||app.decided||app.frozen||!curVisitor||app.logOpen||app.rulesOpen)return false;const e=getTL(4,'A').ev;return e.decide!==undefined&&app.t>=e.atDesk}
   function decide(d){
+    if(visitorHolding()){if(options.onDecide){options.onDecide(curVisitor.id,d);sfx('click')}return}
     if(app.frozen||app.scene!==2||app.decided||app.logOpen||app.rulesOpen)return;const tl=getTL(2,'A'),e=tl.ev;
     if(app.t<e.winOpen||app.t>=e.decide)return;app.dec=d;app.decided=true;app.t=getTL(2,d).ev.decide;sfx('click');
   }
@@ -1129,13 +1167,13 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     if(h){if(h.id==='log'){app.logOpen=true;sfx('click')}else if(h.id==='gate'){app.rulesOpen=true;sfx('click')}else app.info={m:h.m,t0:performance.now(),until:performance.now()+9000}}});
   // live mode has one demo button: it plays the three made-up stories in a row, or stops them
   b1.onclick=()=>setScene(1);b2.onclick=()=>setScene(2);b3.onclick=()=>setScene(3);
-  bauto.onclick=()=>{app.auto=!app.auto;refreshLabels();sfx('click')};bday.onclick=()=>{toggleNight();sfx('click')};bsound.onclick=toggleSound;brules.onclick=()=>{app.logOpen=false;app.rulesOpen=!app.rulesOpen;sfx('click')};bspeed.onclick=()=>{app.pace=app.pace>=1?0.25:app.pace+0.25;refreshLabels();sfx('click')};bA.onclick=()=>decide('A');bR.onclick=()=>decide('R');
+  bauto.onclick=()=>{app.auto=!app.auto;refreshLabels();sfx('click')};bday.onclick=()=>{toggleNight();sfx('click')};bsound.onclick=toggleSound;brules.onclick=()=>{app.logOpen=false;app.rulesOpen=!app.rulesOpen;sfx('click')};if(blog)blog.onclick=()=>{app.rulesOpen=false;app.logOpen=!app.logOpen;app.info=null;sfx('click')};bspeed.onclick=()=>{app.pace=app.pace>=1?0.25:app.pace+0.25;refreshLabels();sfx('click')};bA.onclick=()=>decide('A');bR.onclick=()=>decide('R');
   on(window,'pointerdown',sfxArm);
   logc.style.cursor='pointer';on(logc,'click',()=>{app.rulesOpen=false;app.logOpen=!app.logOpen;sfx('click')});
   on(logc,'keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();ev.stopPropagation();app.logOpen=!app.logOpen}});
   // shortcuts stay quiet while a form field has focus or a modifier is held (hook 3)
   // the same shortcuts are reachable through handle.press(key), for a page that draws its own buttons
-  function openPlace(id){if(!options.onPlace)return false;app.logOpen=false;app.rulesOpen=false;app.info=null;const done=options.onPlace(id)===true;if(done)sfx('click');return done}
+  function openPlace(id){if(id==='desk'&&visitorHolding()&&options.onDecide){decide('A');return true}if(!options.onPlace)return false;app.logOpen=false;app.rulesOpen=false;app.info=null;const done=options.onPlace(id)===true;if(done)sfx('click');return done}
   function handleKey(k){
     if(k==='i'){openPlace('inbox');return}if(k==='h'){openPlace('desk');return}
     if(liveOnly&&k==='p')return;
@@ -1164,7 +1202,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     if(dead)return;
     const dt=Math.min(0.1,(now-last)/1000);last=now;app.amb+=dt;if(!(app.paused||app.logOpen||app.rulesOpen))app.rt+=dt;
     const tl=getTL(app.scene,app.dec);const mv=agentAt(tl,app.t).mv;let nt=app.t+((app.paused||app.logOpen||app.rulesOpen)?0:dt*app.pace*boost*(mv?1:DWELL));
-    if(app.scene===2&&!app.decided&&app.t<tl.ev.decide&&nt>=tl.ev.decide)nt=tl.ev.decide-0.001;
+    if((app.scene===2||app.scene===4)&&tl.ev.decide!==undefined&&!app.decided&&app.t<tl.ev.decide&&nt>=tl.ev.decide)nt=tl.ev.decide-0.001;
     app.t=nt;
     if(app.t>=tl.dur){if(liveOnly)setScene(0,true); // a story plays once, then the robot waits again
       else if(app.scene===4)setScene(app.resume||1,true);else if(app.auto)setScene(app.scene%3+1,true);else setScene(app.scene,true)}
@@ -1178,12 +1216,13 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     press(key){if(dead)return;sfxArm();handleKey(String(key).toLowerCase())},
     overlayOpen(){return !dead&&(app.logOpen||app.rulesOpen)},
     playVisitor(v){if(!dead)playVisitor(v)},
+    visitorDecided(d,cents){if(dead||app.scene!==4||app.decided||!curVisitor||(d!=='A'&&d!=='R'))return;TLS['4']=buildVisitorTL(curVisitor,liveOnly,d,cents);app.dec=d;app.decided=true;app.t=Math.max(app.t,TLS['4'].ev.decide);sfx('click')},
     setPace(p){if(dead)return;app.pace=Math.min(1,Math.max(0.25,Number(p)||1));refreshLabels()},
     destroy(){
     if(dead)return;dead=true;
     cancelAnimationFrame(raf);if(roRaf)cancelAnimationFrame(roRaf);if(ro)ro.disconnect();
     for(const[t,type,fn,opts]of listeners)t.removeEventListener(type,fn,opts);
-    for(const b of[b1,b2,b3,bauto,bday,bsound,bspeed,brules,bA,bR]){b.onclick=null;while(b.firstElementChild)b.removeChild(b.firstElementChild)} // the drawn labels
+    for(const b of[b1,b2,b3,bauto,bday,bsound,bspeed,brules,bA,bR,blog].filter(Boolean)){b.onclick=null;while(b.firstElementChild)b.removeChild(b.firstElementChild)} // the drawn labels
     root.classList.remove('village-bare');root.style.removeProperty('--s');root.style.removeProperty('overflow');scr.style.margin='';scr.style.cursor='';
     if(AC){try{AC.close()}catch(e){}AC=null;MASTER=null}
   }};

@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { approveAndPay, rejectRequest, retryPayment, type Decision } from "../../lib/approval.ts";
@@ -14,11 +14,17 @@ async function currentVisitor(): Promise<string | null> {
 
 // What each form gets back when a person's decision is refused: the reason, in
 // plain words. When the decision goes through, the page reloads with a banner.
-export type FormState = { error: string | null };
+// From the village, the form stays on the page and gets back what happened instead.
+export type Decided = { outcome: "paid" | "already_paid" | "rejected" | "approved_not_paid"; amountCents: number | null };
+export type FormState = { error: string | null; done?: Decided };
 
-function finish(decision: Decision): FormState {
+function finish(decision: Decision, stay = false, amountCents: number | null = null): FormState {
   if (!decision.ok) return { error: decision.message };
   revalidatePath("/approvals");
+  if (stay) {
+    refresh(); // the village around the panel re-reads the visitor's waiting requests
+    return { error: null, done: { outcome: decision.outcome, amountCents } };
+  }
   const result =
     decision.outcome === "paid"
       ? `paid&refund=${decision.refundId}`
@@ -59,14 +65,17 @@ export async function approveAction(_previous: FormState, formData: FormData): P
   if (gateEntryId === null) return { error: "That request could not be found" };
   const visitor = await currentVisitor();
   const input = { orderId: text(formData, "orderId"), amount: text(formData, "amount") };
-  return withDb((db) => finish(approveAndPay(db, gateEntryId, input, utcNow(), visitor)));
+  const cents = Math.round(Number(input.amount) * 100);
+  const stay = formData.get("stay") === "1";
+  return withDb((db) => finish(approveAndPay(db, gateEntryId, input, utcNow(), visitor), stay, Number.isFinite(cents) ? cents : null));
 }
 
 export async function rejectAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const gateEntryId = entryId(formData, "gateEntryId");
   if (gateEntryId === null) return { error: "That request could not be found" };
   const visitor = await currentVisitor();
-  return withDb((db) => finish(rejectRequest(db, gateEntryId, text(formData, "note"), utcNow(), visitor)));
+  const stay = formData.get("stay") === "1";
+  return withDb((db) => finish(rejectRequest(db, gateEntryId, text(formData, "note"), utcNow(), visitor), stay));
 }
 
 export async function retryAction(_previous: FormState, formData: FormData): Promise<FormState> {

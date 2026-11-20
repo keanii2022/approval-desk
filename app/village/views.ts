@@ -1,6 +1,6 @@
 // Turns a visitor's tries and waiting requests into plain words on the server, so the
 // village panel (a client component) never imports the database code.
-import { ruleInWords, type WaitingCase } from "../../lib/approval.ts";
+import { ruleInWords } from "../../lib/approval.ts";
 import type { AgentOutput, GateDecision } from "../../lib/gate.ts";
 import { dollars } from "../../lib/money.ts";
 import type { Tried } from "../../lib/tryout.ts";
@@ -29,7 +29,6 @@ export type TryView = {
   agentSays: string;
 };
 
-export type WaitingView = { requestId: string; customerName: string; subject: string; why: string[]; waitingSince: string };
 
 const GATE_WORDS: Record<GateDecision["result"], string> = {
   allow: "Allowed",
@@ -122,12 +121,7 @@ export function visitorRequest(t: TryView): VisitorRequest | null {
     outcome: t.outcome,
     paid: t.outcome.startsWith("Refund paid"),
     word: logbookWord(t.outcome),
+    decidable: t.waiting,
   };
 }
 
-// Only the visitor's own tries: the seeded practice cases are on the approval screen for everyone.
-export function waitingViews(cases: WaitingCase[]): WaitingView[] {
-  return cases
-    .filter((c) => c.requestId.startsWith("TRY-"))
-    .map((c) => ({ requestId: c.requestId, customerName: c.customer.name, subject: c.request.subject, why: c.why, waitingSince: c.waitingSince }));
-}

@@ -18,12 +18,16 @@ export interface VillageCanvasProps {
   play?: { key: number; request: VisitorRequest } | null;
   /** A made-up story to play (1 small, 2 big, 3 too much). A new key plays it (again). */
   story?: { key: number; scene: 1 | 2 | 3 } | null;
+  /** The robot holds at the desk with the visitor's request and they want to decide it. */
+  onDecide?: (requestId: string, choice: "A" | "R") => void;
+  /** The visitor's decision went through: a new key lets the robot carry on. */
+  decided?: { key: number; choice: "A" | "R"; paidCents: number | null } | null;
   /** No scripted stories or scene buttons: the robot waits until a real request is played. */
   live?: boolean;
   className?: string;
 }
 
-export default function VillageCanvas({ onStage, onPlace, play, story, live: isLive = false, className }: VillageCanvasProps) {
+export default function VillageCanvas({ onStage, onPlace, onDecide, play, story, decided, live: isLive = false, className }: VillageCanvasProps) {
   const screen = useRef<HTMLCanvasElement>(null);
   const title = useRef<HTMLCanvasElement>(null);
   const logbook = useRef<HTMLCanvasElement>(null);
@@ -39,11 +43,12 @@ export default function VillageCanvas({ onStage, onPlace, play, story, live: isL
   const brules = useRef<HTMLButtonElement>(null);
   const bA = useRef<HTMLButtonElement>(null);
   const bR = useRef<HTMLButtonElement>(null);
+  const blog = useRef<HTMLButtonElement>(null);
 
   // The engine mounts once. The callback is read through a ref, so a parent that passes a
   // new function on every render never restarts the village.
-  const hooks = useRef({ onStage, onPlace });
-  hooks.current = { onStage, onPlace };
+  const hooks = useRef({ onStage, onPlace, onDecide });
+  hooks.current = { onStage, onPlace, onDecide };
   const handlesPlaces = useRef(Boolean(onPlace));
   const liveMode = useRef(isLive);
   const village = useRef<VillageHandle | null>(null);
@@ -68,6 +73,7 @@ export default function VillageCanvas({ onStage, onPlace, play, story, live: isL
         buttons: {
           b1: b1.current, b2: b2.current, b3: b3.current, bauto: bauto.current, bday: bday.current,
           bsound: bsound.current, bspeed: bspeed.current, brules: brules.current, bA: bA.current, bR: bR.current,
+          blog: blog.current ?? undefined,
         },
       },
       {
@@ -75,6 +81,7 @@ export default function VillageCanvas({ onStage, onPlace, play, story, live: isL
         onPlace: handlesPlaces.current ? (place) => hooks.current.onPlace?.(place) ?? false : undefined,
         live: liveMode.current,
         onControls: (controls) => setPace(controls.pace),
+        onDecide: (requestId, choice) => hooks.current.onDecide?.(requestId, choice),
       },
     );
     village.current = handle;
@@ -89,6 +96,12 @@ export default function VillageCanvas({ onStage, onPlace, play, story, live: isL
   useEffect(() => {
     if (playKey !== undefined && playRequest) village.current?.playVisitor(playRequest);
   }, [playKey, playRequest]);
+  const decidedKey = decided?.key;
+  const decidedChoice = decided?.choice;
+  const decidedCents = decided?.paidCents ?? null;
+  useEffect(() => {
+    if (decidedKey !== undefined && decidedChoice) village.current?.visitorDecided(decidedChoice, decidedCents);
+  }, [decidedKey, decidedChoice, decidedCents]);
   const storyKey = story?.key;
   const storyScene = story?.scene;
   useEffect(() => {
@@ -140,6 +153,7 @@ export default function VillageCanvas({ onStage, onPlace, play, story, live: isL
           <span aria-hidden="true">FAST</span>
         </label>
         <button ref={brules} type="button" aria-label="Show the hard rules" />
+        <button ref={blog} type="button" aria-pressed="false" aria-label="Open the logbook" />
       </div>
       <canvas ref={keys} className="village-keys" width={320} height={9} aria-hidden="true" />
       <div className="village-bar2">

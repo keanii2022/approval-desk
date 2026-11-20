@@ -1,9 +1,10 @@
 // Runs before `next start` (see "start" in package.json): on a fresh host the
-// database file doesn't exist yet, so seed it once. An existing file is left
+// database file doesn't exist yet, so seed it once, with the overnight requests waiting. An existing file is left
 // alone so approvals and the logbook survive restarts.
 import { existsSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { DB_PATH, openDatabase } from "../lib/db.ts";
+import { queueOvernight } from "../lib/overnight.ts";
 import { seed } from "../lib/seed.ts";
 
 const path = process.env.APPROVAL_DESK_DB ?? DB_PATH;
@@ -15,6 +16,7 @@ if (existsSync(path)) {
   mkdirSync(dirname(path), { recursive: true });
   const db = openDatabase(path);
   seed(db);
+  await queueOvernight(db); // so the human desk has what came in overnight
   db.close();
-  console.log(`No database at ${path}, seeded a fresh one`);
+  console.log(`No database at ${path}, seeded a fresh one with the overnight requests`);
 }

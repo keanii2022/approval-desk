@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useActionState, useEffect, useState, type FormEvent } from "react";
-import { approveAction, rejectAction, retryAction, type FormState } from "./actions.ts";
+import { approveAction, rejectAction, retryAction, type Decided, type FormState } from "./actions.ts";
 
 const start: FormState = { error: null };
 
@@ -23,6 +23,16 @@ function sendWith(action: (data: FormData) => void) {
   };
 }
 
+// Inside the village: the decision stays on the page, and the village hears how it went.
+function useDone(state: FormState, onDone: ((done: Decided) => void) | undefined) {
+  const done = state.done;
+  useEffect(() => {
+    if (done) onDone?.(done);
+    // onDone is a fresh function each render; only a new result should call it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [done]);
+}
+
 function Problem({ state }: { state: FormState }) {
   return state.error ? (
     <p className="problem" role="alert">
@@ -39,12 +49,15 @@ export function ApproveForm(props: {
   fixed: boolean;
   suggestedOrderId: string | null;
   suggestedAmount: string;
+  onDone?: (done: Decided) => void;
 }) {
   const [state, action, pending] = useActionState(approveAction, start);
   const ready = useReady();
+  useDone(state, props.onDone);
   return (
     <form onSubmit={sendWith(action)} className="decision" noValidate aria-label="Approve this refund">
       <input type="hidden" name="gateEntryId" value={props.gateEntryId} />
+      {props.onDone ? <input type="hidden" name="stay" value="1" /> : null}
       <h3>Approve</h3>
       <table className="orders">
         <thead>
@@ -94,12 +107,14 @@ export function ApproveForm(props: {
   );
 }
 
-export function RejectForm({ gateEntryId }: { gateEntryId: number }) {
+export function RejectForm({ gateEntryId, onDone }: { gateEntryId: number; onDone?: (done: Decided) => void }) {
   const [state, action, pending] = useActionState(rejectAction, start);
   const ready = useReady();
+  useDone(state, onDone);
   return (
     <form onSubmit={sendWith(action)} className="decision" noValidate aria-label="Reject this refund">
       <input type="hidden" name="gateEntryId" value={gateEntryId} />
+      {onDone ? <input type="hidden" name="stay" value="1" /> : null}
       <h3>Reject</h3>
       <label htmlFor={`note-${gateEntryId}`}>Why are you rejecting it? A note is required.</label>
       <textarea id={`note-${gateEntryId}`} name="note" rows={3} />

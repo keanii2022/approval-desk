@@ -201,13 +201,40 @@ test("Village: a small refund plays green and the factory pays (R1, R2 pass); th
   await expect(villageSays(page)).toContainText("TAP THE INBOX TO START");
 });
 
-test("Village: a big refund plays yellow and waits at the human desk (R2)", async ({ page }) => {
+// The visitor's own request that needs a person: the robot holds at the desk until they decide.
+async function holdAtDesk(page: Page): Promise<string> {
   await openFastVillage(page);
   const id = await sendAndWatch(page, "Theo Achterberg", "My lamp is dead, I want the big refund.", "Waiting for a person");
   await expect(village(page)).toHaveAttribute("data-gate-light", "yellow", { timeout: 30_000 });
   await expect(village(page)).toHaveAttribute("data-robot-at", "desk", { timeout: 30_000 });
-  await expect(villageSays(page)).toContainText("YOUR REQUEST WAITS AT THE HUMAN DESK");
-  await expectInLogbook(page, new RegExp(`${id}, \\$150\\.00, order O1002\\..*Gate: YELLOW\\. OVER \\$100.*WAITING FOR A PERSON`));
+  await expect(villageSays(page)).toContainText("YOUR REQUEST NEEDS A PERSON");
+  return id;
+}
+
+test("Village: your own big refund waits for you at the desk; you approve it there and the factory pays (R2)", async ({ page }) => {
+  const id = await holdAtDesk(page);
+  await page.getByRole("button", { name: "Approve the refund" }).click();
+  const decide = panel(page);
+  await expect(decide.getByRole("heading", { name: "Your call" })).toBeVisible();
+  await decide.getByRole("button", { name: "Approve and pay" }).click();
+  await expect(panel(page)).toBeHidden();
+  await expect(village(page)).toHaveAttribute("data-robot-at", "factory", { timeout: 30_000 });
+  await expectInLogbook(page, new RegExp(`${id}, \\$150\\.00, order O1002\\..*APPROVED BY YOU`));
+  await page.goto("/approvals");
+  await expect(page.getByRole("article", { name: new RegExp(id) })).toHaveCount(0);
+});
+
+test("Village: rejecting your own big refund at the desk needs a note, then nothing is paid (R2)", async ({ page }) => {
+  const id = await holdAtDesk(page);
+  // Tapping the desk in the picture opens the same decision.
+  await clickPicture(page, 144, 170);
+  const decide = panel(page);
+  await decide.getByRole("button", { name: "Reject" }).click();
+  await expect(decide.getByRole("alert")).toBeVisible();
+  await decide.getByLabel(/Why are you rejecting/).fill("Bought too long ago");
+  await decide.getByRole("button", { name: "Reject" }).click();
+  await expect(panel(page)).toBeHidden();
+  await expectInLogbook(page, new RegExp(`${id}, .*REJECTED BY YOU`));
 });
 
 test("Village: a garbled answer plays red and nothing is paid (R5)", async ({ page }) => {

@@ -18,7 +18,7 @@
   --warn: #e0b84a;
   --warn-bg: #3a2f10;
 }
-body:has(.approvals) {
+body:has(main.approvals) {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
