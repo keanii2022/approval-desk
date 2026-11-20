@@ -23,7 +23,8 @@ export type LogEntry = {
 };
 
 export type GateDecisionDetails = { output: AgentOutput; decision: GateDecision };
-export type HumanApproval = { decision: "approve"; orderId: string; amountCents: number };
+/** note: why the person changed the agent's amount. Required when they did. */
+export type HumanApproval = { decision: "approve"; orderId: string; amountCents: number; note?: string };
 export type HumanRejection = { decision: "reject"; note: string };
 export type RefundDoneDetails = {
   refundId: string;
@@ -34,6 +35,7 @@ export type RefundDoneDetails = {
 };
 
 const APPROVAL_FIELDS = ["amountCents", "decision", "orderId"]; // sorted
+const APPROVAL_FIELDS_WITH_NOTE = ["amountCents", "decision", "note", "orderId"]; // sorted
 
 // The three triggers make the table add-only: changing, deleting, or
 // overwriting a line (REPLACE INTO, INSERT OR REPLACE, upsert) all fail.
@@ -126,9 +128,11 @@ export function humanApprovalProblem(db: DatabaseSync, gateEntry: LogEntry, appr
   if (stored?.decision?.result !== "send_to_human") return "The gate didn't send this request to a person";
 
   if (typeof approval !== "object" || approval === null || Array.isArray(approval)) return "Not a valid approval";
-  if (Object.keys(approval).sort().join() !== APPROVAL_FIELDS.join()) return "Not a valid approval";
-  const { decision, orderId, amountCents } = approval as Record<string, unknown>;
+  const keys = Object.keys(approval).sort().join();
+  if (keys !== APPROVAL_FIELDS.join() && keys !== APPROVAL_FIELDS_WITH_NOTE.join()) return "Not a valid approval";
+  const { decision, orderId, amountCents, note } = approval as Record<string, unknown>;
   if (decision !== "approve") return "Not a valid approval";
+  if (note !== undefined && typeof note !== "string") return "Not a valid approval";
 
   const hasOrder = typeof orderId === "string" && orderId.trim() !== "";
   if (!hasOrder || !db.prepare("SELECT 1 FROM orders WHERE id = ?").get(orderId)) {
@@ -170,11 +174,11 @@ export function humanLimitProblem(
     | undefined;
   if (!order || !asker) return "The approval must name an order that exists, for a request in the Inbox";
 
-  if (order.customer_id !== asker.customer_id) return "That order doesn't belong to the customer who asked (R8)";
+  if (order.customer_id !== asker.customer_id) return "Rule 8: a refund can only go on the asking customer's own order. That order doesn't belong to the customer who asked.";
 
   const left = order.amount_paid_cents - refundedCents(db, approval.orderId);
   if (approval.amountCents > left) {
-    return `That is more than what is left on this order (R1). The most you can refund is ${dollars(Math.max(0, left))}`;
+    return `Rule 1: never refund more than what is left on the order. That is more than what is left on this order. The most you can refund is ${dollars(Math.max(0, left))}.`;
   }
   return null;
 }
@@ -219,12 +223,26 @@ export function logHumanApproval(
       .get(gateEntryId);
     if (earlier) throw new Error(`Line ${gateEntryId} already has a person's decision`);
 
+    const changed = changedAmountProblem(gateEntry, copy as HumanApproval);
+    if (changed) throw new Error(changed);
+
     const entryId = addLine(db, now, "human_decision", gateEntry.requestId, gateEntryId, copy);
     db.exec("COMMIT");
     return { entryId };
   } finally {
     if (db.isTransaction) db.exec("ROLLBACK");
   }
+}
+
+// A person who pays a different amount than the agent suggested says why, so the logbook
+// shows the reason next to the change. No suggestion (the AI was down or unsure): no note needed.
+export function changedAmountProblem(gateEntry: LogEntry, approval: HumanApproval): string | null {
+  const output = (gateEntry.details as Partial<GateDecisionDetails> | null)?.output;
+  if (output?.status !== "answered") return null;
+  const form = output.form as { action?: unknown; amountCents?: unknown } | null;
+  if (form?.action !== "refund" || !Number.isSafeInteger(form.amountCents)) return null;
+  if (approval.amountCents === form.amountCents) return null;
+  return typeof approval.note === "string" && approval.note.trim() !== "" ? null : "You changed the amount, so say why";
 }
 
 // Writes down a person's reject. A note is required: why the person said no.

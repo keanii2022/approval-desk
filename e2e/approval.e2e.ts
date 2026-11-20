@@ -33,7 +33,7 @@ const card = (page: Page, requestId: string) => page.getByRole("article", { name
 
 test("Approval screen: shows what a person needs: the message, why, what the agent said, and what was paid and what is left", async ({ page }) => {
   await page.goto("/approvals");
-  await expect(page.getByRole("heading", { name: "Came in overnight (3)" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Waiting for you (3)" })).toBeVisible();
 
   const theo = card(page, "REQ-002");
   await expect(theo).toContainText("Theo Achterberg");
@@ -46,28 +46,32 @@ test("Approval screen: shows what a person needs: the message, why, what the age
   await expect(theo.getByLabel(/Refund amount/)).toHaveValue("150.00");
 
   await expect(card(page, "REQ-005")).toContainText("The order is more than 30 days old");
-  await expect(card(page, "REQ-018")).toContainText("The AI was unavailable");
+  await expect(card(page, "REQ-018")).toContainText("The AI didn't answer");
 });
 
 test("Approval screen: approve: the refund is paid, the request leaves the queue, and it is in the logbook (REQ-002)", async ({ page }) => {
   await page.goto("/approvals");
   await press(page, card(page, "REQ-002").getByRole("button", { name: "Approve and pay" }));
 
-  await expect(page.getByRole("status")).toHaveText("Approved and paid. Refund RF016 is done.");
-  await expect(page.getByRole("heading", { name: "Came in overnight (2)" })).toBeVisible();
+  await expect(page.getByRole("status")).toHaveText("Paid $150.00 to Theo Achterberg (refund RF016).");
+  await expect(page.getByRole("heading", { name: "Waiting for you (2)" })).toBeVisible();
   await expect(card(page, "REQ-002")).toHaveCount(0);
 
   expect(newRefunds()).toEqual([{ id: "RF016", order_id: "O1002", amount_cents: 15000 }]);
   expect(decisions()).toEqual([{ decision: "approve", orderId: "O1002", amountCents: 15000 }]);
 });
 
-test("Approval screen: change the amount: a person can approve less than the agent suggested (REQ-002, $120.00)", async ({ page }) => {
+test("Approval screen: change the amount: a person can approve less than the agent suggested, and says why (REQ-002, $120.00)", async ({ page }) => {
   await page.goto("/approvals");
   const theo = card(page, "REQ-002");
   await theo.getByLabel(/Refund amount/).fill("120.00");
   await press(page, theo.getByRole("button", { name: "Approve and pay" }));
+  await expect(theo.getByRole("alert")).toHaveText("You changed the amount, so say why");
+  expect(newRefunds()).toEqual([]);
+  await theo.getByLabel(/Why a different amount/).fill("Only the base broke");
+  await press(page, theo.getByRole("button", { name: "Approve and pay" }));
 
-  await expect(page.getByRole("status")).toContainText("Refund RF016");
+  await expect(page.getByRole("status")).toContainText("(refund RF016)");
   expect(newRefunds()).toEqual([{ id: "RF016", order_id: "O1002", amount_cents: 12000 }]);
 });
 
@@ -78,7 +82,7 @@ test("Approval screen: reject without a note is refused, and nothing changes (RE
 
   await expect(theo.getByRole("alert")).toHaveText("A note is required to reject a refund");
   await expect(theo).toBeVisible(); // still waiting
-  await expect(page.getByRole("heading", { name: "Came in overnight (3)" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Waiting for you (3)" })).toBeVisible();
 
   // A note of only spaces is the same as no note.
   await theo.getByLabel(/Why are you rejecting/).fill("    ");
@@ -148,7 +152,7 @@ test("R1 on a picked order: $27.01 on a $27.00 order is refused, $27.00 is paid 
 
   await arjun.getByLabel(/Refund amount/).fill("27.00");
   await press(page, arjun.getByRole("button", { name: "Approve and pay" }));
-  await expect(page.getByRole("status")).toContainText("Refund RF016");
+  await expect(page.getByRole("status")).toContainText("(refund RF016)");
   expect(newRefunds()).toEqual([{ id: "RF016", order_id: "O1030", amount_cents: 2700 }]);
 });
 
@@ -171,7 +175,7 @@ test("Approval screen: when nothing is waiting, the page says so", async ({ page
   await card(page, "REQ-018").getByLabel(/Why are you rejecting/).fill("No");
   await press(page, card(page, "REQ-018").getByRole("button", { name: "Reject" }));
   await expect(page.getByText(/Nothing is waiting/)).toBeVisible();
-  await expect(page.getByRole("heading", { name: /Came in overnight/ })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: /Waiting for you/ })).toHaveCount(0);
 });
 
 test("Approval screen: an approval the executor can't pay is shown as unpaid, and can be paid again once the problem is fixed (REQ-002)", async ({ page }) => {
@@ -191,7 +195,7 @@ test("Approval screen: an approval the executor can't pay is shown as unpaid, an
   fix.exec("DROP TRIGGER e2e_no_payment");
   fix.close();
   await press(page, page.getByRole("button", { name: "Try paying again" }));
-  await expect(page.getByRole("status")).toContainText("Refund RF016");
+  await expect(page.getByRole("status")).toContainText("(refund RF016)");
   await expect(page.getByRole("heading", { name: /Approved but not paid/ })).toHaveCount(0);
   expect(newRefunds()).toEqual([{ id: "RF016", order_id: "O1002", amount_cents: 15000 }]);
 });

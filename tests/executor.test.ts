@@ -56,7 +56,8 @@ function gateLine(db: DatabaseSync, requestId: string, output: AgentOutput): num
 }
 
 function approvalLine(db: DatabaseSync, gateEntryId: number, orderId: string, amountCents: number): number {
-  return logHumanApproval(db, gateEntryId, { decision: "approve", orderId, amountCents }, NOW).entryId;
+  // The note covers the tests that approve a different amount than the agent suggested.
+  return logHumanApproval(db, gateEntryId, { decision: "approve", orderId, amountCents, note: "Checked with the customer" }, NOW).entryId;
 }
 
 // A line written straight into the table, skipping the logbook's writers.

@@ -660,6 +660,7 @@ function build(sc,dec){
   e.red=e.lightFix;T.dur=T.t;T.dec=dec;return T;
 }
 const TLS={};
+let TOUCH=false; // set by mountVillage before any timeline is built: phones read TAP, mice read CLICK
 /** A built story: how long it runs, its named moments (ev), and the robot's walk as segments. */
 export interface VillageTimeline { sc: number; dec: string; dur: number; ev: Record<string, number>; seg: { t0: number; t1: number; x0: number; y0: number; x1: number; y1: number }[] }
 /** The timeline of a scene (1 to 3; scene 2 branches on the decision "A" or "R"). Built once and cached. */
@@ -667,7 +668,7 @@ export const getTL=(sc: number,dec: string): VillageTimeline=>{const k=sc===2?'2
 /** Live mode's resting state (scene 0): the robot waits at its door and nothing is logged. */
 function buildIdle(){
   const T=new TL(0);T.kind='G';T.I={o:'',amt:'',id:''};T.rows=[];T.ev.log=Infinity;T.ev.card=Infinity; // moments that never come; drawCard skips only when t<card
-  T.stand(12,'down');T.say(0,'TAP THE INBOX TO START.','WATCH A STORY OR SEND YOUR OWN REQUEST.');
+  T.stand(12,'down');T.say(0,(TOUCH?'TAP':'CLICK')+' THE INBOX TO SEND A REQUEST.','OR PICK A STORY TO WATCH.');
   T.dur=T.t;T.dec='A';return T;
 }
 /* ================= the visitor's own request (scene 4): same walk and props, the real gate's decision ================= */
@@ -739,7 +740,7 @@ function agentAt(tl,t){
   const u=s.t1>s.t0?clamp((t-s.t0)/(s.t1-s.t0)):1;
   return{x:Math.round(s.x0+(s.x1-s.x0)*u),y:Math.round(s.y0+(s.y1-s.y0)*u),f:s.f,mv:(s.x0!==s.x1||s.y0!==s.y1)&&t<s.t1,run:s.run};
 }
-const rfid=n=>'RF'+String(n).padStart(3,'0');
+const rfid=n=>'STORY'+n; // made-up stories get their own labels, so they never look like a real refund (RF016, ...)
 
 /* ================= where the robot is (hook 2: options.onStage) ================= */
 // The timeline only ever makes the robot stand still at these spots, so a standing
@@ -844,7 +845,8 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   const liveOnly=options.live===true;
   let curVisitor=null; // the visitor's request now playing (scene 4)
   const touch=typeof window.matchMedia==='function'&&window.matchMedia('(hover: none)').matches; // phones get no key hints
-  const app={scene:liveOnly?0:1,pace:1,paused:false,logOpen:false,rulesOpen:false,hist:[],runRF:16,rt:0,dk:'',dt0:0,dec:'A',lastDec:'A',t:0,amb:0,auto:!(typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches),frozen:false,decided:false,info:null,hover:null,hoverBtn:null,pressed:null};
+  if(TOUCH!==touch){TOUCH=touch;delete TLS['0']}
+  const app={scene:liveOnly?0:1,pace:1,paused:false,logOpen:false,rulesOpen:false,hist:[],runRF:1,rt:0,dk:'',dt0:0,dec:'A',lastDec:'A',t:0,amb:0,auto:!(typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches),frozen:false,decided:false,info:null,hover:null,hoverBtn:null,pressed:null};
   let night=qs.get('day')!=='1';
   // ?speed=N plays everything N times faster (browser tests); the speed button still works on top of it
   const boost=Math.max(1,Math.min(20,+qs.get('speed')||1));
@@ -987,7 +989,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
       textC(label[k],bx+(b.w>>1)+off,by+4+off,K,2)}
     const wait=t<e.decide,ly=y+h-17;
     if(wait){const el=Math.max(0,e.decide-t),auto=app.frozen;
-      textC(touch?'YOUR CALL. TAP ONE BELOW.':'YOUR CALL. (KEYS: A OR R)',x+(w>>1),ly,K)}
+      textC(touch?'YOUR CALL. TAP ONE.':'YOUR CALL. (KEYS: A OR R)',x+(w>>1),ly,K)}
     else textC(chosen==='A'?'APPROVED. SENT TO THE FACTORY.':'REJECTED. NOTHING IS PAID.',x+(w>>1),ly,chosen==='A'?RG1:R1);
   }
   // A bouncing arrow over the place to tap: the Inbox while the robot waits, the desk while it holds a request for the visitor.
@@ -1004,7 +1006,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   }
   function drawLog(tl,t,amb){
     B=LB;R(0,0,SW,LOGH,K);R(1,1,SW-2,LOGH-2,W);R(2,2,SW-4,LOGH-4,K);R(3,3,SW-6,LOGH-6,W);
-    text('LOGBOOK',12,7,R1);R(12,15,textW('LOGBOOK'),1,BL);const tip=touch?'ADD-ONLY. TAP TO OPEN':'ADD-ONLY. CLICK TO OPEN';text(tip,SW-12-textW(tip),7,BL);
+    text('LOGBOOK',12,7,R1);R(12,15,textW('LOGBOOK'),1,BL);const tip=touch?'TAP TO OPEN':'CLICK TO OPEN';text(tip,SW-12-textW(tip),7,BL);
     const{l,nl}=logLines(tl,t),all=nl?[...l,nl]:l,show=all.slice(-3);
     if(!all.length)text(liveOnly?'NO ENTRIES YET. SEND A REQUEST.':'NO ENTRIES YET. RUN A SCENE.',20,25,BL);
     show.forEach((s,i)=>{const yy=21+i*10,isNew=nl&&i===show.length-1;
@@ -1131,7 +1133,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     label(b1,['SCENE 1','$24 SMALL'],ink);label(b2,['SCENE 2','$150 BIG'],ink);label(b3,['SCENE 3','$500 SILLY'],ink);
     label(bauto,['AUTO-PLAY',app.auto?'ON':'OFF'],ink);label(bday,[night?'DAY':'NIGHT',touch?'MODE':'KEY N'],ink);label(bsound,['SOUND',sfxOn?'ON':'OFF'],ink);label(brules,touch?['THE','RULES']:['RULES','KEY ?'],ink);if(blog){label(blog,touch?['THE','LOGBOOK']:['LOGBOOK','KEY L'],ink);blog.setAttribute('aria-pressed',app.logOpen?'true':'false')}label(bspeed,['SPEED',Math.round(app.pace*100)+'%'],ink);
     bspeed.setAttribute('aria-label','Playback speed: '+Math.round(app.pace*100)+' percent. Press to change');
-    label(bA,'APPROVE (A)',ink);label(bR,'REJECT (R)',ink);
+    label(bA,touch?'APPROVE':'APPROVE (A)',ink);label(bR,touch?'REJECT':'REJECT (R)',ink);
     [b1,b2,b3].forEach((b,i)=>b.setAttribute('aria-pressed',app.scene===i+1?'true':'false'));
     bauto.setAttribute('aria-pressed',app.auto?'true':'false');bday.setAttribute('aria-pressed',night?'false':'true');bsound.setAttribute('aria-pressed',sfxOn?'true':'false');
     bday.setAttribute('aria-label',night?'Switch to the day palette':'Switch to the night palette');

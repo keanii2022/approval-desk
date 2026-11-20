@@ -232,7 +232,7 @@ describe("logbook: a person's approval", () => {
   it("Logbook: an approval with an extra field is not valid", () => {
     const db = freshDb();
     const { entryId } = logGateDecision(db, "REQ-002", refund("O1002", 15000), NOW);
-    const approval = { decision: "approve", orderId: "O1002", amountCents: 15000, note: "x" } as unknown as HumanApproval;
+    const approval = { decision: "approve", orderId: "O1002", amountCents: 15000, extra: "x" } as unknown as HumanApproval;
 
     expect(() => logHumanApproval(db, entryId, approval, NOW)).toThrow("Not a valid approval");
     expect(linesOf(db, "human_decision")).toHaveLength(0);
@@ -264,8 +264,8 @@ describe("logbook: a person's approval", () => {
     // Valid first, bad later: the valid copy is checked and stored.
     const db = freshDb();
     const toPerson = logGateDecision(db, "REQ-002", refund("O1002", 15000), NOW).entryId;
-    const { entryId } = logHumanApproval(db, toPerson, shiftyApproval(12000, "$150.00"), NOW);
-    expect(readEntry(db, entryId)!.details).toEqual(approve("O1002", 12000));
+    const { entryId } = logHumanApproval(db, toPerson, shiftyApproval(15000, "$150.00"), NOW);
+    expect(readEntry(db, entryId)!.details).toEqual(approve("O1002", 15000));
 
     // Bad first, valid later: the bad copy is checked, so nothing is written.
     const db2 = freshDb();

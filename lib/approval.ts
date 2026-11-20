@@ -132,7 +132,7 @@ export function getWaitingCases(db: DatabaseSync, visitorId: string | null = nul
     const choices = (orderFixed ? own.filter((o) => o.id === named) : own).map((o) => orderChoice(db, o));
 
     const why = item.rules.map((rule) =>
-      rule === "R6" ? (form?.action === "unsure" ? "The AI was unsure what to do" : "The AI was unavailable") : ruleInWords(rule),
+      rule === "R6" ? (form?.action === "unsure" ? "The AI was unsure what to do" : "The AI didn't answer") : ruleInWords(rule),
     );
 
     return {
@@ -162,7 +162,7 @@ export function getWaitingCases(db: DatabaseSync, visitorId: string | null = nul
 export function approveAndPay(
   db: DatabaseSync,
   gateEntryId: number,
-  input: { orderId: string; amount: string },
+  input: { orderId: string; amount: string; note?: string },
   now: string = utcNow(),
   visitorId: string | null = null,
 ): Decision {
@@ -173,7 +173,9 @@ export function approveAndPay(
 
   let entryId: number;
   try {
-    ({ entryId } = logHumanApproval(db, gateEntryId, { decision: "approve", orderId: input.orderId, amountCents }, now));
+    const note = (input.note ?? "").trim();
+    const approval = { decision: "approve" as const, orderId: input.orderId, amountCents, ...(note ? { note } : {}) };
+    ({ entryId } = logHumanApproval(db, gateEntryId, approval, now));
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : String(error) };
   }

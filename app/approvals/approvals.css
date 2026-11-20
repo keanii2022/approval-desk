@@ -32,6 +32,9 @@ main.approvals {
 }
 .approvals a { color: var(--accent); }
 .approvals h1 { margin: 0.5rem 0 0.25rem; font-size: 1.9rem; letter-spacing: -0.01em; }
+/* headings in the village's monospace, so the desk reads as part of the same place */
+.approvals h1, .approvals h2, .approvals .back { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.approvals h1 { letter-spacing: 0.04em; text-transform: uppercase; color: #e8806e; font-size: 1.6rem; }
 .approvals h2 { margin: 2.25rem 0 0.25rem; font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem; }
 .approvals h3, .approvals h4 { margin: 0.75rem 0 0.25rem; }
 .approvals .lede, .approvals .muted { color: var(--muted); }

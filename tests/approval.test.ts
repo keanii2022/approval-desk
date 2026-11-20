@@ -77,7 +77,7 @@ describe("Approval screen: what the screen shows", () => {
     await waiting(db, "REQ-018", AI_FAILS);
     const [c] = getWaitingCases(db);
 
-    expect(c.why).toEqual(["The AI was unavailable"]);
+    expect(c.why).toEqual(["The AI didn't answer"]);
     expect(c.agent).toMatchObject({ status: "ai_down", action: null, reason: null, suggestedAmountCents: null });
     expect(c.orderFixed).toBe(false);
     expect(c.orders.map((o) => o.id)).toEqual(["O1030", "O1031"]); // Arjun's two orders, nobody else's
@@ -123,8 +123,20 @@ describe("Approval screen: a person approves", () => {
     const db = freshDb();
     const gate = await waiting(db, "REQ-002", standIn(refundForm("O1002", 15000)));
 
-    expect(approveAndPay(db, gate, { orderId: "O1002", amount: "120" }, NOW)).toMatchObject({ ok: true, outcome: "paid" });
+    expect(approveAndPay(db, gate, { orderId: "O1002", amount: "120", note: "The shade was fine, only the base broke" }, NOW)).toMatchObject({ ok: true, outcome: "paid" });
     expect(db.prepare("SELECT amount_cents FROM refunds WHERE id = 'RF016'").get()).toEqual({ amount_cents: 12000 });
+    const decision = readEntries(db, "REQ-002").find((l) => l.kind === "human_decision");
+    expect(decision?.details).toMatchObject({ amountCents: 12000, note: "The shade was fine, only the base broke" });
+  });
+
+  it("change the amount: without saying why, it is refused and nothing is paid (REQ-002)", async () => {
+    const db = freshDb();
+    const gate = await waiting(db, "REQ-002", standIn(refundForm("O1002", 15000)));
+
+    expect(approveAndPay(db, gate, { orderId: "O1002", amount: "120", note: "   " }, NOW)).toEqual({ ok: false, message: "You changed the amount, so say why" });
+    expect(refundRows(db)).toHaveLength(SEEDED_REFUNDS);
+    // The agent's own amount needs no reason.
+    expect(approveAndPay(db, gate, { orderId: "O1002", amount: "150.00" }, NOW)).toMatchObject({ ok: true, outcome: "paid" });
   });
 
   it("R1: an amount over what is left on the order is refused, and nothing is written (REQ-002, $150.01)", async () => {
@@ -191,7 +203,7 @@ describe("Approval screen: a person approves", () => {
   it("only one decision counts: a second approve or a reject after an approve is refused (REQ-002)", async () => {
     const db = freshDb();
     const gate = await waiting(db, "REQ-002", standIn(refundForm("O1002", 15000)));
-    approveAndPay(db, gate, { orderId: "O1002", amount: "100" }, NOW);
+    approveAndPay(db, gate, { orderId: "O1002", amount: "100", note: "Partial refund agreed" }, NOW);
 
     expect(approveAndPay(db, gate, { orderId: "O1002", amount: "50" }, NOW)).toMatchObject({ ok: false });
     expect(rejectRequest(db, gate, "changed my mind", NOW)).toMatchObject({ ok: false });

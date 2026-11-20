@@ -41,36 +41,35 @@ async function clickPicture(page: Page, x: number, y: number) {
   await scene(page).click({ position: { x: (x / 320) * box.width, y: (y / 240) * box.height } });
 }
 
-test("Village: no scene buttons; a made-up story from the Inbox plays without the AI, then the robot waits", async ({ page }) => {
+test("Village: no scene buttons; a made-up story under the village plays without the AI, then the robot waits", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await openVillage(page, "/?speed=10");
   await expect(scene(page)).toBeVisible();
   await expect(page.getByRole("button", { name: /^Scene|Play a demo|Auto-play/ })).toHaveCount(0);
   await expect(page.getByRole("slider", { name: "Playback speed" })).toHaveValue("1");
-  await expect(villageSays(page)).toContainText("TAP THE INBOX TO START");
+  await expect(villageSays(page)).toContainText("THE INBOX TO SEND A REQUEST");
   const frame = () => scene(page).evaluate((c) => (c as HTMLCanvasElement).toDataURL());
-  await page.getByRole("button", { name: /The Inbox/ }).click();
-  await panel(page).getByRole("button", { name: /Small refund/ }).click();
-  await expect(panel(page)).toBeHidden();
-  await expect(villageSays(page)).toContainText("A NEW LETTER ARRIVES");
+  await page.getByRole("button", { name: /Small refund/ }).click();
+  // At ten times the speed its first line flashes by, so check that it left the resting line.
+  await expect(villageSays(page)).not.toContainText("THE INBOX TO SEND");
   const first = await frame();
   await expect.poll(frame, { timeout: 5000 }).not.toBe(first);
-  await expect(villageSays(page)).toContainText("TAP THE INBOX TO START", { timeout: 60_000 });
+  await expect(villageSays(page)).toContainText("THE INBOX TO SEND A REQUEST", { timeout: 60_000 });
   expect(errors).toEqual([]);
 });
 
 // The browser tests raise the limits to 100 (playwright.config.ts), so the count starts there.
 test("Village: says what this is, links to GitHub, and has two ways in: the Inbox and the human desk", async ({ page }) => {
   await openVillage(page);
-  await expect(page.getByText(/A refund agent for an invented shop/)).toBeVisible();
+  await expect(page.getByText(/A Claude refund agent for an invented shop/)).toBeVisible();
   await expect(page.getByRole("link", { name: "Code on GitHub" })).toHaveAttribute("href", "https://github.com/keanii2022/approval-desk");
   await expect(page.getByRole("link", { name: /Human desk/ })).toHaveAttribute("href", "/approvals");
+  await expect(page.getByRole("heading", { name: "Watch a story" })).toBeVisible();
   await page.getByRole("button", { name: /The Inbox/ }).click();
   const inbox = panel(page);
-  await expect(inbox.getByRole("heading", { name: "Watch a story" })).toBeVisible();
   await expect(inbox.getByRole("heading", { name: "Try it yourself" })).toBeVisible();
-  await expect(inbox.getByText("100 tries left for you right now.")).toBeVisible();
+  await expect(inbox.getByText("100 tries left this hour.")).toBeVisible();
   // Ideas only: nothing fills in the message for the visitor.
   await inbox.getByText("Ideas to try to break it").click();
   await expect(inbox.getByText("Ask for more money than the order cost.")).toBeVisible();
@@ -95,7 +94,7 @@ test("Village: clicking the Inbox stand opens it over the village, Escape closes
   await clickPicture(page, 59, 65);
   await expect(panel(page)).toBeVisible();
   await expect(panel(page).getByRole("heading", { name: "The Inbox" })).toBeVisible();
-  await expect(panel(page).getByRole("button", { name: /Small refund/ })).toBeFocused();
+  await expect(panel(page).getByLabel("Write as")).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(panel(page)).toBeHidden();
   await expect(page).toHaveURL(/\/$/);
@@ -119,7 +118,7 @@ test("Village: key I opens the Inbox; a sent request shows its result in the pan
   await expect(result).toBeVisible({ timeout: 30_000 });
   await expect(inbox.getByRole("heading", { name: "What happened" })).toBeVisible();
   await expect(result).toContainText("Lamp 123 broke");
-  await expect(result).toContainText("The AI was unavailable");
+  await expect(result).toContainText("The AI didn't answer");
   await expect(result).toContainText("Sent to a person");
   await expect(result).toContainText("Waiting for a person");
   await expect(result.getByRole("link", { name: /Decide it yourself/ })).toHaveAttribute("href", "/approvals");
@@ -128,7 +127,7 @@ test("Village: key I opens the Inbox; a sent request shows its result in the pan
   // "Send another" brings back an empty form.
   await result.getByRole("button", { name: "Send another" }).click();
   await expect(inbox.getByLabel("Message")).toHaveValue("");
-  await expect(inbox.getByText("99 tries left for you right now.")).toBeVisible();
+  await expect(inbox.getByText("99 tries left this hour.")).toBeVisible();
 });
 
 test("Village: the human desk is the approval screen; key H and the desk in the picture open it", async ({ page }) => {
@@ -198,7 +197,7 @@ test("Village: a small refund plays green and the factory pays (R1, R2 pass); th
   await expect(village(page)).toHaveAttribute("data-gate-light", "green", { timeout: 30_000 });
   await expect(village(page)).toHaveAttribute("data-robot-at", "factory", { timeout: 30_000 });
   await expectInLogbook(page, new RegExp(`${id}, \\$24\\.00, order O1001\\..*Final: REFUND PAID`));
-  await expect(villageSays(page)).toContainText("TAP THE INBOX TO START");
+  await expect(villageSays(page)).toContainText("THE INBOX TO SEND A REQUEST");
 });
 
 // The visitor's own request that needs a person: the robot holds at the desk until they decide.

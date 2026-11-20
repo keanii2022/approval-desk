@@ -54,6 +54,14 @@ export function ApproveForm(props: {
   const [state, action, pending] = useActionState(approveAction, start);
   const ready = useReady();
   useDone(state, props.onDone);
+  const [amount, setAmount] = useState(props.suggestedAmount);
+  // Paying something other than the agent's amount needs a reason (checked again by the logbook).
+  const changed = props.suggestedAmount !== "" && Number(amount) !== Number(props.suggestedAmount);
+  const payButton = (
+    <button type="submit" className="approve" disabled={pending || !ready}>
+      Approve and pay
+    </button>
+  );
   return (
     <form onSubmit={sendWith(action)} className="decision" noValidate aria-label="Approve this refund">
       <input type="hidden" name="gateEntryId" value={props.gateEntryId} />
@@ -97,11 +105,25 @@ export function ApproveForm(props: {
       </table>
       <label htmlFor={`amount-${props.gateEntryId}`}>Refund amount (dollars). You can change it.</label>
       <div className="pay-row">
-        <input id={`amount-${props.gateEntryId}`} name="amount" inputMode="decimal" defaultValue={props.suggestedAmount} autoComplete="off" />
-        <button type="submit" className="approve" disabled={pending || !ready}>
-          Approve and pay
-        </button>
+        <input
+          id={`amount-${props.gateEntryId}`}
+          name="amount"
+          inputMode="decimal"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          autoComplete="off"
+        />
+        {changed ? null : payButton}
       </div>
+      {changed ? (
+        <>
+          <label htmlFor={`amount-note-${props.gateEntryId}`}>
+            The agent suggested ${props.suggestedAmount}. Why a different amount?
+          </label>
+          <textarea id={`amount-note-${props.gateEntryId}`} name="amountNote" rows={2} />
+          {payButton}
+        </>
+      ) : null}
       <Problem state={state} />
     </form>
   );

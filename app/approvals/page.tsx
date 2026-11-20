@@ -23,14 +23,18 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
   let cases: WaitingCase[] = [];
   let unpaid: ReturnType<typeof approvedNotPaid> = [];
   let problem: string | null = null;
-  let refundIsReal = false;
+  let paid: { amount_cents: number; name: string } | undefined;
   try {
     const db = appDb();
     try {
       cases = getWaitingCases(db, visitor);
       unpaid = approvedNotPaid(db, visitor);
       // The banner only claims a payment that is really in the shop's refunds.
-      refundIsReal = Boolean(refund && db.prepare("SELECT 1 FROM refunds WHERE id = ?").get(refund));
+      paid = refund
+        ? (db
+            .prepare("SELECT r.amount_cents, c.name FROM refunds r JOIN orders o ON o.id = r.order_id JOIN customers c ON c.id = o.customer_id WHERE r.id = ?")
+            .get(refund) as { amount_cents: number; name: string } | undefined)
+        : undefined;
     } finally {
       db.close();
     }
@@ -39,7 +43,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
   }
 
   const banner =
-    result === "paid" ? (refundIsReal ? `Approved and paid. Refund ${refund} is done.` : undefined) : result ? BANNERS.get(result) : undefined;
+    result === "paid" ? (paid ? `Paid ${dollars(paid.amount_cents)} to ${paid.name} (refund ${refund}).` : undefined) : result ? BANNERS.get(result) : undefined;
 
   const yours = cases.filter((c) => c.requestId.startsWith("TRY-"));
   const practice = cases.filter((c) => !c.requestId.startsWith("TRY-"));
@@ -99,8 +103,8 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
 
       {practice.length > 0 && (
         <section aria-labelledby="practice-title">
-          <h2 id="practice-title">Came in overnight ({practice.length})</h2>
-          <p className="section-sub">The agent kept working while nobody was here. These are the ones it couldn&apos;t settle on its own.</p>
+          <h2 id="practice-title">Waiting for you ({practice.length})</h2>
+          <p className="section-sub">Requests the agent handled on its own but couldn&apos;t settle.</p>
           {practice.map((c) => (
             <WaitingCard key={c.gateEntryId} c={c} />
           ))}

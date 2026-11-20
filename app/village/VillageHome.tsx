@@ -30,7 +30,7 @@ type Props = {
 
 function AgentAnswer({ agent }: { agent: AgentView }) {
   if (agent.kind === "none") return <p className="vh-muted">No answer on record.</p>;
-  if (agent.kind === "ai_down") return <p>The AI was unavailable, so there is no suggestion.</p>;
+  if (agent.kind === "ai_down") return <p>The AI didn&apos;t answer (it was down or timed out), so there is no suggestion. A person decides instead.</p>;
   if (agent.kind === "not_form")
     return (
       <p>
@@ -111,6 +111,7 @@ export default function VillageHome({ customers, tries, waiting, triesLeft, prob
   const [panel, setPanel] = useState<VillagePlace | "decide" | null>(null);
   // The visitor's own request the robot holds at the desk, and the decision once it went through.
   const [deciding, setDeciding] = useState<WaitingCase | null>(null);
+  const [decideChoice, setDecideChoice] = useState<"A" | "R">("A");
   const [decided, setDecided] = useState<{ key: number; choice: "A" | "R"; paidCents: number | null } | null>(null);
   const [ranId, setRanId] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0);
@@ -173,9 +174,12 @@ export default function VillageHome({ customers, tries, waiting, triesLeft, prob
   // Focus moves into the panel when it opens or changes, so keyboard and screen reader users land in it.
   useEffect(() => {
     if (!panel || !dialog.current) return;
-    const first = dialog.current.querySelector<HTMLElement>("select, input:not([type=hidden]), textarea, button:not(.vh-close), a");
+    // Reject tapped at the desk: land on the reject note, not the approve form above it.
+    const note = panel === "decide" && decideChoice === "R" ? dialog.current.querySelector<HTMLElement>('form[aria-label="Reject this refund"] textarea') : null;
+    const first = note ?? dialog.current.querySelector<HTMLElement>("select, input:not([type=hidden]), textarea, button:not(.vh-close), a");
     (first ?? dialog.current).focus();
-  }, [panel, ranId]);
+    note?.scrollIntoView({ block: "center" });
+  }, [panel, ranId, decideChoice]);
 
   // Keys stay inside the panel: the village's own shortcuts (1 2 3, A, R, ...) listen on window.
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -205,8 +209,9 @@ export default function VillageHome({ customers, tries, waiting, triesLeft, prob
   const decidingCase = deciding;
   const latestWaiting = useRef(waiting);
   latestWaiting.current = waiting;
-  const onDecide = useCallback((requestId: string) => {
+  const onDecide = useCallback((requestId: string, choice: "A" | "R") => {
     returnFocus.current = document.activeElement;
+    setDecideChoice(choice);
     setDeciding(latestWaiting.current.find((c) => c.requestId === requestId) ?? null);
     setPanel("decide");
   }, []);
@@ -218,9 +223,9 @@ export default function VillageHome({ customers, tries, waiting, triesLeft, prob
     setDeciding(null);
     close();
   };
-  // A story plays once the panel is out of the way; on a phone, the robot comes back into view.
+  // On a phone the story buttons sit below the village, so bring the robot back into view.
   const playStory = (scene: 1 | 2 | 3) => {
-    close();
+    if (panel) close();
     setStory((last) => ({ key: (last?.key ?? 0) + 1, scene }));
     document.querySelector(".village-canvas")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -230,27 +235,47 @@ export default function VillageHome({ customers, tries, waiting, triesLeft, prob
       <header className="vh-top">
         <p className="vh-name">Approval Desk</p>
         <p className="vh-what">
-          A refund agent for an invented shop: the AI suggests, plain code decides, a person signs off on the big ones.{" "}
+          A Claude refund agent for an invented shop. The AI suggests, plain code decides, a person signs off on the big ones.{" "}
           <a href={GITHUB}>Code on GitHub</a>
         </p>
       </header>
 
-      <VillageCanvas onPlace={openPlace} onDecide={onDecide} decided={decided} play={play} story={story} live />
+      {/* side by side on a wide screen, so the ways in sit next to the village, not below it */}
+      <div className="vh-stage">
+        <VillageCanvas onPlace={openPlace} onDecide={onDecide} decided={decided} play={play} story={story} live />
+        <div className="vh-side">
 
-      <section className="vh-start" aria-label="Start here">
-        <button type="button" className="vh-test" onClick={() => openPlace("inbox")}>
-          <span className="vh-test-name">The Inbox</span>
-          <span className="vh-test-hint">Watch a story or send your own</span>
-        </button>
-        <Link className="vh-test" href="/approvals">
-          <span className="vh-test-name">
-            Human desk{waiting.length > 0 ? <span className="vh-test-price"> ({waiting.length})</span> : null}
-          </span>
-          <span className="vh-test-hint">Decide the big refunds</span>
-        </Link>
-      </section>
+          <section className="vh-start" aria-label="Start here">
+            <button type="button" className="vh-test" onClick={() => openPlace("inbox")}>
+              <span className="vh-test-name">The Inbox</span>
+              <span className="vh-test-hint">Send the agent your own request</span>
+            </button>
+            <Link className="vh-test" href="/approvals">
+              <span className="vh-test-name">
+                Human desk{waiting.length > 0 ? <span className="vh-test-price"> ({waiting.length})</span> : null}
+              </span>
+              <span className="vh-test-hint">Decide the big refunds</span>
+            </Link>
+          </section>
 
-      <p className="vh-note">Big refunds wait for a person at the human desk. That person is you.</p>
+          <section className="vh-stories" aria-labelledby="vh-stories-title">
+            <h2 id="vh-stories-title" className="vh-sec">Watch a story</h2>
+            <p className="vh-muted">Made-up requests, played by the village. No AI, so they always work.</p>
+            <div className="vh-test-buttons">
+              {STORIES.map((st) => (
+                <button key={st.scene} type="button" className="vh-test" onClick={() => playStory(st.scene)}>
+                  <span className="vh-test-name">
+                    {st.name} <span className="vh-test-price">{st.price}</span>
+                  </span>
+                  <span className="vh-test-hint">{st.hint}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <p className="vh-note">When the agent runs on its own, big refunds pile up at the human desk until a person decides. Here, that person is you.</p>
+        </div>
+      </div>
 
       {panel ? (
         <div className="vh-backdrop" onClick={(e) => e.target === e.currentTarget && close()}>
@@ -289,24 +314,11 @@ export default function VillageHome({ customers, tries, waiting, triesLeft, prob
                 <Result tried={tried} onAnother={another} onWatch={close} />
               ) : (
                 <>
-                  <p className="vh-lede">Every refund request starts here. Watch a made-up one, or write your own.</p>
-                  <h3 className="vh-sec">Watch a story</h3>
-                  <p className="vh-muted">Made-up requests, played by the village. No AI, so they always work.</p>
-                  <div className="vh-test-buttons">
-                    {STORIES.map((st) => (
-                      <button key={st.scene} type="button" className="vh-test" onClick={() => playStory(st.scene)}>
-                        <span className="vh-test-name">
-                          {st.name} <span className="vh-test-price">{st.price}</span>
-                        </span>
-                        <span className="vh-test-hint">{st.hint}</span>
-                      </button>
-                    ))}
-                  </div>
                   <h3 className="vh-sec">Try it yourself</h3>
                   <p className="vh-muted">
                     Write as one of the shop&apos;s customers. The real refund agent reads it, and the gate decides.{" "}
                     <strong className="vh-left">
-                      {triesLeft === 0 ? "No tries left right now." : `${triesLeft} ${triesLeft === 1 ? "try" : "tries"} left for you right now.`}
+                      {triesLeft === 0 ? "No tries left for now. The stories still work." : `${triesLeft} ${triesLeft === 1 ? "try" : "tries"} left this hour.`}
                     </strong>
                   </p>
                   <details className="vh-ideas">

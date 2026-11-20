@@ -4,7 +4,7 @@ import type { Decided } from "./actions.ts";
 import { ApproveForm, RejectForm } from "./Forms.tsx";
 
 function agentSays(c: WaitingCase): string {
-  if (c.agent.status === "ai_down") return "The AI was unavailable, so there is no suggestion.";
+  if (c.agent.status === "ai_down") return "The AI didn't answer (it was down or timed out), so there is no suggestion. Pick the order and amount yourself.";
   if (c.agent.action === "refund") {
     const amount = c.agent.suggestedAmountCents === null ? "" : ` of ${dollars(c.agent.suggestedAmountCents)}`;
     return `Suggested a refund${amount} on ${c.suggestedOrderId ?? "an order"}.`;

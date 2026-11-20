@@ -272,3 +272,20 @@ Template:
 **Changed (owner):** taps are obvious without reading anything: a bouncing TAP arrow over the Inbox while the robot waits (and over the desk while it holds your request), a LOGBOOK button in the bar, and "TAP TO OPEN" on the logbook strip on phones.
 **Decided:** the approval card moved to `app/approvals/WaitingCard.tsx` so the village and the desk page share it. From the village, the forms send `stay=1` and get the outcome back instead of leaving the page.
 **Left for later:** the overnight requests are shared by every visitor until the host sleeps and resets, so once someone decides one, it's gone for everyone else until then.
+
+## A reason for a changed amount; stories on the front page (2026-11-19)
+
+**Changed (owner):** a person who approves a different amount than the agent suggested must say why. The form shows "Why a different amount?" as soon as the amount changes, and the logbook refuses an approval with a changed amount and no reason ("You changed the amount, so say why"). The reason is stored on the person's decision line. When the AI suggested nothing (it didn't answer or was unsure), the person sets the amount and no reason is needed. R1 and the one-decision rule are checked first, so their messages still win.
+**Changed (owner):** "The AI was unavailable" now reads "The AI didn't answer (it was down or timed out), so there is no suggestion", which says what happened and what the person does about it.
+**Changed (owner):** "Watch a story" moved out of the Inbox to the front page, under the Inbox and Human desk buttons. The Inbox is now only for writing your own request.
+**Decided:** a changed amount with no reason is refused rather than allowed, matching the note a reject needs.
+
+## UX pass from a first-time visitor's view (2026-11-19)
+
+**Changed (owner, from a design walkthrough):**
+- The made-up stories log as STORY1, STORY2, ... instead of RF016, so they never look like a real refund. The logbook strip says "TAP TO OPEN" (no "add-only", which wasn't true of story lines).
+- Tapping REJECT at the desk opens the decision on the reject note.
+- Phones: the approve and reject buttons drop their key hints, and the $150 story's window says "YOUR CALL. TAP ONE." On a mouse, the village says CLICK instead of TAP.
+- Copy: the header says it's a Claude agent. The tries count says "left this hour", and at zero: "No tries left for now. The stories still work." The desk section is "Waiting for you" ("Requests the agent handled on its own but couldn't settle"), since the seeded dates aren't really overnight. The paid banner says who and how much. Rule errors spell out the rule ("Rule 1: never refund more than what is left on the order. ...").
+- Layout: on wide screens the village sits at 2x on the left, with the Inbox, Human desk and stories beside it, all above the fold. The desk page's headings use the village's monospace.
+**Decided:** no "Watch it in the village" link after deciding on the desk page. Decisions made there don't play in the village, so the link would promise something that doesn't happen.

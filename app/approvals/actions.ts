@@ -64,7 +64,7 @@ export async function approveAction(_previous: FormState, formData: FormData): P
   const gateEntryId = entryId(formData, "gateEntryId");
   if (gateEntryId === null) return { error: "That request could not be found" };
   const visitor = await currentVisitor();
-  const input = { orderId: text(formData, "orderId"), amount: text(formData, "amount") };
+  const input = { orderId: text(formData, "orderId"), amount: text(formData, "amount"), note: text(formData, "amountNote") };
   const cents = Math.round(Number(input.amount) * 100);
   const stay = formData.get("stay") === "1";
   return withDb((db) => finish(approveAndPay(db, gateEntryId, input, utcNow(), visitor), stay, Number.isFinite(cents) ? cents : null));

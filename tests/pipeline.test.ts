@@ -187,7 +187,7 @@ describe("Only the executor pays, and only what the gate allowed", () => {
     await processRequest(db, "REQ-002", standIn(refundForm("O1002", 15000)), NOW);
     const [waiting] = humanQueue(db);
 
-    const approval = logHumanApproval(db, waiting.gateEntryId, { decision: "approve", orderId: "O1002", amountCents: 12000 }, NOW);
+    const approval = logHumanApproval(db, waiting.gateEntryId, { decision: "approve", orderId: "O1002", amountCents: 12000, note: "Partial refund agreed" }, NOW);
     expect(humanQueue(db)).toEqual([]);
     expect(executeRefund(db, approval.entryId, NOW)).toMatchObject({ result: "done", refundId: "RF016" });
     expect(kinds(db, "REQ-002")).toEqual(["gate_decision", "human_decision", "refund_done"]);
