@@ -16,7 +16,8 @@
     "queue-demo": "node scripts/prepare-queue.ts",
     "demo": "node scripts/prepare-queue.ts && APPROVAL_DESK_DB=data/demo.db next dev",
     "e2e": "playwright test",
-    "evals": "node --env-file=.env scripts/run-evals.ts"
+    "evals": "node --env-file=.env scripts/run-evals.ts",
+    "trace": "node scripts/trace.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",

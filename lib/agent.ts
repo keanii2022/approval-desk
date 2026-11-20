@@ -1,5 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
 import type { AgentOutput } from "./gate.ts";
+import type { CallTrace } from "./trace.ts";
 
 // The agent: reads one Inbox request and the shop data, and fills the fixed form
 // (action, order, amount, reason, policy line). It only reads. It has no way to
@@ -12,16 +13,31 @@ export type ModelRequest = { system: string; user: string };
 // Asks the AI and returns its answer exactly as it came back (not checked, not
 // cleaned up). Throws when there is no answer at all. The real one is in
 // lib/claude.ts; tests pass a stand-in that returns fixed forms.
-export type AskModel = (request: ModelRequest) => Promise<unknown>;
+// The real one also reports what the call cost through reportTrace, answered
+// or not; a stand-in that makes no AI call reports nothing.
+export type AskModel = (request: ModelRequest, reportTrace?: (trace: CallTrace) => void) => Promise<unknown>;
 
 export async function runAgent(db: DatabaseSync, requestId: string, askModel: AskModel): Promise<AgentOutput> {
+  return (await runAgentTraced(db, requestId, askModel)).output;
+}
+
+// runAgent, plus the call's trace when the AI was really asked.
+export async function runAgentTraced(
+  db: DatabaseSync,
+  requestId: string,
+  askModel: AskModel,
+): Promise<{ output: AgentOutput; trace?: CallTrace }> {
   const request = buildRequest(db, requestId);
+  let trace: CallTrace | undefined;
+  const reportTrace = (reported: CallTrace) => {
+    trace = reported;
+  };
   try {
-    return { status: "answered", form: await askModel(request) };
+    return { output: { status: "answered", form: await askModel(request, reportTrace) }, trace };
   } catch {
     // No answer at all: the AI is down (R6). A garbled answer is not caught here;
     // it goes to the gate as it is, and the gate blocks it (R5).
-    return { status: "ai_down" };
+    return { output: { status: "ai_down" }, trace };
   }
 }
 

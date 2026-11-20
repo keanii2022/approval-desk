@@ -2,6 +2,7 @@ import type { DatabaseSync } from "node:sqlite";
 import type { Refusal } from "./executor.ts"; // type only, so there is no loop at run time
 import { type AgentOutput, checkProposal, type GateDecision, refundedCents } from "./gate.ts";
 import { dollars } from "./money.ts";
+import { type CallTrace, isCallTrace } from "./trace.ts";
 
 // The logbook: an add-only record of every step. Lines are only ever added,
 // never changed or deleted. Only the writers below, and the executor's own
@@ -22,7 +23,8 @@ export type LogEntry = {
   details: unknown;
 };
 
-export type GateDecisionDetails = { output: AgentOutput; decision: GateDecision };
+/** trace: what the Claude call cost and how long it took. Missing when no AI was asked (a stand-in). */
+export type GateDecisionDetails = { output: AgentOutput; decision: GateDecision; trace?: CallTrace };
 /** note: why the person changed the agent's amount. Required when they did. */
 export type HumanApproval = { decision: "approve"; orderId: string; amountCents: number; note?: string };
 export type HumanRejection = { decision: "reject"; note: string };
@@ -98,6 +100,7 @@ export function logGateDecision(
   requestId: string,
   output: AgentOutput,
   now: string,
+  trace?: CallTrace,
 ): { entryId: number; decision: GateDecision } {
   checkNow(now);
   ensureLogbook(db);
@@ -114,6 +117,9 @@ export function logGateDecision(
   const decision = checkProposal(db, requestId, copy); // an unknown request throws, and nothing is logged
 
   const details: GateDecisionDetails = { output: copy, decision };
+  // A malformed trace is dropped, not thrown: the refund decision must be logged
+  // either way (R7), and a missing trace only means the cost isn't counted.
+  if (isCallTrace(trace)) details.trace = { ...trace };
   const entryId = addLine(db, now, "gate_decision", requestId, null, details);
   return { entryId, decision };
 }

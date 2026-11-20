@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import { type AskModel, runAgent } from "./agent.ts";
+import { type AskModel, runAgentTraced } from "./agent.ts";
 import { executeRefund, type Refusal } from "./executor.ts";
 import type { AgentOutput, RuleId } from "./gate.ts";
 import {
@@ -61,7 +61,7 @@ export async function processRequest(
   }
   if (earlier) return resume(db, earlier, now ?? utcNow());
 
-  const output = await runAgent(db, requestId, askModel);
+  const { output, trace } = await runAgentTraced(db, requestId, askModel);
   const at = now ?? utcNow();
 
   let gate;
@@ -70,7 +70,7 @@ export async function processRequest(
     try {
       const raced = firstGateLine(db, requestId);
       if (raced) return { outcome: "already_processed", gateEntryId: raced.id };
-      gate = logGateDecision(db, requestId, output, at);
+      gate = logGateDecision(db, requestId, output, at, trace);
       db.exec("COMMIT");
     } finally {
       if (db.isTransaction) db.exec("ROLLBACK");
