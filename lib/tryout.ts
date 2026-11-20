@@ -69,7 +69,7 @@ export function tryInputProblem(db: DatabaseSync, input: TryInput): string | nul
 }
 
 // counts is where the site-wide try counts live (lib/visitor-db.ts openCounts); without it they're kept in db.
-export type Visit = { visitorId: string; now?: string; limits?: TryLimits; counts?: DatabaseSync };
+export type Visit = { visitorId: string; now?: string; limits?: TryLimits; counts?: DatabaseSync; network?: string | null };
 
 // Adds the request to the Inbox, owned by the visitor, and runs it. Throws if the
 // input is bad or a spending limit is reached; check both first. Both checks come
@@ -84,7 +84,7 @@ export async function tryRequest(
   if (problem) throw new Error(problem);
   const now = visit.now ?? utcNow();
   const counts = visit.counts ?? db;
-  const overLimit = spendingProblem(counts, visit.visitorId, now, visit.limits);
+  const overLimit = spendingProblem(counts, visit.visitorId, now, visit.limits, visit.network ?? null);
   if (overLimit) throw new Error(overLimit);
 
   const customerId = input.customerId === NEW_CUSTOMER ? addNewCustomer(db, (input.newName ?? "").trim()) : input.customerId;
@@ -97,7 +97,7 @@ export async function tryRequest(
     input.message.trim(),
   );
   recordTry(db, requestId, visit.visitorId, now);
-  countTry(counts, visit.visitorId, now);
+  countTry(counts, visit.visitorId, now, visit.network ?? null);
   return { requestId, result: await processRequest(db, requestId, askModel, now) };
 }
 

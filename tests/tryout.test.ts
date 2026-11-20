@@ -4,7 +4,7 @@ import type { AskModel } from "../lib/agent.ts";
 import { openDatabase } from "../lib/db.ts";
 import { seed } from "../lib/seed.ts";
 import { customerReceipts, MESSAGE_MAX, NEW_CUSTOMER, recentTries, tryInputProblem, tryRequest } from "../lib/tryout.ts";
-import { DAILY_LIMIT_WORDS, HOURLY_LIMIT_WORDS, readVisitorId, spendingProblem, SWITCHED_OFF_WORDS, tryLimits, triesLeft } from "../lib/visitor.ts";
+import { DAILY_LIMIT_WORDS, HOURLY_LIMIT_WORDS, NETWORK_LIMIT_WORDS, networkKey, readVisitorId, spendingProblem, SWITCHED_OFF_WORDS, tryLimits, triesLeft } from "../lib/visitor.ts";
 
 // "Try it yourself" runs a typed-in request down the same path as any Inbox
 // request. A stand-in plays the agent: no AI calls.
@@ -185,6 +185,31 @@ describe("try it yourself: spending limits on the real agent", () => {
     expect(calls.n).toBe(4);
   });
 
+  it("clearing cookies doesn't help: new visitors from one network share an hourly limit; other networks can still try", async () => {
+    const db = freshDb();
+    const limits = { daily: 100, visitorHourly: 5, networkHourly: 3 };
+    const { calls, ask } = countingAgent();
+    const home = networkKey("203.0.113.7, 10.0.0.1");
+    for (const v of ["cleared-1", "cleared-2", "cleared-3"]) await tryRequest(db, request, ask, { visitorId: v, now: NOW, limits, network: home });
+    const before = counts(db);
+
+    await expect(tryRequest(db, request, ask, { visitorId: "cleared-4", now: NOW, limits, network: home })).rejects.toThrow(NETWORK_LIMIT_WORDS);
+    expect(calls.n).toBe(3);
+    expect(counts(db)).toEqual(before);
+
+    await tryRequest(db, request, ask, { visitorId: "cleared-4", now: NOW, limits, network: networkKey("198.51.100.2") });
+    expect(calls.n).toBe(4);
+  });
+
+  it("the network is kept as a short hash, never the address; no forwarding header means no network limit", () => {
+    const key = networkKey("203.0.113.7");
+    expect(key).toMatch(/^[0-9a-f]{16}$/);
+    expect(key).not.toContain("203");
+    expect(networkKey("203.0.113.7, 10.0.0.1")).toBe(key);
+    expect(networkKey(null)).toBeNull();
+    expect(networkKey("  ")).toBeNull();
+  });
+
   it("tries left is the smaller of the day's and the visitor's hour, and 0 when switched off", async () => {
     const db = freshDb();
     const limits = { daily: 3, visitorHourly: 2 };
@@ -199,10 +224,10 @@ describe("try it yourself: spending limits on the real agent", () => {
     expect(triesLeft(db, null, NOW, { ...limits, enabled: false })).toBe(0);
   });
 
-  it("the limits default to 20 a day and 5 per visitor per hour, and can be set from the environment", () => {
-    expect(tryLimits({})).toEqual({ enabled: true, daily: 20, visitorHourly: 5 });
-    expect(tryLimits({ TRY_DAILY_LIMIT: "10", TRY_VISITOR_HOURLY_LIMIT: "2" })).toEqual({ enabled: true, daily: 10, visitorHourly: 2 });
-    expect(tryLimits({ TRY_DAILY_LIMIT: "lots", TRY_VISITOR_HOURLY_LIMIT: "-1" })).toEqual({ enabled: true, daily: 20, visitorHourly: 5 });
+  it("the limits default to 20 a day, 5 per visitor per hour and 10 per network per hour, and can be set from the environment", () => {
+    expect(tryLimits({})).toEqual({ enabled: true, daily: 20, visitorHourly: 5, networkHourly: 10 });
+    expect(tryLimits({ TRY_DAILY_LIMIT: "10", TRY_VISITOR_HOURLY_LIMIT: "2", TRY_NETWORK_HOURLY_LIMIT: "4" })).toEqual({ enabled: true, daily: 10, visitorHourly: 2, networkHourly: 4 });
+    expect(tryLimits({ TRY_DAILY_LIMIT: "lots", TRY_VISITOR_HOURLY_LIMIT: "-1" })).toEqual({ enabled: true, daily: 20, visitorHourly: 5, networkHourly: 10 });
   });
 
   it("TRY_ENABLED=off switches the live agent off: every try is refused before the agent is called", async () => {

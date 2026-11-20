@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 
 // Every visitor gets a private sandbox. A cookie holds a random visitor ID, and
@@ -47,7 +47,8 @@ export function canSeeRequest(db: DatabaseSync, requestId: string, visitorId: st
   return Boolean(db.prepare("SELECT 1 FROM try_owners WHERE request_id = ? AND visitor_id = ?").get(requestId, visitorId));
 }
 
-export type TryLimits = { enabled?: boolean; daily: number; visitorHourly: number };
+/** networkHourly: tries per network address (IP) per hour, so clearing cookies can't use up the day. Defaults to 10. */
+export type TryLimits = { enabled?: boolean; daily: number; visitorHourly: number; networkHourly?: number };
 
 function limitFromEnv(value: string | undefined, fallback: number): number {
   const n = Number(value);
@@ -60,20 +61,39 @@ export function tryLimits(env: Record<string, string | undefined> = process.env)
     enabled: (env.TRY_ENABLED ?? "").trim().toLowerCase() !== "off",
     daily: limitFromEnv(env.TRY_DAILY_LIMIT, 20),
     visitorHourly: limitFromEnv(env.TRY_VISITOR_HOURLY_LIMIT, 5),
+    networkHourly: limitFromEnv(env.TRY_NETWORK_HOURLY_LIMIT, NETWORK_HOURLY_DEFAULT),
   };
 }
 
 export const SWITCHED_OFF_WORDS = "The live agent is switched off right now. The stories in the village still play.";
 export const DAILY_LIMIT_WORDS = "The agent is done for today, come back tomorrow.";
 export const HOURLY_LIMIT_WORDS = "That's all your tries for this hour. Come back in a bit.";
+export const NETWORK_LIMIT_WORDS = "That's all the tries from your network for this hour. Come back in a bit.";
+const NETWORK_HOURLY_DEFAULT = 10;
 
-function ensureCountTable(counts: DatabaseSync): void {
-  counts.exec("CREATE TABLE IF NOT EXISTS try_counts (visitor_id TEXT NOT NULL, tried_at TEXT NOT NULL)");
+// The visitor's network address, from the host's forwarding header, kept only as a short
+// one-way hash: enough to count tries, never the address itself. No header (local runs): null.
+export function networkKey(forwardedFor: string | null | undefined): string | null {
+  const ip = (forwardedFor ?? "").split(",")[0]?.trim();
+  return ip ? createHash("sha256").update(`approval-desk:${ip}`).digest("hex").slice(0, 16) : null;
 }
 
-export function countTry(counts: DatabaseSync, visitorId: string, triedAt: string): void {
+function ensureCountTable(counts: DatabaseSync): void {
+  counts.exec("CREATE TABLE IF NOT EXISTS try_counts (visitor_id TEXT NOT NULL, tried_at TEXT NOT NULL, network TEXT)");
+  // A counts file made before the network limit has no network column yet.
+  const columns = counts.prepare("PRAGMA table_info(try_counts)").all() as { name: string }[];
+  if (!columns.some((c) => c.name === "network")) counts.exec("ALTER TABLE try_counts ADD COLUMN network TEXT");
+}
+
+export function countTry(counts: DatabaseSync, visitorId: string, triedAt: string, network: string | null = null): void {
   ensureCountTable(counts);
-  counts.prepare("INSERT INTO try_counts (visitor_id, tried_at) VALUES (?, ?)").run(visitorId, triedAt);
+  counts.prepare("INSERT INTO try_counts (visitor_id, tried_at, network) VALUES (?, ?, ?)").run(visitorId, triedAt, network);
+}
+
+function networkTriesThisHour(db: DatabaseSync, network: string, now: string): number {
+  const hourAgo = new Date(Date.parse(now) - 60 * 60 * 1000).toISOString().slice(0, 19) + "Z";
+  const { n } = db.prepare("SELECT COUNT(*) AS n FROM try_counts WHERE network = ? AND tried_at > ?").get(network, hourAgo) as { n: number };
+  return n;
 }
 
 function triedCounts(db: DatabaseSync, visitorId: string | null, now: string): { today: number; thisHour: number } {
@@ -89,11 +109,18 @@ function triedCounts(db: DatabaseSync, visitorId: string | null, now: string): {
 
 // Says in plain words why one more try isn't allowed right now, or null if it is.
 // "A day" is the UTC calendar day; "an hour" is the last 60 minutes.
-export function spendingProblem(db: DatabaseSync, visitorId: string, now: string, limits: TryLimits = tryLimits()): string | null {
+export function spendingProblem(
+  db: DatabaseSync,
+  visitorId: string,
+  now: string,
+  limits: TryLimits = tryLimits(),
+  network: string | null = null,
+): string | null {
   if (limits.enabled === false) return SWITCHED_OFF_WORDS;
   const tried = triedCounts(db, visitorId, now);
   if (tried.today >= limits.daily) return DAILY_LIMIT_WORDS;
   if (tried.thisHour >= limits.visitorHourly) return HOURLY_LIMIT_WORDS;
+  if (network !== null && networkTriesThisHour(db, network, now) >= (limits.networkHourly ?? NETWORK_HOURLY_DEFAULT)) return NETWORK_LIMIT_WORDS;
   return null;
 }
 

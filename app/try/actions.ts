@@ -1,12 +1,13 @@
 "use server";
 
 import { refresh } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { askClaude } from "../../lib/claude.ts";
 import { utcNow } from "../../lib/pipeline.ts";
 import { standInAgent } from "../../lib/stand-in-agent.ts";
 import { tryInputProblem, tryRequest } from "../../lib/tryout.ts";
-import { spendingProblem } from "../../lib/visitor.ts";
+import { networkKey, spendingProblem } from "../../lib/visitor.ts";
 import { countsDb, visitorShop } from "../approvals/db.ts";
 
 // ranId is set only when the form asked to stay on its page (the village panel) instead of going to /try.
@@ -37,8 +38,9 @@ export async function tryAction(_previous: TryState, formData: FormData): Promis
     if (problem) return { error: problem };
     const counts = countsDb();
     try {
-      const visit = { visitorId: shop.visitorId, now: utcNow(), counts };
-      const overLimit = spendingProblem(counts, visit.visitorId, visit.now);
+      const network = networkKey((await headers()).get("x-forwarded-for"));
+      const visit = { visitorId: shop.visitorId, now: utcNow(), counts, network };
+      const overLimit = spendingProblem(counts, visit.visitorId, visit.now, undefined, network);
       if (overLimit) return { error: overLimit };
       ({ requestId } = await tryRequest(db, input, agent(), visit));
     } finally {
