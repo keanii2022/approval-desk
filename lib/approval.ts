@@ -54,7 +54,7 @@ export type ApprovedNotPaid = {
 
 export type Decision =
   | { ok: false; message: string } // refused: nothing was written, nothing changed
-  | { ok: true; outcome: "paid"; message: string; refundId: string }
+  | { ok: true; outcome: "paid"; message: string; refundId: string; amountCents: number }
   | { ok: true; outcome: "already_paid"; message: string } // asked to pay something that was already paid: nothing more was done
   | { ok: true; outcome: "rejected"; message: string }
   | { ok: true; outcome: "approved_not_paid"; message: string }; // the approval is on record but nothing was paid
@@ -191,7 +191,7 @@ function pay(db: DatabaseSync, gateEntryId: number, approvalEntryId: number, amo
     return { ok: true, outcome: "approved_not_paid", message: "Your approval is on record, but NOTHING was paid: something went wrong while paying." };
   }
   if (paid.result === "done") {
-    return { ok: true, outcome: "paid", refundId: paid.refundId, message: `Approved and paid ${dollars(amountCents)} (refund ${paid.refundId}).` };
+    return { ok: true, outcome: "paid", refundId: paid.refundId, amountCents, message: `Approved and paid ${dollars(amountCents)} (refund ${paid.refundId}).` };
   }
   // Asked to pay something that was already paid: say so, and write nothing down.
   if (paid.because === "already_done") {

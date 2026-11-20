@@ -139,6 +139,7 @@ export function humanApprovalProblem(db: DatabaseSync, gateEntry: LogEntry, appr
   const { decision, orderId, amountCents, note } = approval as Record<string, unknown>;
   if (decision !== "approve") return "Not a valid approval";
   if (note !== undefined && typeof note !== "string") return "Not a valid approval";
+  if (typeof note === "string" && note.trim().length > 1000) return "The note is too long (1,000 characters at most)";
 
   const hasOrder = typeof orderId === "string" && orderId.trim() !== "";
   if (!hasOrder || !db.prepare("SELECT 1 FROM orders WHERE id = ?").get(orderId)) {

@@ -1,10 +1,9 @@
 // Runs before `next start` (see "start" in package.json): on a fresh host the
 // database file doesn't exist yet, so seed it once, with the overnight requests waiting. An existing file is left
 // alone so approvals and the logbook survive restarts.
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { dirname } from "node:path";
 import { DB_PATH, openDatabase } from "../lib/db.ts";
-import { rmSync } from "node:fs";
 import { queueOvernight } from "../lib/overnight.ts";
 import { countsPath, visitorFolder } from "../lib/visitor-db.ts";
 import { seed } from "../lib/seed.ts";

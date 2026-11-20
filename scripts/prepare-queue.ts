@@ -4,8 +4,8 @@
 //        node scripts/prepare-queue.ts <path>   (used by the browser tests)
 // It never touches the real database (data/approval-desk.db): it drops that file's
 // logbook, which the app otherwise never does.
-import { DB_PATH, openDatabase } from "../lib/db.ts";
 import { rmSync } from "node:fs";
+import { DB_PATH, openDatabase } from "../lib/db.ts";
 import { queueOvernight } from "../lib/overnight.ts";
 import { countsPath, visitorFolder } from "../lib/visitor-db.ts";
 import { seed } from "../lib/seed.ts";

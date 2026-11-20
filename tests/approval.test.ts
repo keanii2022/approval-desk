@@ -113,7 +113,7 @@ describe("Approval screen: a person approves", () => {
     const gate = await waiting(db, "REQ-002", standIn(refundForm("O1002", 15000)));
 
     const result = approveAndPay(db, gate, { orderId: "O1002", amount: "150.00" }, NOW);
-    expect(result).toEqual({ ok: true, outcome: "paid", refundId: "RF016", message: "Approved and paid $150.00 (refund RF016)." });
+    expect(result).toEqual({ ok: true, outcome: "paid", refundId: "RF016", amountCents: 15000, message: "Approved and paid $150.00 (refund RF016)." });
     expect(db.prepare("SELECT order_id, amount_cents FROM refunds WHERE id = 'RF016'").get()).toEqual({ order_id: "O1002", amount_cents: 15000 });
     expect(kinds(db, "REQ-002")).toEqual(["gate_decision", "human_decision", "refund_done"]);
     expect(humanQueue(db)).toEqual([]);
@@ -127,6 +127,14 @@ describe("Approval screen: a person approves", () => {
     expect(db.prepare("SELECT amount_cents FROM refunds WHERE id = 'RF016'").get()).toEqual({ amount_cents: 12000 });
     const decision = readEntries(db, "REQ-002").find((l) => l.kind === "human_decision");
     expect(decision?.details).toMatchObject({ amountCents: 12000, note: "The shade was fine, only the base broke" });
+  });
+
+  it("a reason for a changed amount is capped like a reject note (REQ-002)", async () => {
+    const db = freshDb();
+    const gate = await waiting(db, "REQ-002", standIn(refundForm("O1002", 15000)));
+
+    expect(approveAndPay(db, gate, { orderId: "O1002", amount: "120", note: "x".repeat(1001) }, NOW)).toEqual({ ok: false, message: "The note is too long (1,000 characters at most)" });
+    expect(refundRows(db)).toHaveLength(SEEDED_REFUNDS);
   });
 
   it("change the amount: without saying why, it is refused and nothing is paid (REQ-002)", async () => {

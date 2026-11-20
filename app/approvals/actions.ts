@@ -13,12 +13,13 @@ import { visitorShop } from "./db.ts";
 export type Decided = { outcome: "paid" | "already_paid" | "rejected" | "approved_not_paid"; amountCents: number | null };
 export type FormState = { error: string | null; done?: Decided };
 
-function finish(decision: Decision, stay = false, amountCents: number | null = null): FormState {
+function finish(decision: Decision, stay = false): FormState {
   if (!decision.ok) return { error: decision.message };
   revalidatePath("/approvals");
   if (stay) {
     refresh(); // the village around the panel re-reads the visitor's waiting requests
-    return { error: null, done: { outcome: decision.outcome, amountCents } };
+    // the amount the executor actually paid, not the form re-read
+    return { error: null, done: { outcome: decision.outcome, amountCents: decision.outcome === "paid" ? decision.amountCents : null } };
   }
   const result =
     decision.outcome === "paid"
@@ -59,9 +60,8 @@ export async function approveAction(_previous: FormState, formData: FormData): P
   const gateEntryId = entryId(formData, "gateEntryId");
   if (gateEntryId === null) return { error: "That request could not be found" };
   const input = { orderId: text(formData, "orderId"), amount: text(formData, "amount"), note: text(formData, "amountNote") };
-  const cents = Math.round(Number(input.amount) * 100);
   const stay = formData.get("stay") === "1";
-  return withDb((db, visitor) => finish(approveAndPay(db, gateEntryId, input, utcNow(), visitor), stay, Number.isFinite(cents) ? cents : null));
+  return withDb((db, visitor) => finish(approveAndPay(db, gateEntryId, input, utcNow(), visitor), stay));
 }
 
 export async function rejectAction(_previous: FormState, formData: FormData): Promise<FormState> {
