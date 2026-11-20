@@ -59,7 +59,7 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
   - **Goal:** Change the agent's prompt twice, each time writing down a guess of what will change before running the evals. Record all three scores (baseline and two changes) in `EVALS.md`, with the guess next to each result.
   - **Done when:** `EVALS.md` holds three dated scorecards with a written guess for each prompt change; a test fails if the prompt file changed but `EVALS.md` did not.
 
-- [ ] **Step 15: Tracing** (builds on step 5)
+- [ ] **Step 15: Tracing** (builds on step 5; moved below on 2026-11-19, after step 21)
   - **Goal:** Every Claude call logs tokens in and out, cost, latency and the gate's result, on the gate's logbook line. One command prints a summary: calls, total cost, average latency, results by gate verdict.
   - **Done when:** the summary command runs on the seeded database and matches the logbook by hand for five calls; a test checks the line is written on success and on an AI outage.
 
@@ -108,6 +108,22 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **Out of scope:** app code.
 - **Dependencies:** 17, 18, 19, 20
 - **Done when:** a stranger can open the URL, send a request from the village and approve it.
+
+### 21. A shop for each visitor
+- **Status:** current
+- **Goal:** Every visitor gets their own copy of the shop, so what one visitor decides (approving REQ-002, paying out an order) never changes what another visitor sees. The first time a visitor (the `visitor` cookie) reads or writes, their copy is made from the fresh template database: the seeded shop plus the overnight requests, the file `npm start` makes. The template itself is never written to by visitors. The spending limits stay site-wide: the 20-a-day count and each visitor's hourly count are kept in one shared place (the template's folder), not in the copies. A page view with no cookie yet shows the template, read only. Old copies are cleaned up so the free host's disk can't fill: keep at most 200, removing the oldest first, and remove any untouched for 7 days.
+- **Scope:** `lib/visitor-db.ts` (new), `app/approvals/db.ts`, `app/page.tsx`, `app/approvals/page.tsx`, `app/approvals/actions.ts`, `app/try/actions.ts`, `lib/visitor.ts`, `lib/tryout.ts` (only if the limits' counting must move), `tests/visitor-db.test.ts` (new), `tests/tryout.test.ts`, `e2e/village.e2e.ts` and `e2e/approval.e2e.ts` (only to clear visitor copies before each test), `.gitignore` if the copies' folder isn't already ignored
+- **Out of scope:** the village engine and any copy on screen, the gate, the executor, the hard rules, tracing (step 15).
+- **Dependencies:** none
+- **Done when:** a test where visitor A approves REQ-002 and visitor B still sees REQ-002 waiting with the order untouched; a test that tries by two visitors both count toward the one daily limit; the template file is byte-for-byte unchanged after visitors act; the copy cap and the 7-day cleanup are tested; all unit and browser tests pass.
+
+### 15. Tracing
+- **Status:** todo
+- **Goal:** Every Claude call writes down tokens in and out, cost, how long it took, the model that answered, and the gate's verdict, on the gate's logbook line for that request. A call that fails (AI down) is written too, with its time and error and no tokens. One command (`npm run trace`) prints a summary for a database: number of calls, total cost, average time, and calls by gate verdict (allow, send to a person, block, AI down). Cost uses a price table in code, per million tokens: Claude Opus 5.5 $4 in / $20 out (cache reads $0.20), Claude Sonnet 5.5 $2 / $10 (cache reads $0.10), Claude Haiku 5.5 $0.10 / $0.50 (prompts up to 100K tokens). An unknown model shows its tokens with the cost left blank, never a guess. The stand-in agent and the overnight requests make no Claude call, so they write no trace.
+- **Scope:** `lib/claude.ts`, `lib/agent.ts`, `lib/pipeline.ts`, `lib/logbook.ts` (only to carry the trace on the gate line), `lib/trace.ts` (new: the price table, cost and the summary), `scripts/trace.ts` (new), `package.json` (the `trace` script), `tests/trace.test.ts` (new)
+- **Out of scope:** the gate's decisions, the hard rules, the village and screens, the README cost table (added after this step, from real numbers).
+- **Dependencies:** 21
+- **Done when:** a test checks the trace is written on a successful call and on an AI outage; a test checks the cost maths for each priced model and the blank cost for an unknown one; `npm run trace` runs on a seeded database (with traced lines made by a stand-in that reports token counts) and its totals match the lines; all unit and browser tests pass.
 
 ## Calls to review
 
