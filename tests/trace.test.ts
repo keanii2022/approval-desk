@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
@@ -12,6 +12,7 @@ import { processRequest } from "../lib/pipeline.ts";
 import { seed } from "../lib/seed.ts";
 import { standInAgent } from "../lib/stand-in-agent.ts";
 import { type CallTrace, costUsd } from "../lib/trace.ts";
+import { visitorFolder } from "../lib/visitor-db.ts";
 
 // Tracing: every Claude call leaves its tokens, cost, time and model on the
 // gate's line. No real AI calls here: the real call runs against a faked fetch,
@@ -183,5 +184,19 @@ describe("npm run trace on a seeded database", () => {
     expect(out).toContain(`Total cost: $${sum((t) => t.costUsd).toFixed(6)} (not counting 1 unpriced call)`);
     expect(out).toContain(`Average time: ${Math.round(sum((t) => t.durationMs) / 4)} ms`);
     expect(out).toContain("  allow: 1\n  send to a person: 1\n  block: 1\n  AI down: 1");
+  });
+
+  it("visitors' tries live in their own copies of the shop, and those are counted too", async () => {
+    const path = join(dir, "shop.db");
+    freshDb(path).close();
+    mkdirSync(visitorFolder(path), { recursive: true });
+    const copy = freshDb(join(visitorFolder(path), "visitor-a.db"));
+    await processRequest(copy, "REQ-001", traced(refundForm("O1001", 2400), trace("claude-opus-5-5", 900, 1500, 90)), NOW);
+    copy.close();
+
+    const out = execFileSync("node", ["scripts/trace.ts", path], { encoding: "utf8" });
+    expect(out).toContain("and 1 visitor copy");
+    expect(out).toContain("Calls: 1");
+    expect(out).toContain("  allow: 1");
   });
 });

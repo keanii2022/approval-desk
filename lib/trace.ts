@@ -94,9 +94,25 @@ export type TraceSummary = {
   byVerdict: Record<Verdict, number>;
 };
 
-// Reads every gate line that carries a trace. Works on any database; one with
-// no logbook yet has no calls.
-export function summarizeTraces(db: DatabaseSync): TraceSummary {
+type TraceRow = { trace: string; status: string; result: Verdict };
+
+function traceRows(db: DatabaseSync): TraceRow[] {
+  if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'logbook'").get()) return [];
+  return db
+    .prepare(
+      `SELECT json_extract(details, '$.trace') AS trace,
+              json_extract(details, '$.output.status') AS status,
+              json_extract(details, '$.decision.result') AS result
+       FROM logbook
+       WHERE kind = 'gate_decision' AND json_extract(details, '$.trace') IS NOT NULL
+       ORDER BY id`,
+    )
+    .all() as TraceRow[];
+}
+
+// Reads every gate line that carries a trace, across one or several databases
+// (the shop and each visitor's copy). One with no logbook yet has no calls.
+export function summarizeTraces(dbs: DatabaseSync | DatabaseSync[]): TraceSummary {
   const summary: TraceSummary = {
     calls: 0,
     inputTokens: 0,
@@ -108,18 +124,7 @@ export function summarizeTraces(db: DatabaseSync): TraceSummary {
     averageMs: 0,
     byVerdict: { allow: 0, send_to_human: 0, block: 0, ai_down: 0 },
   };
-  if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'logbook'").get()) return summary;
-
-  const rows = db
-    .prepare(
-      `SELECT json_extract(details, '$.trace') AS trace,
-              json_extract(details, '$.output.status') AS status,
-              json_extract(details, '$.decision.result') AS result
-       FROM logbook
-       WHERE kind = 'gate_decision' AND json_extract(details, '$.trace') IS NOT NULL
-       ORDER BY id`,
-    )
-    .all() as { trace: string; status: string; result: Verdict }[];
+  const rows = (Array.isArray(dbs) ? dbs : [dbs]).flatMap((db) => traceRows(db));
 
   let totalMs = 0;
   let costMillionths = 0; // summed in whole millionths so six-decimal costs add up exactly
