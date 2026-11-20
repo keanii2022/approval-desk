@@ -1,10 +1,10 @@
 # Approval Desk
 
-A Claude-powered refund agent for a made-up online shop. The AI reads each customer email and suggests what to do. Plain code checks every suggestion against hard limits, and a person decides the big ones. The AI can never move money on its own.
+A refund agent where the AI can only suggest. Plain code enforces 10 hard limits, a person decides the risky ones, and across 396 graded answers from Claude Opus no wrong refund was paid.
 
 All shop data, customers and messages are invented.
 
-**Try it live: [approval-desk-g3lz.onrender.com](https://approval-desk-g3lz.onrender.com)**. Send the agent a real request and decide the big ones yourself. It's on a free host, so the first visit can take up to a minute to wake up, and the shop resets each time it sleeps. Everyone gets a few tries an hour.
+**Try it live: [approval-desk-g3lz.onrender.com](https://approval-desk-g3lz.onrender.com)**. Send the agent a real request and decide the big ones yourself. Every visitor gets their own copy of the shop, so what you decide never changes anyone else's. It's on a free host, so the first visit can take up to a minute to wake up. Everyone gets a few tries an hour.
 
 ![The village: the robot carries each request from the Inbox past the gate, and big refunds wait at the human desk](docs/demo/village.png)
 
@@ -20,16 +20,23 @@ A person then approves (and can lower the amount) or rejects with a note. Nobody
 
 ## Results
 
-Each case is run 3 times. "Got through" means a wrong answer the code checks still let happen.
+Each case is run 3 times on Claude Opus 5.5. "Got through" means a wrong answer the code checks still let happen.
 
-| Test set | Claude Opus 5.5 | Claude Haiku 5.5 (cheapest) |
+| Test set | First test (rules R1–R8) | Retest (R9 and R10 added) |
 |---|---|---|
-| 60 practice cases | **98.3%**, 0 got through | 76.1%, 4 got through (all under $100) |
-| 60 hard cases, written by a different AI to break it | **95.0%**, 0 got through | 73.3%, 0 got through |
+| 12 hole cases: follow-ups, repeats, flagged and new accounts | 8.3%, **21 wrong refunds paid** | **75.0%, 0 got through** |
+| 60 practice cases | 98.3%, 0 got through | 97.8%, 1 customer turned away, no money out |
+| 60 hard cases, written by a different AI to break it | 95.0%, 0 got through | 95.6%, 0 got through |
 
-- The code checks let through **0 of 1,000** random bad proposals.
-- 272 automated tests and 23 browser tests pass. None of them call the AI.
-- Scorecards are dated and saved in [evals/](evals/). The latest is from 2026-11-16.
+The practice and hard cases score one request at a time, so they can't see a refund asked for in pieces. The hole cases replay what already happened to an order or account, like half a refund paid or a claim still waiting, before the agent answers. On the old rules, splits and refunds for flagged or brand-new accounts went through with no person involved. R9 and R10 now send them to a person. What the hole cases still miss is the agent answering "unsure" on repeat claims, and a person reviews those first.
+
+**Why a gate and not just the AI:** on the practice set the cheaper model, Haiku, got 43 answers wrong (Nov 16, R1–R8). The gate caught 39 of them and sent them to a person.
+
+**Cost:** about 1 cent per request on Claude Opus 5.5. Every call's tokens, time and cost are written down, and `npm run trace` adds them up.
+
+- The code checks let through **0 of 1,000** random bad proposals, across all 10 rules.
+- 304 automated tests and 24 browser tests pass. None of them call the AI.
+- Every scorecard is dated and saved in [evals/](evals/).
 
 ## How it works
 
@@ -39,7 +46,8 @@ customer email → agent (AI) → form → gate (plain code) → paid / sent to 
 
 - The AI only fills in a form. It can't change any data.
 - The gate is plain code, with no AI inside it. It enforces the rules in [docs/RULES.md](docs/RULES.md), like "over $100 goes to a person" and "never more than was paid."
-- Every step is written to a logbook before it happens.
+- Every step is written to a logbook before it happens. If the logbook can't write, nothing happens (R7).
+- If the AI is down or unsure, the request goes to a person instead (R6). It fails toward a human, never toward paying.
 
 More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · decisions along the way: [DECISIONS.md](DECISIONS.md)
 
@@ -61,7 +69,9 @@ Open http://localhost:3000 and send the agent a request from the village.
 Other commands:
 
 - `npm test` runs the tests (free, no AI).
-- `npm run evals` scores the agent on the 60 practice cases. Add `-- --set hard` for the hard set. A full run costs about $4.
+- `npm run evals` scores the agent on the 60 practice cases. Add `-- --set hard` or `-- --set holes` for the other sets. A full run of the 60 costs about $2.
+- `npm run probe` runs follow-up and repeat requests against a fresh shop (free). Add `-- --real` to use the real agent, for a few cents.
+- `npm run trace` prints the calls, tokens, cost and time behind every real request.
 
 ## Part of agent-hub
 
