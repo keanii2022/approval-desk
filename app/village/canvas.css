@@ -14,7 +14,9 @@
 .village-canvas .village-bsound[aria-pressed=true],.village-canvas .village-bauto[aria-pressed=true]{background:#6cc48a}
 .village-canvas button[hidden]{visibility:hidden}
 .village-bar button[hidden]{display:none}
-@media (hover:none){.village-keys{display:none}} /* key hints mean nothing on a phone */
+@media (hover:none),(pointer:coarse){.village-canvas .village-keys{display:none}} /* key hints mean nothing on a phone */
+.village-speed{display:flex;align-items:center;gap:calc(var(--s)*2px);background:#f5efd6;color:#15102e;border:calc(var(--s)*1px) solid #15102e;box-shadow:0 calc(var(--s)*2px) 0 #15102e;padding:0 calc(var(--s)*3px);margin-bottom:calc(var(--s)*2px);font:700 calc(var(--s)*5px)/1 ui-monospace,monospace;letter-spacing:.05em}
+.village-speed input{width:calc(var(--s)*40px);accent-color:#e8806e;margin:0;cursor:pointer}
 .village-canvas .village-bA{background:#6cc48a}.village-canvas .village-bA:hover{background:#92d8a8}
 .village-canvas .village-bR{background:#e8988a}.village-canvas .village-bR:hover{background:#f0aca0}
 .village-canvas button:focus-visible{outline:calc(var(--s)*1px) solid #f2e8a8;outline-offset:calc(var(--s)*1px)}

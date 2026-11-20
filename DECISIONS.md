@@ -250,3 +250,17 @@ Template:
 **Built:** the three scene buttons and auto-play are gone from the front page. One Demo button (key D) plays the three made-up stories in a row with no AI, as a fallback if the live agent is off or out of tries. Next to it, three quick tests (Small refund $24, Big refund $150, Sneaky $500) each send a ready-made request to the real agent in one tap, and the village plays what really happened. The page shows how many tries a visitor has left. Between requests the robot waits at home. The approval screen got the village's look: your own waiting requests come first (with a clear empty state on a first visit), and the shop's made-up ones sit below under "Practice requests". Each card shows why a person must decide as a tag, the message, the agent's suggestion, then approve and reject side by side.
 **Decided (owner):** quick tests count against the same limits as typed requests (5 per visitor per hour, 20 a day for everyone).
 **Decided:** the quick tests don't promise an outcome. They're real calls, so the agent may answer differently than the labels suggest, and that's the point.
+
+## Step 16: Live on the internet (2026-11-19)
+
+**Built:** the app runs on Render's free plan at https://approval-desk-g3lz.onrender.com, from `main`, with the owner's key set only on the host. Checked end to end with the real agent: a $24 refund paid on its own, a $150 refund waited for a person, and approving it paid. The README opens with the live link and a "may take a minute to wake up" note, shows the village, and ends with a section on agent-hub with its screenshot. The approvals screenshot was retaken in the new look.
+**Fixed:** on phones the village never played sound, because sound only started after a key press or the Sound button. It now starts on any tap. iPhones also mute web sound while the ringer is on silent.
+**Decided:** Render settings are Node 24 (`NODE_VERSION`), build `npm install && npm run build`, start `npm run start`. Render sets `PORT` itself.
+**Left for later:** the cost table waits for step 15. The shop data is shared by all visitors until the host sleeps and resets, so one visitor's approved refund uses up that order for everyone else until then. `docs/demo/try.png` still shows the old light look.
+**Changed (owner):** the quick tests say "sends a real request to the refund agent", not "to Claude", so the village keeps its own story.
+
+## Front page: the Inbox and the human desk (2026-11-19)
+
+**Changed (owner):** the front page now has two ways in. The Inbox holds the three made-up stories ($24 paid, $150 waits for a person, $500 blocked), which the village plays without the AI, and "Try it yourself" with the real agent, the tries left, and a list of ideas to try that the visitor writes up themselves. Nothing fills in the message anymore. The human desk is the approval screen (key H, the desk in the picture, or the button), now titled "The human desk". The Demo button and the quick tests are gone, and `/try` goes to the front page.
+**Changed (owner):** speed is a slider that starts at full speed. On phones the key legend is hidden, and the buttons read DAY MODE and THE RULES instead of key hints. The legend had never hidden on phones, because a more specific rule overrode it.
+**Decided:** real AI calls happen only when a visitor writes their own request, so the stories always work and cost nothing.

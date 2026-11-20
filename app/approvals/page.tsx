@@ -7,7 +7,7 @@ import { appDb } from "./db.ts";
 import { ApproveForm, RejectForm, RetryForm } from "./Forms.tsx";
 import "./approvals.css";
 
-export const metadata = { title: "Approvals | Approval Desk" };
+export const metadata = { title: "Human desk | Approval Desk" };
 export const dynamic = "force-dynamic"; // always read the queue fresh
 
 const BANNERS = new Map([
@@ -58,7 +58,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
       <p className="back">
         <Link href="/">← Back to the village</Link>
       </p>
-      <h1>Approvals</h1>
+      <h1>The human desk</h1>
       <p className="lede">The gate sends some refunds to a person instead of paying them. Here, that person is you.</p>
       <ul className="guards" aria-label="What no one can do, you included">
         <li>Nothing is paid until you approve</li>

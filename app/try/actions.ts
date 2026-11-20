@@ -62,5 +62,5 @@ export async function tryAction(_previous: TryState, formData: FormData): Promis
     refresh(); // the page around the panel re-reads the visitor's tries and waiting requests
     return { error: null, ranId: requestId };
   }
-  redirect(`/try?ran=${requestId}`);
+  redirect("/");
 }

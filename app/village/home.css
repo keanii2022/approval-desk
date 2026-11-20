@@ -16,35 +16,30 @@ body:has(.village-home) { margin: 0; background: #24283f; }
 .vh-name { margin: 0; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--coral); }
 .vh-what { margin: 0; color: var(--lilac); flex: 1 1 24rem; }
 
-.vh-note { text-align: center; color: var(--lilac); max-width: 46rem; margin: 0 auto; }
-.vh-note p { margin: 4px 0; }
-.vh-note strong { color: var(--cream); }
-.vh-more { font-size: 0.9em; }
+.vh-note { text-align: center; color: var(--lilac); max-width: 46rem; margin: 4px auto 0; }
 .village-home .vh-link {
   font: inherit; color: var(--lemon); background: none; border: 0; padding: 0; margin: 0; box-shadow: none;
   text-decoration: underline; text-underline-offset: 3px; cursor: pointer; display: inline;
 }
 
-/* quick tests: three pixel buttons under the village, each a real request */
-.vh-tests { max-width: 46rem; margin: 4px auto 18px; text-align: center; }
-.vh-tests h2 { margin: 0 0 2px; font-size: 1rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--lemon); }
-.vh-tests-sub { margin: 0 0 12px; color: var(--lilac); }
-.vh-left { color: var(--cream); white-space: nowrap; }
+/* pixel buttons: the two ways in under the village, and the stories inside the Inbox */
+.vh-start { max-width: 34rem; margin: 6px auto 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.vh-left { color: var(--cream); }
 .vh-test-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .village-home .vh-test {
-  font: inherit; color: var(--ink); background: var(--cream); border: 2px solid var(--ink); border-radius: 0;
-  box-shadow: 0 4px 0 var(--deep); padding: 10px 8px 8px; cursor: pointer; display: grid; gap: 2px; text-align: center;
+  font: inherit; color: var(--ink); background: var(--cream); border: 2px solid var(--ink); border-radius: 0; text-decoration: none;
+  box-shadow: 0 4px 0 var(--deep); padding: 12px 8px 10px; cursor: pointer; display: grid; gap: 2px; text-align: center;
 }
 .village-home .vh-test:hover { background: var(--lemon); }
 .village-home .vh-test:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--deep); }
-.village-home .vh-test:disabled { opacity: 0.55; cursor: not-allowed; transform: none; background: var(--cream); }
 .vh-test-name { font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
 .vh-test-price { color: #a3262f; }
 .vh-test-hint { font-size: 0.8em; color: #4a3f6e; }
-.vh-tests-status { min-height: 1.6em; margin-top: 10px; }
-.vh-tests-status p { margin: 0; }
-.vh-tests-own { margin: 6px 0 0; color: var(--lilac); }
-@media (max-width: 560px) { .vh-test-buttons { grid-template-columns: 1fr; } .village-home .vh-test { grid-template-columns: 1fr auto; text-align: left; align-items: center; } }
+.vh-sec { margin: 18px 0 2px; font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--lemon); }
+.vh-ideas { margin: 8px 0 4px; }
+.vh-ideas summary { cursor: pointer; color: var(--lemon); }
+.vh-ideas ul { margin: 6px 0 0; padding-left: 1.2em; color: var(--lilac); }
+@media (max-width: 560px) { .vh-test-buttons { grid-template-columns: 1fr; } .vh-test-buttons .vh-test { grid-template-columns: 1fr auto; text-align: left; align-items: center; } }
 
 /* the panel: a window drawn like the village's device frame */
 .vh-backdrop {
@@ -90,9 +85,6 @@ body:has(.village-home) { margin: 0; background: #24283f; }
   width: 100%; box-sizing: border-box;
 }
 .vh-try textarea { resize: vertical; }
-.vh-try .starters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0 0; }
-.vh-try .starters .muted { width: 100%; }
-.vh-try button.starter { font-weight: 400; padding: 3px 9px; font-size: 0.9em; }
 .vh-panel .problem { background: #e8988a; color: var(--ink); padding: 6px 10px; }
 .vh-panel table { width: 100%; border-collapse: collapse; font-size: 0.85rem; display: block; overflow-x: auto; margin: 4px 0; }
 .vh-panel th, .vh-panel td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--plum-lo); white-space: nowrap; }
@@ -106,7 +98,3 @@ body:has(.village-home) { margin: 0; background: #24283f; }
 .vh-light-ask { background: var(--gold); }
 .vh-light-stop { background: var(--coral); }
 
-.vh-empty { border: 2px dashed var(--plum-hi); padding: 10px 12px; }
-.vh-waiting { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
-.vh-waiting li { background: #1d1640; border-left: 4px solid var(--gold); padding: 8px 10px; }
-.vh-waiting-subject { margin: 2px 0 !important; color: var(--cream); }

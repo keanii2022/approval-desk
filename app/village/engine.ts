@@ -41,8 +41,8 @@ export interface VillageControls {
   /** Dusk palette (the default) when true, day palette when false. */
   night: boolean;
   sound: boolean;
-  /** Playback speed: 1 normal, 0.5 slow, 0.25 slower. */
-  pace: 1 | 0.5 | 0.25;
+  /** Playback speed, from 0.25 (slowest) to 1 (full speed). */
+  pace: number;
   logOpen: boolean;
   rulesOpen: boolean;
 }
@@ -93,6 +93,8 @@ export interface VillageHandle {
   overlayOpen(): boolean;
   /** Pauses the scripted stories and plays the visitor's real request; the stories resume after it. */
   playVisitor(request: VisitorRequest): void;
+  /** Sets the playback speed, from 0.25 to 1. */
+  setPace(pace: number): void;
 }
 
 const SW=320,SH=240,LOGH=54;
@@ -657,7 +659,7 @@ export const getTL=(sc: number,dec: string): VillageTimeline=>{const k=sc===2?'2
 /** Live mode's resting state (scene 0): the robot waits at its door and nothing is logged. */
 function buildIdle(){
   const T=new TL(0);T.kind='G';T.I={o:'',amt:'',id:''};T.rows=[];T.ev.log=Infinity;T.ev.card=Infinity; // moments that never come; drawCard skips only when t<card
-  T.stand(12,'down');T.say(0,'SEND THE AGENT A REAL REQUEST!','PICK A TEST BELOW, OR WRITE ONE AT THE INBOX.');
+  T.stand(12,'down');T.say(0,'TAP THE INBOX TO START.','WATCH A STORY OR SEND YOUR OWN REQUEST.');
   T.dur=T.t;T.dec='A';return T;
 }
 /* ================= the visitor's own request (scene 4): same walk and props, the real gate's decision ================= */
@@ -819,7 +821,8 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   const WB=new Uint8Array(SW*SH),OUT=new Uint8Array(SW*SH),LB=new Uint8Array(SW*LOGH);
   const qs=new URLSearchParams(window.location.search);
   const liveOnly=options.live===true;
-  const app={scene:liveOnly?0:1,pace:0.5,paused:false,logOpen:false,rulesOpen:false,hist:[],runRF:16,rt:0,dk:'',dt0:0,dec:'A',lastDec:'A',t:0,amb:0,auto:!(typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches),frozen:false,decided:false,info:null,hover:null,hoverBtn:null,pressed:null};
+  const touch=typeof window.matchMedia==='function'&&window.matchMedia('(hover: none)').matches; // phones get no key hints
+  const app={scene:liveOnly?0:1,pace:1,paused:false,logOpen:false,rulesOpen:false,hist:[],runRF:16,rt:0,dk:'',dt0:0,dec:'A',lastDec:'A',t:0,amb:0,auto:!(typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches),frozen:false,decided:false,info:null,hover:null,hoverBtn:null,pressed:null};
   let night=qs.get('day')!=='1';
   // ?speed=N plays everything N times faster (browser tests); the speed button still works on top of it
   const boost=Math.max(1,Math.min(20,+qs.get('speed')||1));
@@ -1011,7 +1014,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   }
   /* ================= SFX: tiny chip-style synth (WebAudio, no files). Wakes on the first click or key; M mutes ================= */
   let sfxOn=true,AC=null,MASTER=null;
-  function sfxArm(){if(AC||app.frozen)return;try{AC=new(window.AudioContext||window.webkitAudioContext)();MASTER=AC.createGain();MASTER.gain.value=0.55;MASTER.connect(AC.destination);AC.resume()}catch(e){AC=null}}
+  function sfxArm(){if(AC){if(AC.state!=='running')AC.resume();return}if(app.frozen)return;try{AC=new(window.AudioContext||window.webkitAudioContext)();MASTER=AC.createGain();MASTER.gain.value=0.55;MASTER.connect(AC.destination);AC.resume()}catch(e){AC=null}}
   function tone(f0,f1,dur,type='square',vol=0.07,delay=0){
     if(!sfxOn||!AC||AC.state!=='running')return;const t0=AC.currentTime+delay,o=AC.createOscillator(),g=AC.createGain();
     o.type=type;o.frequency.setValueAtTime(f0,t0);o.frequency.linearRampToValueAtTime(f1,t0+dur);
@@ -1090,12 +1093,11 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   }
   function refreshLabels(){
     const ink='#15102e';
-    if(liveOnly){const on=app.scene>=1&&app.scene<=3;label(b1,['DEMO',on?'STOP':'NO AI'],ink);b1.setAttribute('aria-label',on?'Stop the demo':'Play a demo: three made-up stories, no AI')}
-    else label(b1,['SCENE 1','$24 SMALL'],ink);label(b2,['SCENE 2','$150 BIG'],ink);label(b3,['SCENE 3','$500 SILLY'],ink);
-    label(bauto,['AUTO-PLAY',app.auto?'ON':'OFF'],ink);label(bday,[night?'DAY':'NIGHT','KEY N'],ink);label(bsound,['SOUND',sfxOn?'ON':'OFF'],ink);label(brules,['RULES','KEY ?'],ink);label(bspeed,['SPEED',app.pace===1?'NORMAL':(app.pace===0.5?'SLOW':'SLOWER')],ink);
-    bspeed.setAttribute('aria-label','Playback speed: '+(app.pace===1?'normal':(app.pace===0.5?'slow':'slower'))+'. Press to change');
+    label(b1,['SCENE 1','$24 SMALL'],ink);label(b2,['SCENE 2','$150 BIG'],ink);label(b3,['SCENE 3','$500 SILLY'],ink);
+    label(bauto,['AUTO-PLAY',app.auto?'ON':'OFF'],ink);label(bday,[night?'DAY':'NIGHT',touch?'MODE':'KEY N'],ink);label(bsound,['SOUND',sfxOn?'ON':'OFF'],ink);label(brules,touch?['THE','RULES']:['RULES','KEY ?'],ink);label(bspeed,['SPEED',Math.round(app.pace*100)+'%'],ink);
+    bspeed.setAttribute('aria-label','Playback speed: '+Math.round(app.pace*100)+' percent. Press to change');
     label(bA,'APPROVE (A)',ink);label(bR,'REJECT (R)',ink);
-    [b1,b2,b3].forEach((b,i)=>b.setAttribute('aria-pressed',(liveOnly?app.scene>=1&&app.scene<=3:app.scene===i+1)?'true':'false'));
+    [b1,b2,b3].forEach((b,i)=>b.setAttribute('aria-pressed',app.scene===i+1?'true':'false'));
     bauto.setAttribute('aria-pressed',app.auto?'true':'false');bday.setAttribute('aria-pressed',night?'false':'true');bsound.setAttribute('aria-pressed',sfxOn?'true':'false');
     bday.setAttribute('aria-label',night?'Switch to the day palette':'Switch to the night palette');
     bsound.setAttribute('aria-label',sfxOn?'Sound effects on. Press to mute':'Sound effects off. Press to unmute');
@@ -1126,8 +1128,8 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     const h=HOT.find(q=>inR(q,x,y));if(h&&(h.id==='inbox'||h.id==='desk')&&openPlace(h.id))return;
     if(h){if(h.id==='log'){app.logOpen=true;sfx('click')}else if(h.id==='gate'){app.rulesOpen=true;sfx('click')}else app.info={m:h.m,t0:performance.now(),until:performance.now()+9000}}});
   // live mode has one demo button: it plays the three made-up stories in a row, or stops them
-  b1.onclick=()=>liveOnly?setScene(app.scene>=1&&app.scene<=3?0:1):setScene(1);b2.onclick=()=>setScene(2);b3.onclick=()=>setScene(3);
-  bauto.onclick=()=>{app.auto=!app.auto;refreshLabels();sfx('click')};bday.onclick=()=>{toggleNight();sfx('click')};bsound.onclick=toggleSound;brules.onclick=()=>{app.logOpen=false;app.rulesOpen=!app.rulesOpen;sfx('click')};bspeed.onclick=()=>{app.pace=app.pace===0.5?0.25:(app.pace===0.25?1:0.5);refreshLabels();sfx('click')};bA.onclick=()=>decide('A');bR.onclick=()=>decide('R');
+  b1.onclick=()=>setScene(1);b2.onclick=()=>setScene(2);b3.onclick=()=>setScene(3);
+  bauto.onclick=()=>{app.auto=!app.auto;refreshLabels();sfx('click')};bday.onclick=()=>{toggleNight();sfx('click')};bsound.onclick=toggleSound;brules.onclick=()=>{app.logOpen=false;app.rulesOpen=!app.rulesOpen;sfx('click')};bspeed.onclick=()=>{app.pace=app.pace>=1?0.25:app.pace+0.25;refreshLabels();sfx('click')};bA.onclick=()=>decide('A');bR.onclick=()=>decide('R');
   on(window,'pointerdown',sfxArm);
   logc.style.cursor='pointer';on(logc,'click',()=>{app.rulesOpen=false;app.logOpen=!app.logOpen;sfx('click')});
   on(logc,'keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();ev.stopPropagation();app.logOpen=!app.logOpen}});
@@ -1136,9 +1138,10 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   function openPlace(id){if(!options.onPlace)return false;app.logOpen=false;app.rulesOpen=false;app.info=null;const done=options.onPlace(id)===true;if(done)sfx('click');return done}
   function handleKey(k){
     if(k==='i'){openPlace('inbox');return}if(k==='h'){openPlace('desk');return}
-    if(liveOnly&&k==='d'){b1.onclick();return}
-    if(liveOnly&&(k==='1'||k==='2'||k==='3'||k==='p'))return;
+    if(liveOnly&&k==='p')return;
     if(k==='1'||k==='2'||k==='3')setScene(+k);else if(k==='a')decide('A');else if(k==='r')decide('R');else if(k==='n')toggleNight();else if(k==='p')bauto.onclick();else if(k==='m')toggleSound();else if(k==='s')bspeed.onclick();else if(k===' ')app.paused=!app.paused;else if(k==='l'){app.rulesOpen=false;app.logOpen=!app.logOpen}else if(k==='?'){app.logOpen=false;app.rulesOpen=!app.rulesOpen}else if(k==='escape'){app.logOpen=false;app.rulesOpen=false}}
+  // phones never send a key press, and browsers only allow sound to start inside a tap
+  on(window,'click',sfxArm);on(window,'touchend',sfxArm);
   on(window,'keydown',ev=>{if(ev.ctrlKey||ev.metaKey||ev.altKey||isTypingTarget(ev.target))return;sfxArm();const k=ev.key.toLowerCase();
     // I and H open a panel whose first field takes focus; without this the same key press is typed into it.
     if(k===' '||k==='i'||k==='h')ev.preventDefault();handleKey(k)});
@@ -1163,17 +1166,19 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
     const tl=getTL(app.scene,app.dec);const mv=agentAt(tl,app.t).mv;let nt=app.t+((app.paused||app.logOpen||app.rulesOpen)?0:dt*app.pace*boost*(mv?1:DWELL));
     if(app.scene===2&&!app.decided&&app.t<tl.ev.decide&&nt>=tl.ev.decide)nt=tl.ev.decide-0.001;
     app.t=nt;
-    if(app.t>=tl.dur){if(liveOnly)setScene(app.scene===1||app.scene===2?app.scene+1:0,true);else if(app.scene===4)setScene(app.resume||1,true);else if(app.auto)setScene(app.scene%3+1,true);else setScene(app.scene,true)}
+    if(app.t>=tl.dur){if(liveOnly)setScene(0,true); // a story plays once, then the robot waits again
+      else if(app.scene===4)setScene(app.resume||1,true);else if(app.auto)setScene(app.scene%3+1,true);else setScene(app.scene,true)}
     sfxRun(getTL(app.scene,app.dec),Math.min(app.t,getTL(app.scene,app.dec).dur));
     frameRender();raf=requestAnimationFrame(tick);
   }
   if(app.frozen)frameRender();else raf=requestAnimationFrame(tick);
 
   return {
-    setScene(n){if(dead||liveOnly)return;if(n===1||n===2||n===3){sfxArm();setScene(n)}},
+    setScene(n){if(dead)return;if(n===1||n===2||n===3){sfxArm();setScene(n)}},
     press(key){if(dead)return;sfxArm();handleKey(String(key).toLowerCase())},
     overlayOpen(){return !dead&&(app.logOpen||app.rulesOpen)},
     playVisitor(v){if(!dead)playVisitor(v)},
+    setPace(p){if(dead)return;app.pace=Math.min(1,Math.max(0.25,Number(p)||1));refreshLabels()},
     destroy(){
     if(dead)return;dead=true;
     cancelAnimationFrame(raf);if(roRaf)cancelAnimationFrame(roRaf);if(ro)ro.disconnect();

@@ -3,7 +3,7 @@
 // The village prototype as a React component: the same markup the prototype had, with refs
 // instead of ids, and the drawing engine mounted in an effect. All the picture and the
 // stories live in engine.ts; this file only hands it the DOM and the page hook.
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { mountVillage, type VillageHandle, type VillagePlace, type VillageStage, type VisitorRequest } from "./engine.ts";
 import "./canvas.css";
 
@@ -16,12 +16,14 @@ export interface VillageCanvasProps {
   onPlace?: (place: VillagePlace) => boolean;
   /** The visitor's request to play. A new key plays it (again); the scripted stories pause meanwhile. */
   play?: { key: number; request: VisitorRequest } | null;
+  /** A made-up story to play (1 small, 2 big, 3 too much). A new key plays it (again). */
+  story?: { key: number; scene: 1 | 2 | 3 } | null;
   /** No scripted stories or scene buttons: the robot waits until a real request is played. */
   live?: boolean;
   className?: string;
 }
 
-export default function VillageCanvas({ onStage, onPlace, play, live: isLive = false, className }: VillageCanvasProps) {
+export default function VillageCanvas({ onStage, onPlace, play, story, live: isLive = false, className }: VillageCanvasProps) {
   const screen = useRef<HTMLCanvasElement>(null);
   const title = useRef<HTMLCanvasElement>(null);
   const logbook = useRef<HTMLCanvasElement>(null);
@@ -45,6 +47,8 @@ export default function VillageCanvas({ onStage, onPlace, play, live: isLive = f
   const handlesPlaces = useRef(Boolean(onPlace));
   const liveMode = useRef(isLive);
   const village = useRef<VillageHandle | null>(null);
+  // Mirrors the engine's speed, so the slider follows the S key too.
+  const [pace, setPace] = useState(1);
 
   useEffect(() => {
     if (
@@ -70,6 +74,7 @@ export default function VillageCanvas({ onStage, onPlace, play, live: isLive = f
         onStage: (stage) => hooks.current.onStage?.(stage),
         onPlace: handlesPlaces.current ? (place) => hooks.current.onPlace?.(place) ?? false : undefined,
         live: liveMode.current,
+        onControls: (controls) => setPace(controls.pace),
       },
     );
     village.current = handle;
@@ -84,6 +89,11 @@ export default function VillageCanvas({ onStage, onPlace, play, live: isLive = f
   useEffect(() => {
     if (playKey !== undefined && playRequest) village.current?.playVisitor(playRequest);
   }, [playKey, playRequest]);
+  const storyKey = story?.key;
+  const storyScene = story?.scene;
+  useEffect(() => {
+    if (storyKey !== undefined && storyScene) village.current?.setScene(storyScene);
+  }, [storyKey, storyScene]);
 
   return (
     <div className={className ? `village-canvas ${className}` : "village-canvas"}>
@@ -109,13 +119,26 @@ export default function VillageCanvas({ onStage, onPlace, play, live: isLive = f
         />
       </div>
       <div className="village-bar">
-        <button ref={b1} type="button" aria-label={isLive ? "Play a demo: three made-up stories, no AI" : "Scene 1: small $24 refund, allowed"} />
+        <button ref={b1} type="button" hidden={isLive} aria-label="Scene 1: small $24 refund, allowed" />
         <button ref={b2} type="button" hidden={isLive} aria-label="Scene 2: big $150 refund, needs a human" />
         <button ref={b3} type="button" hidden={isLive} aria-label="Scene 3: ridiculous $500 request, blocked" />
         <button ref={bauto} type="button" hidden={isLive} className="village-bauto" aria-pressed="true" aria-label="Auto-play" />
         <button ref={bday} type="button" aria-pressed="false" aria-label="Day palette" />
         <button ref={bsound} type="button" className="village-bsound" aria-pressed="true" aria-label="Sound effects" />
-        <button ref={bspeed} type="button" aria-label="Playback speed" />
+        <button ref={bspeed} type="button" hidden aria-label="Playback speed" />
+        <label className="village-speed">
+          <span aria-hidden="true">SLOW</span>
+          <input
+            type="range"
+            min={0.25}
+            max={1}
+            step={0.25}
+            value={pace}
+            aria-label="Playback speed"
+            onChange={(e) => village.current?.setPace(Number(e.target.value))}
+          />
+          <span aria-hidden="true">FAST</span>
+        </label>
         <button ref={brules} type="button" aria-label="Show the hard rules" />
       </div>
       <canvas ref={keys} className="village-keys" width={320} height={9} aria-hidden="true" />
