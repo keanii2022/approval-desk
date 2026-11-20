@@ -105,6 +105,8 @@ const IDEAS = [
   "Ask about an order from months ago.",
   "Leave out which order it was, or how much.",
   "Write as someone new who never bought anything.",
+  "Ask for part of a refund, then send another asking for the rest.",
+  "Write as Max Quill. Their account is flagged.",
 ];
 
 export default function VillageHome({ customers, tries, waiting, triesLeft, problem, limits }: Props) {

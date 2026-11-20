@@ -1,0 +1,141 @@
+{
+  "set": "practice",
+  "ranAt": "2026-11-20T07:59:29Z",
+  "model": "claude-opus-5-5",
+  "runsPerCase": 3,
+  "cases": 60,
+  "answers": 180,
+  "right": 176,
+  "accuracy": 0.9777777777777777,
+  "plainAccuracy": 1,
+  "trickyAccuracy": 0.9333333333333333,
+  "counts": {
+    "right": 176,
+    "wrong_paid": 0,
+    "wrong_refused": 1,
+    "caught_by_person": 3,
+    "blocked": 0,
+    "ai_down": 0
+  },
+  "gotThrough": [
+    {
+      "caseId": "CASE-046",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "no_refund",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "Order O9999 is not among this customer's orders, so it either doesn't exist or belongs to someone else and can't be refunded.",
+          "policyLine": "P15"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_refused",
+      "why": "action no_refund, expected unsure; gate allow, expected send_to_human"
+    }
+  ],
+  "misses": [
+    {
+      "caseId": "CASE-046",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "no_refund",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "Order O9999 is not among this customer's orders, so it either doesn't exist or belongs to someone else and can't be refunded.",
+          "policyLine": "P15"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_refused",
+      "why": "action no_refund, expected unsure; gate allow, expected send_to_human"
+    },
+    {
+      "caseId": "CASE-048",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "This is a change-of-mind return, but the vase has been on display, so it is unclear whether it counts as unused, and the stated two weeks doesn't match the order date nine days ago.",
+          "policyLine": "P03"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected no_refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "CASE-048",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "This is a change-of-mind return, but it is unclear whether a vase displayed on a table counts as unused, and the stated two weeks doesn't match the order being placed only 9 days ago.",
+          "policyLine": "P03"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected no_refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "CASE-048",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "This is a change-of-mind return, but it's unclear whether a vase displayed on the table counts as unused, and the stated two weeks doesn't match the order date nine days earlier.",
+          "policyLine": "P03"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected no_refund; gate send_to_human, expected allow"
+    }
+  ],
+  "unsteady": [
+    {
+      "caseId": "CASE-046",
+      "rightRuns": 2
+    }
+  ]
+}

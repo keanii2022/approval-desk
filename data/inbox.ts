@@ -189,4 +189,20 @@ export const inbox: InboxRequest[] = [
     subject: "Cracked mugs",
     body: "Please refund order O1001. The mugs arrived cracked. $24.00 please. Oren",
   },
+  // R10: a flagged account asks for a fair refund. A person looks first.
+  {
+    id: "REQ-023",
+    customerId: "C023",
+    receivedOn: "2026-10-01",
+    subject: "Pillow seam split",
+    body: "The wool throw pillow from order O1036 split along the seam. Could I get $45.00 back? Max",
+  },
+  // R10: an account opened days before the order asks for a fair refund. A person looks first.
+  {
+    id: "REQ-024",
+    customerId: "C024",
+    receivedOn: "2026-10-02",
+    subject: "Bowl chipped",
+    body: "My ceramic serving bowl (order O1037) arrived with a chip on the rim. I'd like a refund of $32.00. Juno",
+  },
 ];

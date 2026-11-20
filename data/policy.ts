@@ -100,4 +100,16 @@ export const policyLines: PolicyLine[] = [
     ruleId: "R8",
     text: "A refund must be on an order that belongs to the customer who asked. An order that belongs to someone else is blocked, even if the customer names it.",
   },
+  {
+    id: "P16",
+    section: "Hard rules",
+    ruleId: "R9",
+    text: "A second refund on one order needs a human: the order was refunded before, or another request on it is waiting for a person. Asking for a big refund in small pieces, or sending the same claim twice, reaches a person.",
+  },
+  {
+    id: "P17",
+    section: "Hard rules",
+    ruleId: "R10",
+    text: "A flagged account, or one opened 30 days or fewer before the request, needs a human. The shop marks flagged accounts; age is counted like an order's.",
+  },
 ];

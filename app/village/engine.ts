@@ -673,8 +673,8 @@ function buildIdle(){
 }
 /* ================= the visitor's own request (scene 4): same walk and props, the real gate's decision ================= */
 const VKIND={allow:'G',send_to_human:'Y',block:'R'};
-const RSHORT={R1:'MORE THAN WAS PAID',R2:'OVER THE $100 LIMIT',R3:'ORDER OVER 30 DAYS',R4:'3+ RECENT REFUNDS',R5:'NOT A PROPER FORM',R6:'AI DOWN OR UNSURE',R8:'LOGBOOK FAILED'};
-const RWHY={R1:'MORE THAN WAS PAID',R2:'OVER $100',R3:'ORDER OVER 30 DAYS OLD',R4:'3+ REFUNDS IN 90 DAYS',R5:'NOT A PROPER FORM',R6:'THE AI WAS DOWN OR UNSURE',R8:'THE LOGBOOK FAILED'};
+const RSHORT={R1:'MORE THAN WAS PAID',R2:'OVER THE $100 LIMIT',R3:'ORDER OVER 30 DAYS',R4:'3+ RECENT REFUNDS',R5:'NOT A PROPER FORM',R6:'AI DOWN OR UNSURE',R8:'NOT THEIR ORDER',R9:'ORDER REFUNDED BEFORE',R10:'ACCOUNT NEEDS A LOOK'};
+const RWHY={R1:'MORE THAN WAS PAID',R2:'OVER $100',R3:'ORDER OVER 30 DAYS OLD',R4:'3+ REFUNDS IN 90 DAYS',R5:'NOT A PROPER FORM',R6:'THE AI WAS DOWN OR UNSURE',R8:'NOT THE CUSTOMERS ORDER',R9:'THIS ORDER WAS REFUNDED BEFORE',R10:'FLAGGED OR NEW ACCOUNT'};
 // Visitor text goes through the pixel font, which only has capitals, digits and a little punctuation.
 const pix=(s,n=48)=>{s=String(s??'').toUpperCase().split('').filter(c=>FONT[c]).join('').replace(/\s+/g,' ').trim();return s.length>n?s.slice(0,n-1).trimEnd()+'.':s};
 /** The timeline of a visitor's real request: the walk of the scripted stories, lit by the real gate's decision. */
@@ -768,14 +768,17 @@ const RULES=[
  ['HUMAN',['A CUSTOMER WITH 3 OR MORE REFUNDS IN','90 DAYS NEEDS A HUMAN.']],
  ['BLOCK',['A GARBLED OR INCOMPLETE FORM','IS BLOCKED.']],
  ['HUMAN',['IF THE AI IS DOWN OR UNSURE,','A HUMAN DECIDES.']],
- ['STOP',['IF THE LOGBOOK CANNOT WRITE,','NOTHING HAPPENS.']]];
+ ['STOP',['IF THE LOGBOOK CANNOT WRITE,','NOTHING HAPPENS.']],
+ ['BLOCK',['A REFUND MUST BE ON THE ASKING','CUSTOMERS OWN ORDER.']],
+ ['HUMAN',['A SECOND REFUND ON THE SAME ORDER','NEEDS A HUMAN.']],
+ ['HUMAN',['A FLAGGED OR BRAND-NEW ACCOUNT','NEEDS A HUMAN.']]];
 function rulesSummary(){return 'The hard rules the gate checks. '+RULES.map(r=>({BLOCK:'Blocked: ',HUMAN:'Needs a human: ',STOP:'Stops everything: '}[r[0]])+r[1].join(' ')).join(' ')}
 function drawRulesWin(){
-  const x=12,y=8,w=296,h=186;
+  const x=12,y=4,w=296,h=193; // ends above the speech box at the bottom of the screen
   R(x+3,y+3,w,h,K);R(x,y,w,h,K);R(x+1,y+1,w-2,h-2,W);FR(x+2,y+2,w-4,h-4,K);
   R(x+3,y+3,w-6,11,BL);for(let j=0;j<9;j+=2)R(x+3,y+4+j,w-6,1,WH);
   const ttl='THE HARD RULES',tw=textW(ttl);R(x+(w>>1)-(tw>>1)-4,y+3,tw+8,11,W);textC(ttl,x+(w>>1),y+6,K);
-  RULES.forEach((r,i)=>{const ey=y+20+i*21,lx=x+10,fill=r[0]==='BLOCK'?R2:(r[0]==='HUMAN'?Y2:R1),ink=r[0]==='HUMAN'?K:W;
+  RULES.forEach((r,i)=>{const ey=y+18+i*16,lx=x+10,fill=r[0]==='BLOCK'?R2:(r[0]==='HUMAN'?Y2:R1),ink=r[0]==='HUMAN'?K:W;
     R(lx,ey-1,42,11,K);R(lx+1,ey,40,9,fill);R(lx+1,ey,40,1,r[0]==='HUMAN'?Y1:C1);textC(r[0],lx+21,ey+1,ink);
     r[1].forEach((ln,j)=>text(ln,lx+52,ey+j*8,K))});
   textC('THE GATE CHECKS EVERY REQUEST. ESC TO CLOSE.',x+(w>>1),y+h-11,BL);

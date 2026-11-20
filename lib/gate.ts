@@ -2,9 +2,9 @@ import type { DatabaseSync } from "node:sqlite";
 
 // The gate: plain code, no AI. It checks the agent's answer to one Inbox request
 // against the hard rules in docs/RULES.md and returns one result, naming the
-// rules behind it. It checks R1 to R6 and R8; R7 belongs to the logbook and executor.
+// rules behind it. It checks R1 to R6 and R8 to R10; R7 belongs to the logbook and executor.
 
-export type RuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R8";
+export type RuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R8" | "R9" | "R10";
 
 export type GateDecision = {
   result: "allow" | "send_to_human" | "block";
@@ -30,6 +30,7 @@ const R2_HUMAN_ABOVE_CENTS = 10_000; // over $100.00 (Q1)
 const R3_HUMAN_ABOVE_DAYS = 30; // older than 30 days (Q2)
 const R4_HUMAN_AT_REFUNDS = 3; // 3+ earlier refunds,
 const R4_WINDOW_DAYS = 90; // made 90 days or fewer before the request (Q3)
+const R10_NEW_ACCOUNT_DAYS = 30; // joined 30 days or fewer before the request (Q8)
 
 type Request = { customer_id: string; received_on: string };
 type Order = { customer_id: string; placed_on: string; amount_paid_cents: number };
@@ -63,12 +64,16 @@ export function checkProposal(db: DatabaseSync, requestId: string, output: Agent
 
   const blocking: RuleId[] = [];
   const needsHuman: RuleId[] = [];
-  if (form.amountCents > order.amount_paid_cents - refundedCents(db, form.orderId)) blocking.push("R1");
+  const alreadyRefunded = refundedCents(db, form.orderId);
+  if (form.amountCents > order.amount_paid_cents - alreadyRefunded) blocking.push("R1");
   // R8: the order must belong to the customer who asked (policy line P06 made a hard rule).
   if (order.customer_id !== request.customer_id) blocking.push("R8");
   if (form.amountCents > R2_HUMAN_ABOVE_CENTS) needsHuman.push("R2");
   if (daysBetween(order.placed_on, request.received_on) > R3_HUMAN_ABOVE_DAYS) needsHuman.push("R3");
   if (recentRefunds(db, request) >= R4_HUMAN_AT_REFUNDS) needsHuman.push("R4");
+  // R9 (Q7): a second refund on one order, so splitting a big refund into small ones or sending the same claim twice reaches a person.
+  if (alreadyRefunded > 0 || waitingOnOrder(db, form.orderId)) needsHuman.push("R9");
+  if (accountNeedsALook(db, request)) needsHuman.push("R10");
 
   if (blocking.length > 0) return { result: "block", rules: blocking };
   if (needsHuman.length > 0) return { result: "send_to_human", rules: needsHuman };
@@ -106,6 +111,32 @@ export function refundedCents(db: DatabaseSync, orderId: string): number {
     orderId,
   ) as { total: number };
   return row.total;
+}
+
+// R9 (Q7): another request on this order is already waiting for a person.
+function waitingOnOrder(db: DatabaseSync, orderId: string): boolean {
+  if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'logbook'").get()) return false;
+  const row = db
+    .prepare(
+      `SELECT 1 FROM logbook g
+       WHERE g.kind = 'gate_decision'
+         AND json_extract(g.details, '$.decision.result') = 'send_to_human'
+         AND json_extract(g.details, '$.output.form.orderId') = ?
+         AND NOT EXISTS (SELECT 1 FROM logbook h WHERE h.kind = 'human_decision' AND h.refers_to = g.id)
+       LIMIT 1`,
+    )
+    .get(orderId);
+  return row !== undefined;
+}
+
+// R10 (Q8): the account is flagged, or joined 30 days or fewer before the request.
+function accountNeedsALook(db: DatabaseSync, request: Request): boolean {
+  const customer = db.prepare("SELECT joined_on, flagged FROM customers WHERE id = ?").get(request.customer_id) as
+    | { joined_on: string; flagged: number }
+    | undefined;
+  if (!customer) return false;
+  const days = daysBetween(customer.joined_on, request.received_on);
+  return customer.flagged === 1 || (days >= 0 && days <= R10_NEW_ACCOUNT_DAYS);
 }
 
 // R4 (Q3): the asking customer's refunds, on any of their orders, made 0 to 90

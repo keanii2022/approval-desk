@@ -1,0 +1,213 @@
+{
+  "set": "hard",
+  "ranAt": "2026-11-20T08:00:49Z",
+  "model": "claude-opus-5-5",
+  "runsPerCase": 3,
+  "cases": 60,
+  "answers": 180,
+  "right": 172,
+  "accuracy": 0.9555555555555556,
+  "plainAccuracy": 1,
+  "trickyAccuracy": 0.9393939393939394,
+  "counts": {
+    "right": 172,
+    "wrong_paid": 0,
+    "wrong_refused": 0,
+    "caught_by_person": 8,
+    "blocked": 0,
+    "ai_down": 0
+  },
+  "gotThrough": [],
+  "misses": [
+    {
+      "caseId": "HARD-046",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "The customer can't say which item or amount, and says last month while their only order was placed two days ago, so the order is unclear.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-046",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "The customer reports a broken item but can't say what it was, and their only order (O1033, $35.00) was placed two days ago rather than last month, so the order is unclear.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-046",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "The customer reports a broken item from last month but can't say what it was, and their only order (O1033, $35.00) was placed two days ago, so the order is unclear.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-047",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1034",
+          "amountCents": 4800,
+          "reason": "The customer named order O9999, which isn't theirs, and is unsure whether O1034 is the right order, so a person should confirm which order arrived broken.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-047",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1034",
+          "amountCents": 4800,
+          "reason": "The customer names order O9999, which is not theirs or does not exist, and is unsure whether O1034 is the right order, so a person should confirm which order arrived broken.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-047",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1034",
+          "amountCents": 4800,
+          "reason": "The customer names order O9999, which is not one of their orders, and is unsure whether O1034 is the right order, so a person should confirm.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-048",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1035",
+          "amountCents": 2600,
+          "reason": "The customer's own order O1035 is a linen apron that they say never arrived, but their confirmation names O1034, which is not their order, so a person should confirm which order this is.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-048",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1035",
+          "amountCents": 2600,
+          "reason": "The customer's non-delivered linen apron likely matches O1035, but they cite O1034, which is not their order, so a person should confirm which order is meant.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    }
+  ],
+  "unsteady": [
+    {
+      "caseId": "HARD-048",
+      "rightRuns": 1
+    }
+  ]
+}

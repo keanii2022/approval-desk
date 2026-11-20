@@ -17,8 +17,8 @@ const db = openDatabase(":memory:");
 seed(db);
 
 describe("refund policy", () => {
-  it("docs/RULES.md lists R1 to R8", () => {
-    expect(hardRules().map((rule) => rule.id)).toEqual(["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8"]);
+  it("docs/RULES.md lists R1 to R10", () => {
+    expect(hardRules().map((rule) => rule.id)).toEqual(["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10"]);
   });
 
   for (const rule of hardRules()) {

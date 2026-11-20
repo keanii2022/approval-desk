@@ -14,6 +14,8 @@ can name it in its result and tests can point to it
 | R6 | If the AI is down or unsure, send to a human. | Send to human | Agent output | Gate |
 | R7 | If the logbook can't write, the step doesn't happen. | Step doesn't happen | Every step | Logbook, executor |
 | R8 | A refund must be on an order that belongs to the customer who asked. | Block | Agent proposals **and** the human approver | Gate, approval screen, executor |
+| R9 | A second refund on one order needs a human: the order was refunded before, or another request on it is waiting for a person. | Send to human | Agent proposals | Gate |
+| R10 | A flagged account, or one opened 30 days or fewer before the request, needs a human. | Send to human | Agent proposals | Gate |
 
 ## Where each rule is tested
 
@@ -27,6 +29,8 @@ can name it in its result and tests can point to it
 | R6 | 3, 5 |
 | R7 | 4 |
 | R8 | 3 (gate), 4 (executor), 7 (approval screen) |
+| R9 | Added 2026-11-19 (gate tests, `npm run probe`) |
+| R10 | Added 2026-11-19 (gate tests, `npm run probe`) |
 
 ## Open questions (settled in steps 2 and 3, and after step 5)
 
@@ -40,3 +44,5 @@ Record each answer here and in `DECISIONS.md`.
 | Q4 | Which result wins when several rules apply? | All | Step 3 | The strictest: block, then send to human, then allow. The gate names every rule behind that result (for example R2 and R3 together). A malformed form (R5) is blocked before any other rule is checked. |
 | Q5 | What counts as the AI being "unsure"? | R6 | Step 3 | Only the agent saying so, by choosing the action "unsure" on its form. The gate doesn't guess from wording or confidence scores. An unsure form goes to a human whatever amount it suggests; the human's amount is still held to R1. "Down" means no answer at all. |
 | Q6 | Does a refund on someone else's order block or go to a human? | R8 | After step 5 | Block. It is stricter than sending it to a person, and the person can't override it: the order a person picks must also be the asking customer's own (R8 applies to the approval screen and the executor too). An "unsure" form isn't checked, because nothing on it is carried out. |
+| Q7 | Why R9? | R9 | 2026-11-19 | R2 looks at one request at a time, so a $150 refund asked for as two $75 requests was paid with no person involved, and the same claim sent twice was paid twice. A probe (`npm run probe`) showed both. Now any refund on an order that was refunded before, or that already has a request waiting for a person, goes to a person. R1 still blocks anything over what's left. |
+| Q8 | What counts as a flagged or new account? | R10 | 2026-11-19 | Flagged is a mark on the customer in the shop data. New means the account was opened 30 days or fewer before the request arrived, counted like R3. A long-standing customer with no mark passes. Customers made by "Someone new" on the try page have no orders, so R8 already blocks their refunds. |

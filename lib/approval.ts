@@ -67,6 +67,8 @@ const RULE_WORDS: Record<RuleId, string> = {
   R5: "The agent's form was garbled",
   R6: "The AI was unsure or unavailable",
   R8: "The order isn't the customer's own",
+  R9: "This order already had a refund, or one is waiting",
+  R10: "The account is flagged or new",
 };
 
 // Why the executor refused, in plain words. Only some refusals can ever be fixed by trying again.

@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { inbox, type InboxRequest } from "../data/inbox.ts";
-import { orders, refunds } from "../data/shop.ts";
+import { customers, orders, refunds } from "../data/shop.ts";
 import { openDatabase } from "../lib/db.ts";
 import { type AgentOutput, checkProposal, type RuleId } from "../lib/gate.ts";
+import { processRequest } from "../lib/pipeline.ts";
 import { seed } from "../lib/seed.ts";
 
 // The gate's tests use a stand-in agent: fixed forms written here, no AI calls.
@@ -16,6 +17,14 @@ function check(requestId: string, output: AgentOutput) {
 }
 
 const AI_DOWN: AgentOutput = { status: "ai_down" };
+const NOW = "2026-10-05T12:00:00Z";
+
+// A shop of its own, for tests that run several requests in a row.
+function freshDb() {
+  const fresh = openDatabase(":memory:");
+  seed(fresh);
+  return fresh;
+}
 
 function answered(form: unknown): AgentOutput {
   return { status: "answered", form };
@@ -89,12 +98,42 @@ describe("R1: a refund never exceeds the amount paid, counting earlier refunds",
     expect(check("REQ-013", refund("O1025", 8000))).toEqual(blocked("R1"));
   });
 
-  it("R1: exactly what's left after an earlier refund is allowed (REQ-014)", () => {
-    expect(check("REQ-014", refund("O1026", 3500))).toEqual(allowed);
+  it("R1: exactly what's left after an earlier refund passes R1, and R9 sends it to a person (REQ-014)", () => {
+    expect(check("REQ-014", refund("O1026", 3500))).toEqual(toHuman("R9"));
   });
 
   it("R1: even one cent on an order already fully refunded is blocked (REQ-015)", () => {
     expect(check("REQ-015", refund("O1027", 1))).toEqual(blocked("R1"));
+  });
+});
+
+describe("R9: a second refund on one order needs a person", () => {
+  it("R9: a refund on an order that was refunded before goes to a person, even far under $100 (REQ-014, O1026)", () => {
+    expect(check("REQ-014", refund("O1026", 100))).toEqual(toHuman("R9"));
+  });
+
+  it("R9: splitting a $150 refund: the first $75 is paid, the second $75 goes to a person (REQ-002)", async () => {
+    const db = freshDb();
+    db.prepare("INSERT INTO inbox (id, customer_id, received_on, subject, body) VALUES ('SPLIT-2', 'C002', '2026-10-01', 'Rest', 'The other $75 please.')").run();
+    expect((await processRequest(db, "REQ-002", async () => refundForm("O1002", 7500), NOW)).outcome).toBe("paid");
+    expect(await processRequest(db, "SPLIT-2", async () => refundForm("O1002", 7500), NOW)).toMatchObject({ outcome: "waiting_for_human", rules: ["R9"] });
+  });
+
+  it("R9: a second claim while the first is still waiting for a person goes to a person too (REQ-002)", async () => {
+    const db = freshDb();
+    db.prepare("INSERT INTO inbox (id, customer_id, received_on, subject, body) VALUES ('AGAIN-2', 'C002', '2026-10-01', 'Again', 'Just $50 then.')").run();
+    expect(await processRequest(db, "REQ-002", async () => refundForm("O1002", 15000), NOW)).toMatchObject({ outcome: "waiting_for_human", rules: ["R2"] });
+    expect(await processRequest(db, "AGAIN-2", async () => refundForm("O1002", 5000), NOW)).toMatchObject({ outcome: "waiting_for_human", rules: ["R9"] });
+  });
+});
+
+describe("R10: a flagged or new account needs a person", () => {
+  it("R10: a flagged account's fair $45 refund goes to a person (REQ-023, Max Quill)", () => {
+    expect(check("REQ-023", refund("O1036", 4500))).toEqual(toHuman("R10"));
+  });
+
+  it("R10: an account that joined 5 days before the request goes to a person (REQ-024, Juno Park)", () => {
+    expect(check("REQ-024", refund("O1037", 3200))).toEqual(toHuman("R10"));
   });
 });
 
@@ -268,6 +307,12 @@ describe("1,000 bad proposals", () => {
     (p) => daysBetween(orders.find((o) => o.id === p.orderId)!.placedOn, p.request.receivedOn) > 30,
   );
   const frequentRefunders = pairs.filter((p) => recentRefunds(p.request) >= 3);
+  const refundedBefore = pairs.filter((p) => refunds.some((r) => r.orderId === p.orderId) && centsLeft(p.orderId) > 0);
+  const lookAtAccount = pairs.filter((p) => {
+    const c = customers.find((x) => x.id === p.request.customerId)!;
+    const days = daysBetween(c.joinedOn ?? "2025-01-01", p.request.receivedOn);
+    return c.flagged === true || (days >= 0 && days <= 30);
+  });
 
   // Values that are wrong for each field of a refund form.
   const junk: Record<string, unknown[]> = {
@@ -325,6 +370,14 @@ describe("1,000 bad proposals", () => {
       const { request, orderId } = pick(foreignPairs);
       return { requestId: request.id, output: refund(orderId, fairAmount(orderId)) };
     },
+    R9: () => {
+      const { request, orderId } = pick(refundedBefore);
+      return { requestId: request.id, output: refund(orderId, fairAmount(orderId)) };
+    },
+    R10: () => {
+      const { request, orderId } = pick(lookAtAccount);
+      return { requestId: request.id, output: refund(orderId, fairAmount(orderId)) };
+    },
   };
 
   const rules = Object.keys(makers) as RuleId[];
@@ -333,7 +386,7 @@ describe("1,000 bad proposals", () => {
     return { breaks, ...makers[breaks]() };
   });
 
-  it("R1 to R6 and R8: none is allowed", () => {
+  it("R1 to R6 and R8 to R10: none is allowed", () => {
     expect(proposals).toHaveLength(1000);
 
     for (const p of proposals) {
