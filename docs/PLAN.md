@@ -110,7 +110,7 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **Done when:** a stranger can open the URL, send a request from the village and approve it.
 
 ### 21. A shop for each visitor
-- **Status:** current
+- **Status:** done
 - **Goal:** Every visitor gets their own copy of the shop, so what one visitor decides (approving REQ-002, paying out an order) never changes what another visitor sees. The first time a visitor (the `visitor` cookie) reads or writes, their copy is made from the fresh template database: the seeded shop plus the overnight requests, the file `npm start` makes. The template itself is never written to by visitors. The spending limits stay site-wide: the 20-a-day count and each visitor's hourly count are kept in one shared place (the template's folder), not in the copies. A page view with no cookie yet shows the template, read only. Old copies are cleaned up so the free host's disk can't fill: keep at most 200, removing the oldest first, and remove any untouched for 7 days.
 - **Scope:** `lib/visitor-db.ts` (new), `app/approvals/db.ts`, `app/page.tsx`, `app/approvals/page.tsx`, `app/approvals/actions.ts`, `app/try/actions.ts`, `lib/visitor.ts`, `lib/tryout.ts` (only if the limits' counting must move), `tests/visitor-db.test.ts` (new), `tests/tryout.test.ts`, `e2e/village.e2e.ts` and `e2e/approval.e2e.ts` (only to clear visitor copies before each test), `.gitignore` if the copies' folder isn't already ignored
 - **Out of scope:** the village engine and any copy on screen, the gate, the executor, the hard rules, tracing (step 15).
@@ -118,7 +118,7 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **Done when:** a test where visitor A approves REQ-002 and visitor B still sees REQ-002 waiting with the order untouched; a test that tries by two visitors both count toward the one daily limit; the template file is byte-for-byte unchanged after visitors act; the copy cap and the 7-day cleanup are tested; all unit and browser tests pass.
 
 ### 15. Tracing
-- **Status:** todo
+- **Status:** current
 - **Goal:** Every Claude call writes down tokens in and out, cost, how long it took, the model that answered, and the gate's verdict, on the gate's logbook line for that request. A call that fails (AI down) is written too, with its time and error and no tokens. One command (`npm run trace`) prints a summary for a database: number of calls, total cost, average time, and calls by gate verdict (allow, send to a person, block, AI down). Cost uses a price table in code, per million tokens: Claude Opus 5.5 $4 in / $20 out (cache reads $0.20), Claude Sonnet 5.5 $2 / $10 (cache reads $0.10), Claude Haiku 5.5 $0.10 / $0.50 (prompts up to 100K tokens). An unknown model shows its tokens with the cost left blank, never a guess. The stand-in agent and the overnight requests make no Claude call, so they write no trace.
 - **Scope:** `lib/claude.ts`, `lib/agent.ts`, `lib/pipeline.ts`, `lib/logbook.ts` (only to carry the trace on the gate line), `lib/trace.ts` (new: the price table, cost and the summary), `scripts/trace.ts` (new), `package.json` (the `trace` script), `tests/trace.test.ts` (new)
 - **Out of scope:** the gate's decisions, the hard rules, the village and screens, the README cost table (added after this step, from real numbers).
@@ -145,3 +145,6 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **20:** On yellow, the robot waits at the human desk for about 6 seconds and says "YOU ARE THE PERSON. PRESS H TO DECIDE IT", then the stories carry on, so a visitor who walks away doesn't freeze the village.
 - **20:** On red, the robot sweats instead of scene 3's "LOL YA RIGHT", so it never mocks a visitor's own request.
 - **20:** `?speed=N` speeds the village up (for tests); the default pace is unchanged.
+- **21:** Copies live at `data/<template name>-visitors/<id>.db` and the shared try counts at `data/<template name>-limits.db`, so the test shop and the real one never share copies or counts.
+- **21:** A try with bad input still makes the visitor's copy and sets their cookie, because the cookie is set before the input is checked. Harmless: the copy is just the fresh shop.
+- **21:** A fresh shop (`npm start` on a new host, `npm run demo`) removes old copies and counts, since they were made from the previous shop.

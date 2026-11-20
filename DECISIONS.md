@@ -289,3 +289,9 @@ Template:
 - Copy: the header says it's a Claude agent. The tries count says "left this hour", and at zero: "No tries left for now. The stories still work." The desk section is "Waiting for you" ("Requests the agent handled on its own but couldn't settle"), since the seeded dates aren't really overnight. The paid banner says who and how much. Rule errors spell out the rule ("Rule 1: never refund more than what is left on the order. ...").
 - Layout: on wide screens the village sits at 2x on the left, with the Inbox, Human desk and stories beside it, all above the fold. The desk page's headings use the village's monospace.
 **Decided:** no "Watch it in the village" link after deciding on the desk page. Decisions made there don't play in the village, so the link would promise something that doesn't happen.
+
+## Step 21: a shop for each visitor (2026-11-19)
+
+**Built:** every visitor gets their own copy of the shop on their first read or write, made from the template (the seeded shop plus the overnight requests). What one visitor approves, rejects or pays never shows up for anyone else. A page view with no cookie reads the template, read only, and the template is never written by visitors (a test checks it byte for byte). The spending limits stay site-wide: tries are counted in one shared file next to the template. Copies are capped at 200, oldest removed first, and any copy untouched for 7 days is removed. A fresh shop clears old copies and counts.
+**Decided:** separate files per visitor instead of a visitor column on every table. It's the smallest change that isolates everything (orders, refunds, logbook, waiting requests), and the gate, executor and rules didn't change at all.
+**Left for later:** the shared counts file hasn't been tested under heavy load from many visitors at once.
