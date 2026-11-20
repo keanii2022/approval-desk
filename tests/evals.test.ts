@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { practiceCases } from "../data/cases.ts";
+import { holeCases } from "../data/hole-cases.ts";
 import type { AskModel, ModelRequest } from "../lib/agent.ts";
 import { runEvals, scoreAnswer, scorecardMarkdown } from "../lib/evals.ts";
 
@@ -104,5 +105,21 @@ describe("a whole run", () => {
     expect(md).toContain("**Accuracy** | **100.0%**");
     expect(md).toContain("## Misses");
     expect(md).toContain("## Wrong decisions that got through");
+  });
+});
+
+describe("hole cases: what already happened comes first", () => {
+  it("the earlier requests run with fixed forms (no AI), so the agent is asked once and sees the earlier refund (HOLE-01)", async () => {
+    const prompts: string[] = [];
+    const recording: AskModel = async ({ user }: ModelRequest) => {
+      prompts.push(user);
+      return { action: "unsure", orderId: null, amountCents: null, reason: "x", policyLine: "P02" };
+    };
+    const card = await runEvals(recording, { model: "stand-in", set: "holes", runs: 2, cases: holeCases.filter((c) => c.id === "HOLE-01"), now: NOW });
+
+    expect(card.answers).toBe(2);
+    expect(prompts).toHaveLength(2);
+    // Each run gets its own shop, so the $75 was paid once in each, not twice in one.
+    for (const p of prompts) expect(p.match(/Broken lamp/g)).toHaveLength(1);
   });
 });

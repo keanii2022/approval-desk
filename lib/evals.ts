@@ -3,11 +3,14 @@ import { type PracticeCase, practiceCases } from "../data/cases.ts";
 import { type AskModel, runAgent } from "./agent.ts";
 import { type AgentOutput, checkProposal, type GateDecision } from "./gate.ts";
 import { openDatabase } from "./db.ts";
+import { processRequest } from "./pipeline.ts";
 import { seed } from "./seed.ts";
 
 // The eval runner: every practice case, several times, through the agent and the
 // gate (parts 3 and 4). Nothing is paid and nothing is logged: it reads a fresh
-// in-memory copy of the shop, so every run sees the same data.
+// in-memory copy of the shop, so every run sees the same data. A case with a history
+// (data/hole-cases.ts) gets a shop of its own for every run, where its earlier
+// requests are first paid or left waiting through the real pipeline, with fixed forms.
 
 export type Verdict =
   | "right"
@@ -82,6 +85,22 @@ export function scoreAnswer(c: PracticeCase, output: AgentOutput, decision: Gate
   return { verdict: form.action === "refund" ? "wrong_paid" : "wrong_refused", why };
 }
 
+type Earlier = { id: string; receivedOn: string; subject: string; body: string; form: Record<string, unknown> };
+type CaseWithHistory = PracticeCase & { history?: Earlier[] };
+
+const HISTORY_NOW = "2026-10-01T09:00:00Z";
+
+// A shop for one run of one case: its earlier requests have already happened.
+async function shopWithHistory(c: CaseWithHistory): Promise<DatabaseSync> {
+  const db = practiceDb([c]);
+  const insert = db.prepare("INSERT INTO inbox (id, customer_id, received_on, subject, body) VALUES (?, ?, ?, ?, ?)");
+  for (const h of c.history ?? []) {
+    insert.run(h.id, c.customerId, h.receivedOn, h.subject, h.body);
+    await processRequest(db, h.id, async () => h.form, HISTORY_NOW);
+  }
+  return db;
+}
+
 export type EvalOptions = {
   model: string;
   set?: string;
@@ -102,8 +121,11 @@ export async function runEvals(askModel: AskModel, options: EvalOptions): Promis
   const worker = async () => {
     while (next < jobs.length) {
       const { c, run } = jobs[next++];
-      const output = await runAgent(db, c.id, askModel);
-      const decision = checkProposal(db, c.id, output);
+      const own = (c as CaseWithHistory).history ? await shopWithHistory(c as CaseWithHistory) : null;
+      const shop = own ?? db;
+      const output = await runAgent(shop, c.id, askModel);
+      const decision = checkProposal(shop, c.id, output);
+      own?.close();
       const answer = { caseId: c.id, tricky: c.tricky, run, output, decision, ...scoreAnswer(c, output, decision) };
       answers.push(answer);
       options.onAnswer?.(answer, answers.length, jobs.length);

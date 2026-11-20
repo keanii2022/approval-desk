@@ -16,7 +16,9 @@ const SCHEMA = `
   CREATE TABLE customers (
     id    TEXT PRIMARY KEY,
     name  TEXT NOT NULL,
-    email TEXT NOT NULL UNIQUE
+    email TEXT NOT NULL UNIQUE,
+    joined_on TEXT NOT NULL DEFAULT '2025-01-01',
+    flagged INTEGER NOT NULL DEFAULT 0
   );
 
   CREATE TABLE orders (
@@ -58,8 +60,8 @@ export function seed(db: DatabaseSync): void {
   try {
     db.exec(SCHEMA);
 
-    const insertCustomer = db.prepare("INSERT INTO customers (id, name, email) VALUES (?, ?, ?)");
-    for (const c of customers) insertCustomer.run(c.id, c.name, c.email);
+    const insertCustomer = db.prepare("INSERT INTO customers (id, name, email, joined_on, flagged) VALUES (?, ?, ?, ?, ?)");
+    for (const c of customers) insertCustomer.run(c.id, c.name, c.email, c.joinedOn ?? "2025-01-01", c.flagged ? 1 : 0);
 
     const insertOrder = db.prepare(
       "INSERT INTO orders (id, customer_id, placed_on, item, amount_paid_cents) VALUES (?, ?, ?, ?, ?)",

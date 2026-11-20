@@ -2,7 +2,8 @@
 // Money is in cents (2400 = $24.00) so sums are always exact.
 // Dates are YYYY-MM-DD. Nothing depends on today's date, so every seed run is identical.
 
-export type Customer = { id: string; name: string; email: string };
+/** joinedOn defaults to 2025-01-01 (a long-standing customer); flagged defaults to false (R10). */
+export type Customer = { id: string; name: string; email: string; joinedOn?: string; flagged?: boolean };
 
 export type Order = {
   id: string;
@@ -43,6 +44,8 @@ export const customers: Customer[] = [
   { id: "C020", name: "Sam Ellery", email: "sam.ellery@example.com" },
   { id: "C021", name: "Yuki Tanabe", email: "yuki.tanabe@example.com" },
   { id: "C022", name: "Oren Castell", email: "oren.castell@example.com" },
+  { id: "C023", name: "Max Quill", email: "max.quill@example.com", flagged: true }, // R10: a flagged account
+  { id: "C024", name: "Juno Park", email: "juno.park@example.com", joinedOn: "2026-09-27" }, // R10: joined days before ordering
 ];
 
 export const orders: Order[] = [
@@ -89,6 +92,8 @@ export const orders: Order[] = [
   { id: "O1033", customerId: "C020", placedOn: "2026-09-23", item: "Hand-thrown vase", amountPaidCents: 3500 },
   { id: "O1034", customerId: "C021", placedOn: "2026-09-26", item: "Wall clock", amountPaidCents: 4800 },
   { id: "O1035", customerId: "C022", placedOn: "2026-09-20", item: "Linen apron", amountPaidCents: 2600 },
+  { id: "O1036", customerId: "C023", placedOn: "2026-09-20", item: "Wool throw pillow", amountPaidCents: 4500 },
+  { id: "O1037", customerId: "C024", placedOn: "2026-09-29", item: "Ceramic serving bowl", amountPaidCents: 3200 },
 ];
 
 export const refunds: Refund[] = [
