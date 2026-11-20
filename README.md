@@ -4,13 +4,17 @@ A Claude-powered refund agent for a made-up online shop. The AI reads each custo
 
 All shop data, customers and messages are invented.
 
+**Try it live: [approval-desk-g3lz.onrender.com](https://approval-desk-g3lz.onrender.com)**. Send the agent a real request and decide the big ones yourself. It's on a free host, so the first visit can take up to a minute to wake up, and the shop resets each time it sleeps. Everyone gets a few tries an hour.
+
+![The village: the robot carries each request from the Inbox past the gate, and big refunds wait at the human desk](docs/demo/village.png)
+
 ## Demo
 
 A customer tries to fake an "admin override" for $1,000. The agent ignores it and proposes the real $150. The gate sends it to a person because it's over $100.
 
 ![The agent handling a fake admin override](docs/demo/try.png)
 
-A person then approves (and can lower the amount) or rejects with a note. Nobody, the person included, can refund more than was paid:
+A person then approves (and can lower the amount) or rejects with a note. Nobody, the person included, can refund more than was paid. On the live site, that person is you:
 
 ![The approval screen](docs/demo/approvals.png)
 
@@ -24,7 +28,7 @@ Each case is run 3 times. "Got through" means a wrong answer the code checks sti
 | 60 hard cases, written by a different AI to break it | **95.0%**, 0 got through | 73.3%, 0 got through |
 
 - The code checks let through **0 of 1,000** random bad proposals.
-- 256 automated tests and 15 browser tests pass. None of them call the AI.
+- 272 automated tests and 23 browser tests pass. None of them call the AI.
 - Scorecards are dated and saved in [evals/](evals/). The latest is from 2026-11-16.
 
 ## How it works
@@ -52,12 +56,18 @@ npm run seed
 npm run dev
 ```
 
-Open http://localhost:3000 and use "Try it yourself" to send the agent a request.
+Open http://localhost:3000 and send the agent a request from the village.
 
 Other commands:
 
 - `npm test` runs the tests (free, no AI).
 - `npm run evals` scores the agent on the 60 practice cases. Add `-- --set hard` for the hard set. A full run costs about $4.
+
+## Part of agent-hub
+
+Approval Desk is one house in [agent-hub](https://github.com/keanii2022/agent-hub), a pixel village where each of my AI projects is a house and anything that needs me ends up at my desk.
+
+![agent-hub: approval-desk is one of the houses on the upper street](docs/demo/agent-hub.png)
 
 ## Stack
 

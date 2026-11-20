@@ -63,7 +63,7 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
   - **Goal:** Every Claude call logs tokens in and out, cost, latency and the gate's result, on the gate's logbook line. One command prints a summary: calls, total cost, average latency, results by gate verdict.
   - **Done when:** the summary command runs on the seeded database and matches the logbook by hand for five calls; a test checks the line is written on success and on an AI outage.
 
-- [ ] **Step 16: Live on the internet** (moved below, into "Public village", on 2026-11-16: it now comes before step 15, and the cost table waits for step 15.)
+- [x] **Step 16: Live on the internet** (moved below, into "Public village", on 2026-11-16: it now comes before step 15, and the cost table waits for step 15.)
 
 ## Public village (added 2026-11-16)
 
@@ -102,7 +102,7 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **Done when:** browser tests (stand-in agent) send a small refund, a big refund and a garbled one, and see the green, yellow and red lights in turn, with the visitor's entry in the logbook.
 
 ### 16. Live on the internet
-- **Status:** current
+- **Status:** done
 - **Goal:** The app runs on Render's free plan (chosen 2026-11-16: $0 a month; it sleeps when idle and wakes with a fresh copy of the data), invented data only, the owner's key on the host only, spending limits on. The README opens with the live link, says this agent is one house in the owner's bigger agent-hub, with a screenshot of the hub supplied by the owner. The cost table from step 15 is added once step 15 is done.
 - **Scope:** `README.md`, host settings (owner's account)
 - **Out of scope:** app code.
