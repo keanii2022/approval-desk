@@ -1,0 +1,45 @@
+# Weekly drift check (npm run drift): a sample of every eval set on the real agent,
+# compared with the last full run. Red when something got through or a set fell more
+# than 15 points. Needs the repository secret ANTHROPIC_API_KEY; without it the run
+# skips. Each run is capped at $1 (a fresh spend ledger every time).
+name: Drift check
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # Mondays 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      SPEND_CAP_USD: "1"
+      SPEND_LEDGER: /tmp/spend-ledger.json
+    steps:
+      - name: Skip without an API key
+        if: env.ANTHROPIC_API_KEY == ''
+        run: echo "::notice::No ANTHROPIC_API_KEY secret, so the drift check didn't run."
+      - uses: actions/checkout@v4
+        if: env.ANTHROPIC_API_KEY != ''
+      - uses: actions/setup-node@v4
+        if: env.ANTHROPIC_API_KEY != ''
+        with:
+          node-version: 24
+          cache: npm
+      - if: env.ANTHROPIC_API_KEY != ''
+        run: npm ci
+      - name: Run the drift check
+        if: env.ANTHROPIC_API_KEY != ''
+        run: npm run drift
+      - name: Keep the report
+        if: always() && env.ANTHROPIC_API_KEY != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-report
+          path: evals/drift/
+          if-no-files-found: ignore

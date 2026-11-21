@@ -18,7 +18,8 @@
     "e2e": "playwright test",
     "evals": "node --env-file=.env scripts/run-evals.ts",
     "probe": "node --env-file-if-exists=.env scripts/probe-holes.ts",
-    "trace": "node scripts/trace.ts"
+    "trace": "node scripts/trace.ts",
+    "drift": "node --env-file-if-exists=.env scripts/drift.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
