@@ -51,5 +51,7 @@ describe("spend cap", () => {
   it("projects from the ledger's average once it has one", () => {
     expect(projectedUsd({ capUsd: 1, spentUsd: 0, calls: 0 }, 10, 0.01)).toBeCloseTo(0.1);
     expect(projectedUsd({ capUsd: 1, spentUsd: 0.6, calls: 20 }, 10, 0.01)).toBeCloseTo(0.3);
+    // a cheap ledger doesn't make a dear model look cheap
+    expect(projectedUsd({ capUsd: 1, spentUsd: 0.02, calls: 100 }, 10, 0.015)).toBeCloseTo(0.15);
   });
 });

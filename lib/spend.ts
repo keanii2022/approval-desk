@@ -23,9 +23,10 @@ export function readLedger(path: string, capUsd: number): Ledger {
 const save = (path: string, ledger: Ledger) => writeFileSync(path, JSON.stringify(ledger, null, 2) + "\n");
 
 // What a run of this many calls would likely cost: the ledger's own average per
-// call once there is one, otherwise the given guess.
+// call, or the guess for this model if that's higher (a ledger full of cheap Haiku
+// calls would otherwise make an Opus run look cheap).
 export function projectedUsd(ledger: Ledger, calls: number, guessPerCall: number): number {
-  const perCall = ledger.calls > 0 ? ledger.spentUsd / ledger.calls : guessPerCall;
+  const perCall = ledger.calls > 0 ? Math.max(ledger.spentUsd / ledger.calls, guessPerCall) : guessPerCall;
   return calls * perCall;
 }
 
