@@ -34,6 +34,11 @@ test("Dashboard: every section loads from the real data", async ({ page }) => {
   // The latest scorecard, with its date.
   await expect(page.locator(".dash-latest")).toContainText(/Latest scorecard: \d{4}-\d{2}-\d{2},/);
   await expect(page.getByRole("table", { name: "Scorecards" }).getByRole("row")).not.toHaveCount(1);
+
+  // Step 31: the desk load table, or its empty line until a scorecard keeps every answer.
+  const desk = "Sent to a person, per 100 requests";
+  await expect(page.getByRole("heading", { name: desk })).toBeVisible();
+  await expect(page.getByRole("table", { name: desk }).or(page.getByText("Shows after the next eval run."))).toBeVisible();
 });
 
 test("Dashboard: the section bar jumps to each section", async ({ page }) => {

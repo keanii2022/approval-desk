@@ -1,14 +1,16 @@
 import { cookies } from "next/headers";
 import Link from "next/link";
-import { getWaitingCases, type WaitingCase } from "../../lib/approval.ts";
+import { getWaitingCases, ruleInWords, type WaitingCase } from "../../lib/approval.ts";
 import {
   customerRows,
+  deskLoad,
   inboxRows,
   logLines,
   orderRows,
   scorecards,
   shopTotals,
   type CustomerRow,
+  type DeskSet,
   type InboxRow,
   type LogLine,
   type OrderRow,
@@ -28,6 +30,7 @@ export const dynamic = "force-dynamic"; // always read the shop fresh
 const GITHUB_EVALS = "https://github.com/keanii2022/approval-desk/blob/main/evals/";
 const SET_NAMES: Record<string, string> = { practice: "60 practice cases", hard: "60 hard cases", holes: "hole cases" };
 const percent = (n: number) => `${(n * 100).toFixed(1)}%`;
+const per100 = (count: number, s: DeskSet) => (s.answers === 0 ? "0" : ((count / s.answers) * 100).toFixed(0));
 
 // The owner's view of everything: read only, apart from the human desk's own approve and reject.
 export default async function DashboardPage() {
@@ -58,6 +61,7 @@ export default async function DashboardPage() {
   const shipping = promptVersion();
   // The newest run on the prompt that ships; runs on prompts that were tried and rejected don't count.
   const latest = cards.find((c) => c.prompt === shipping) ?? cards.find((c) => c.prompt === null) ?? cards[0];
+  const desk = deskLoad(cards, shipping);
 
   return (
     <main className="approvals dashboard">
@@ -235,6 +239,49 @@ export default async function DashboardPage() {
           </p>
         ) : (
           <p className="empty">No scorecards yet. Run npm run evals.</p>
+        )}
+        <h3 id="desk-title">Sent to a person, per 100 requests</h3>
+        {desk.sets.length === 0 ? (
+          <p className="empty">Shows after the next eval run.</p>
+        ) : (
+          <>
+            <div className="dash-scroll">
+              <table aria-labelledby="desk-title">
+                <thead>
+                  <tr>
+                    <th>Rule</th>
+                    <th>Why</th>
+                    {desk.sets.map((s) => (
+                      <th key={s.set}>{SET_NAMES[s.set] ?? s.set}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Any</td>
+                    <td>Sent to a person for any reason</td>
+                    {desk.sets.map((s) => (
+                      <td key={s.set}>{per100(s.toPerson, s)}</td>
+                    ))}
+                  </tr>
+                  {desk.rules.map((rule) => (
+                    <tr key={rule}>
+                      <td>{rule === "R6" ? "Unsure (R6)" : rule}</td>
+                      {/* A rule added after RULE_WORDS (R13, R14 on their way) shows with an empty Why. */}
+                      <td>{ruleInWords(rule as Parameters<typeof ruleInWords>[0]) ?? ""}</td>
+                      {desk.sets.map((s) => (
+                        <td key={s.set}>{per100(s.perRule[rule] ?? 0, s)}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="section-sub dash-desk-note">
+              Of {desk.atDesk} answers sent to a person, {desk.rightAtDesk} were right and only needed a look; {desk.wrongAtDesk} were wrong and a person had
+              to catch them. A reviewer who approves everything would pay those {desk.wrongAtDesk}.
+            </p>
+          </>
         )}
         <p className="section-sub">
           Every run, newest first. How prompt changes were scored: <a href="https://github.com/keanii2022/approval-desk/blob/main/EVALS.md">EVALS.md</a>.
