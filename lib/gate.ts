@@ -2,9 +2,9 @@ import type { DatabaseSync } from "node:sqlite";
 
 // The gate: plain code, no AI. It checks the agent's answer to one Inbox request
 // against the hard rules in docs/RULES.md and returns one result, naming the
-// rules behind it. It checks R1 to R6 and R8 to R11; R7 belongs to the logbook and executor.
+// rules behind it. It checks R1 to R6 and R8 to R12; R7 belongs to the logbook and executor.
 
-export type RuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R8" | "R9" | "R10" | "R11";
+export type RuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R8" | "R9" | "R10" | "R11" | "R12";
 
 export type GateDecision = {
   result: "allow" | "send_to_human" | "block";
@@ -32,13 +32,13 @@ const R4_HUMAN_AT_REFUNDS = 3; // 3+ earlier refunds,
 const R4_WINDOW_DAYS = 90; // made 90 days or fewer before the request (Q3)
 const R10_NEW_ACCOUNT_DAYS = 30; // joined 30 days or fewer before the request (Q8)
 
-type Request = { customer_id: string; received_on: string };
+type Request = { customer_id: string; received_on: string; subject: string; body: string };
 type Order = { customer_id: string; placed_on: string; amount_paid_cents: number; in_transit: number };
 
 // When several rules apply, the strictest result wins (block, then send to
 // human, then allow), and every rule behind that result is named (Q4).
 export function checkProposal(db: DatabaseSync, requestId: string, output: AgentOutput): GateDecision {
-  const request = db.prepare("SELECT customer_id, received_on FROM inbox WHERE id = ?").get(requestId) as
+  const request = db.prepare("SELECT customer_id, received_on, subject, body FROM inbox WHERE id = ?").get(requestId) as
     | Request
     | undefined;
   if (!request) throw new Error(`No Inbox request with ID ${requestId}`);
@@ -54,7 +54,8 @@ export function checkProposal(db: DatabaseSync, requestId: string, output: Agent
   if (form.action === "unsure") return { result: "send_to_human", rules: ["R6"] };
 
   // Nothing is refunded, so there's nothing to check.
-  if (form.action === "no_refund") return { result: "allow", rules: [] };
+  // R12 (Q10): turning a customer away over an order number that isn't theirs needs a person to check it.
+  if (form.action === "no_refund") return namesUnknownOrder(db, request) ? { result: "send_to_human", rules: ["R12"] } : { result: "allow", rules: [] };
 
   // R5: a refund on an order that doesn't exist can't be checked or carried out.
   const order = db
@@ -76,6 +77,7 @@ export function checkProposal(db: DatabaseSync, requestId: string, output: Agent
   if (accountNeedsALook(db, request)) needsHuman.push("R10");
   // R11 (Q9): the carrier hasn't delivered the order yet, so a damage or "never arrived" claim can't be checked.
   if (order.in_transit === 1) needsHuman.push("R11");
+  if (namesUnknownOrder(db, request)) needsHuman.push("R12");
 
   if (blocking.length > 0) return { result: "block", rules: blocking };
   if (needsHuman.length > 0) return { result: "send_to_human", rules: needsHuman };
@@ -129,6 +131,15 @@ function waitingOnOrder(db: DatabaseSync, orderId: string): boolean {
     )
     .get(orderId);
   return row !== undefined;
+}
+
+// R12 (Q10): the message names an order number (like O1234) that isn't one of the asking
+// customer's orders: one that doesn't exist, someone else's, or a typo. Plain text matching, no AI.
+function namesUnknownOrder(db: DatabaseSync, request: Request): boolean {
+  const named = new Set(`${request.subject} ${request.body}`.toUpperCase().match(/\bO\d{4,}\b/g) ?? []);
+  if (named.size === 0) return false;
+  const own = new Set((db.prepare("SELECT id FROM orders WHERE customer_id = ?").all(request.customer_id) as { id: string }[]).map((o) => o.id));
+  return [...named].some((id) => !own.has(id));
 }
 
 // R10 (Q8): the account is flagged, or joined 30 days or fewer before the request.

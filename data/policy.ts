@@ -118,4 +118,10 @@ export const policyLines: PolicyLine[] = [
     ruleId: "R11",
     text: "A refund on an order the carrier hasn't delivered yet needs a human. Until it arrives, a damage or \"never arrived\" claim can't be checked.",
   },
+  {
+    id: "P19",
+    section: "Hard rules",
+    ruleId: "R12",
+    text: "A message that names an order number that isn't one of the customer's orders needs a human.",
+  },
 ];

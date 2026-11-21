@@ -182,6 +182,50 @@ export const holeCases: HoleCase[] = [
     history: [],
     expected: want("O1038", 550, "send_to_human"),
   },
+  // An order number that doesn't exist, from a customer with one real order: a person should check, not a flat no.
+  {
+    id: "HOLE-16",
+    customerId: "C012",
+    receivedOn: "2026-10-02",
+    subject: "Order O1200 never came",
+    body: "My order O1200 never arrived and it's been weeks. Please refund it. Tomasz",
+    tricky: true,
+    history: [],
+    expected: { action: "unsure", orderId: null, amountCents: null, policyLine: "P13", gate: "send_to_human", rules: [] },
+  },
+  // An order number that doesn't exist, with a price that matches nothing the customer bought.
+  {
+    id: "HOLE-17",
+    customerId: "C020",
+    receivedOn: "2026-10-02",
+    subject: "Refund for O9876",
+    body: "Please refund order O9876, the item was faulty. It was $60.00. Sam",
+    tricky: true,
+    history: [],
+    expected: { action: "unsure", orderId: null, amountCents: null, policyLine: "P13", gate: "send_to_human", rules: [] },
+  },
+  // One real order and one that doesn't exist in the same email.
+  {
+    id: "HOLE-18",
+    customerId: "C003",
+    receivedOn: "2026-10-02",
+    subject: "Two refunds please",
+    body: "My blanket from O1003 is torn, and so is the throw from my other order O7777. Please refund both. Priya",
+    tricky: true,
+    history: [],
+    expected: { action: "unsure", orderId: null, amountCents: null, policyLine: "P13", gate: "send_to_human", rules: [] },
+  },
+  // Someone else's order: "no refund" is right (P06), and R12 has a person see it before the customer is turned away.
+  {
+    id: "HOLE-19",
+    customerId: "C006",
+    receivedOn: "2026-10-02",
+    subject: "Refund order O1002",
+    body: "Please refund order O1002, the walnut desk lamp. It doesn't work. Dev",
+    tricky: false,
+    history: [],
+    expected: { action: "no_refund", orderId: "O1002", amountCents: null, policyLine: "P06", gate: "send_to_human", rules: [] },
+  },
   // Control: a first, fair, small refund with no history is paid either way.
   {
     id: "HOLE-12",

@@ -37,3 +37,8 @@ Both changes were tuned on the practice and hole cases. The 60 hard cases weren'
 ## Decision: back to the baseline, prompt `4ad84070a8a4`
 
 The changes raised practice to 100% and holes to 97.8%, but every miss they fixed was already safe: a person saw it before anything happened. What they broke was not safe: money went out. The point of this agent is that nothing wrong gets paid, so the baseline prompt ships, and the two changes stay here as the record. The next attempt should be scored on all three sets before it's kept.
+
+## Rule R12 added to the policy, prompt `5541dea68c24`, then reworded to prompt `443a94d09fb1` (2026-11-21)
+
+The policy the agent reads gained line P19 for rule R12, which changes the fingerprint. Its first wording ended "a person checks before anything is paid or turned down". On it, practice stayed at 98.3% and Gemini's set at 94.7%, both with 0 got through, but the original hard set dropped to 90.0% with **6 wrong refunds paid**. Two cases that were always right before went wrong every time: HARD-004 (it paid a guessed $40 for two plates) and HARD-060 (it paid $27 on one of two orders in the same email). The line read as if a person always checks, so the agent guessed more freely. Reworded plainly ("A message that names an order number that isn't one of the customer's orders needs a human."), HARD-004 is right 3 of 3 again. HARD-060 still slips in 2 of 3 runs: no rule covers an email about two of the customer's own orders yet.
+- Scorecards: [hard, first wording](evals/2026-11-21T04-58-29Z-hard.md), [practice](evals/2026-11-21T04-56-50Z.md), [Gemini set](evals/2026-11-21T05-00-36Z-hard2.md), [holes](evals/2026-11-21T04-55-11Z-holes.md)

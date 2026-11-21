@@ -28,7 +28,7 @@ Inbox request
    Agent (AI) ──► form: action, order, amount, reason, policy line
      │
      ▼
-   Gate (plain code) ── names the rule (R1 to R6, R8 to R11)
+   Gate (plain code) ── names the rule (R1 to R6, R8 to R12)
      │
      ├── allow ─────────────────────────────────► Executor ──► order changed
      │                                               ▲

@@ -673,8 +673,8 @@ function buildIdle(){
 }
 /* ================= the visitor's own request (scene 4): same walk and props, the real gate's decision ================= */
 const VKIND={allow:'G',send_to_human:'Y',block:'R'};
-const RSHORT={R1:'MORE THAN WAS PAID',R2:'OVER THE $100 LIMIT',R3:'ORDER OVER 30 DAYS',R4:'3+ RECENT REFUNDS',R5:'NOT A PROPER FORM',R6:'AI DOWN OR UNSURE',R8:'NOT THEIR ORDER',R9:'ORDER REFUNDED BEFORE',R10:'ACCOUNT NEEDS A LOOK',R11:'NOT DELIVERED YET'};
-const RWHY={R1:'MORE THAN WAS PAID',R2:'OVER $100',R3:'ORDER OVER 30 DAYS OLD',R4:'3+ REFUNDS IN 90 DAYS',R5:'NOT A PROPER FORM',R6:'THE AI WAS DOWN OR UNSURE',R8:'NOT THE CUSTOMERS ORDER',R9:'THIS ORDER WAS REFUNDED BEFORE',R10:'FLAGGED OR NEW ACCOUNT',R11:'THE ORDER IS NOT DELIVERED YET'};
+const RSHORT={R1:'MORE THAN WAS PAID',R2:'OVER THE $100 LIMIT',R3:'ORDER OVER 30 DAYS',R4:'3+ RECENT REFUNDS',R5:'NOT A PROPER FORM',R6:'AI DOWN OR UNSURE',R8:'NOT THEIR ORDER',R9:'ORDER REFUNDED BEFORE',R10:'ACCOUNT NEEDS A LOOK',R11:'NOT DELIVERED YET',R12:'NOT THEIR ORDER NUMBER'};
+const RWHY={R1:'MORE THAN WAS PAID',R2:'OVER $100',R3:'ORDER OVER 30 DAYS OLD',R4:'3+ REFUNDS IN 90 DAYS',R5:'NOT A PROPER FORM',R6:'THE AI WAS DOWN OR UNSURE',R8:'NOT THE CUSTOMERS ORDER',R9:'THIS ORDER WAS REFUNDED BEFORE',R10:'FLAGGED OR NEW ACCOUNT',R11:'THE ORDER IS NOT DELIVERED YET',R12:'AN ORDER NUMBER IS NOT THEIRS'};
 // Visitor text goes through the pixel font, which only has capitals, digits and a little punctuation.
 const pix=(s,n=48)=>{s=String(s??'').toUpperCase().split('').filter(c=>FONT[c]).join('').replace(/\s+/g,' ').trim();return s.length>n?s.slice(0,n-1).trimEnd()+'.':s};
 /** The timeline of a visitor's real request: the walk of the scripted stories, lit by the real gate's decision. */
@@ -761,18 +761,19 @@ const SDET={
 };
 function makeEntry(sc,dec,n){const d=SDET[sc];return{id:rfid(n),o:d.o,a:d.a,ag:d.ag,ga:d.ga,fi:d.fi(dec),g:d.g(dec),wd:d.wd(dec)}}
 /* ================= the hard rules, in plain words ================= */
-const RULES=[ // one line where it fits, so all 11 sit above the speech box
+const RULES=[ // one line each, so all 12 sit above the speech box
  ['BLOCK',['NEVER REFUND MORE THAN IS LEFT.']],
  ['HUMAN',['REFUNDS OVER $100 NEED A HUMAN.']],
  ['HUMAN',['ORDERS OVER 30 DAYS OLD NEED A HUMAN.']],
- ['HUMAN',['A CUSTOMER WITH 3+ REFUNDS IN 90 DAYS','NEEDS A HUMAN.']],
+ ['HUMAN',['3+ REFUNDS IN 90 DAYS NEED A HUMAN.']],
  ['BLOCK',['A GARBLED FORM IS BLOCKED.']],
  ['HUMAN',['AI DOWN OR UNSURE: A HUMAN DECIDES.']],
  ['STOP',['LOGBOOK DOWN: NOTHING HAPPENS.']],
  ['BLOCK',['ONLY THE ASKING CUSTOMERS OWN ORDERS.']],
- ['HUMAN',['A SECOND REFUND ON THE SAME ORDER','NEEDS A HUMAN.']],
+ ['HUMAN',['A 2ND REFUND ON AN ORDER NEEDS A HUMAN.']],
  ['HUMAN',['FLAGGED OR NEW ACCOUNTS NEED A HUMAN.']],
- ['HUMAN',['UNDELIVERED ORDERS NEED A HUMAN.']]];
+ ['HUMAN',['UNDELIVERED ORDERS NEED A HUMAN.']],
+ ['HUMAN',['UNKNOWN ORDER NUMBERS NEED A HUMAN.']]];
 function rulesSummary(){return 'The hard rules the gate checks. '+RULES.map(r=>({BLOCK:'Blocked: ',HUMAN:'Needs a human: ',STOP:'Stops everything: '}[r[0]])+r[1].join(' ')).join(' ')}
 function drawRulesWin(){
   const x=12,y=4,w=296,h=193; // ends above the speech box at the bottom of the screen

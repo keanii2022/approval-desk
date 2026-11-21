@@ -17,6 +17,7 @@ can name it in its result and tests can point to it
 | R9 | A second refund on one order needs a human: the order was refunded before, or another request on it is waiting for a person. | Send to human | Agent proposals | Gate |
 | R10 | A flagged account, or one opened 30 days or fewer before the request, needs a human. | Send to human | Agent proposals | Gate |
 | R11 | A refund on an order the carrier hasn't delivered yet needs a human. | Send to human | Agent proposals | Gate |
+| R12 | A message that names an order number that isn't one of the customer's orders needs a human. | Send to human | Agent proposals | Gate |
 
 ## Where each rule is tested
 
@@ -33,6 +34,7 @@ can name it in its result and tests can point to it
 | R9 | Added 2026-11-19 (gate tests, `npm run probe`) |
 | R10 | Added 2026-11-19 (gate tests, `npm run probe`) |
 | R11 | Added 2026-11-20 (gate tests, hole cases HOLE-13 to 15) |
+| R12 | Added 2026-11-21 (gate tests, hole cases HOLE-16 to 19) |
 
 ## Open questions (settled in steps 2 and 3, and after step 5)
 
@@ -49,3 +51,4 @@ Record each answer here and in `DECISIONS.md`.
 | Q7 | Why R9? | R9 | 2026-11-19 | R2 looks at one request at a time, so a $150 refund asked for as two $75 requests was paid with no person involved, and the same claim sent twice was paid twice. A probe (`npm run probe`) showed both. Now any refund on an order that was refunded before, or that already has a request waiting for a person, goes to a person. R1 still blocks anything over what's left. |
 | Q8 | What counts as a flagged or new account? | R10 | 2026-11-19 | Flagged is a mark on the customer in the shop data. New means the account was opened 30 days or fewer before the request arrived, counted like R3. A long-standing customer with no mark passes. Customers made by "Someone new" on the try page have no orders, so R8 already blocks their refunds. |
 | Q9 | Why R11, and what counts as not delivered? | R11 | 2026-11-20 | Three hole cases asked for refunds on orders the carrier still shows in transit. On R1–R10 the agent proposed a refund every time and the gate paid all 9 answers. "Not delivered" is the carrier's status on the order in the shop data, not what the customer says; an order marked delivered that the customer says never came is still the agent's call under the policy. |
+| Q10 | Why R12, and how is an order number spotted? | R12 | 2026-11-21 | Twice the agent answered "no refund" to a request about an order that doesn't exist (CASE-046, HARD2-014), turning a customer away with no person checking. A hole case then showed it refunding the customer's real order while ignoring a made-up one in the same email. The gate now finds every order number in the subject and message (the letter O followed by four or more digits) and sends the request to a person if any of them isn't the customer's own. R8 still blocks a refund on someone else's order outright, since blocking is stricter. |

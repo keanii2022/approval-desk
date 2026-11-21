@@ -79,9 +79,9 @@ describe("R8: a refund must be on an order that belongs to the customer who aske
     expect(check("REQ-022", unsure("O1001", 2400))).toEqual(toHuman("R6"));
   });
 
-  it("R8: a no-refund answer naming someone else's order is allowed, since nothing is refunded", () => {
+  it("R8 and R12: a no-refund answer on someone else's order isn't blocked (nothing is refunded), but a person checks it first", () => {
     const form = { action: "no_refund", orderId: "O1001", amountCents: null, reason: "Order isn't theirs", policyLine: "P06" };
-    expect(check("REQ-022", answered(form))).toEqual(allowed);
+    expect(check("REQ-022", answered(form))).toEqual(toHuman("R12"));
   });
 });
 
@@ -134,6 +134,20 @@ describe("R10: a flagged or new account needs a person", () => {
 
   it("R10: an account that joined 5 days before the request goes to a person (REQ-024, Juno Park)", () => {
     expect(check("REQ-024", refund("O1037", 3200))).toEqual(toHuman("R10"));
+  });
+});
+
+describe("R12: a message naming an order that isn't the customer's needs a person", () => {
+  it("R12: \"no refund\" on someone else's order isn't sent straight back: a person checks first (REQ-022, O1001 is Mara's)", () => {
+    expect(check("REQ-022", answered({ action: "no_refund", orderId: null, amountCents: null, reason: "Not their order", policyLine: "P06" }))).toEqual(toHuman("R12"));
+  });
+
+  it("R12: a refund on their own order, when the message also names one that isn't theirs, goes to a person (REQ-022, O1035)", () => {
+    expect(check("REQ-022", refund("O1035", 2600))).toEqual(toHuman("R12"));
+  });
+
+  it("R12: a message naming only the customer's own orders is unaffected (REQ-001)", () => {
+    expect(check("REQ-001", answered({ action: "no_refund", orderId: null, amountCents: null, reason: "No refund asked", policyLine: "P07" }))).toEqual(allowed);
   });
 });
 
@@ -324,6 +338,9 @@ describe("1,000 bad proposals", () => {
     return c.flagged === true || (days >= 0 && days <= 30);
   });
   const undelivered = pairs.filter((p) => orders.find((o) => o.id === p.orderId)!.inTransit === true);
+  const namesSomeoneElses = pairs.filter((p) =>
+    (`${p.request.subject} ${p.request.body}`.toUpperCase().match(/\bO\d{4,}\b/g) ?? []).some((id) => orders.find((o) => o.id === id)?.customerId !== p.request.customerId),
+  );
 
   // Values that are wrong for each field of a refund form.
   const junk: Record<string, unknown[]> = {
@@ -393,6 +410,10 @@ describe("1,000 bad proposals", () => {
       const { request, orderId } = pick(undelivered);
       return { requestId: request.id, output: refund(orderId, fairAmount(orderId)) };
     },
+    R12: () => {
+      const { request, orderId } = pick(namesSomeoneElses);
+      return { requestId: request.id, output: refund(orderId, fairAmount(orderId)) };
+    },
   };
 
   const rules = Object.keys(makers) as RuleId[];
@@ -401,7 +422,7 @@ describe("1,000 bad proposals", () => {
     return { breaks, ...makers[breaks]() };
   });
 
-  it("R1 to R6 and R8 to R11: none is allowed", () => {
+  it("R1 to R6 and R8 to R12: none is allowed", () => {
     expect(proposals).toHaveLength(1000);
 
     for (const p of proposals) {

@@ -81,7 +81,8 @@ describe("try it yourself: someone new", () => {
     const db = freshDb();
     const refundOnSomeoneElses = { action: "no_refund", orderId: null, amountCents: null, reason: "No orders", policyLine: "P06" };
     const { requestId, result } = await tryRequest(db, { customerId: NEW_CUSTOMER, newName: "Ada Stone", subject: "", message: "Refund O1001 please" }, answers(refundOnSomeoneElses), visit);
-    expect(result.outcome).toBe("nothing_to_pay");
+    // The message names someone else's order, so a person checks the "no refund" first (R12).
+    expect(result).toMatchObject({ outcome: "waiting_for_human", rules: ["R12"] });
     const customer = db.prepare("SELECT c.id, c.name FROM inbox i JOIN customers c ON c.id = i.customer_id WHERE i.id = ?").get(requestId) as { id: string; name: string };
     expect(customer).toEqual({ id: "N-001", name: "Ada Stone" });
     expect(customerReceipts(db).find((c) => c.id === "N-001")?.orders).toEqual([]);

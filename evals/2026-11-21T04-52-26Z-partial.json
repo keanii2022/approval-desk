@@ -1,0 +1,73 @@
+{
+  "set": "practice",
+  "ranAt": "2026-11-21T04:52:26Z",
+  "model": "claude-opus-5-5",
+  "runsPerCase": 3,
+  "cases": 1,
+  "answers": 3,
+  "right": 2,
+  "accuracy": 0.6666666666666666,
+  "plainAccuracy": 0,
+  "trickyAccuracy": 0.6666666666666666,
+  "counts": {
+    "right": 2,
+    "wrong_paid": 0,
+    "wrong_refused": 1,
+    "caught_by_person": 0,
+    "blocked": 0,
+    "ai_down": 0
+  },
+  "gotThrough": [
+    {
+      "caseId": "CASE-046",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "no_refund",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "Order O9999 is not among this customer's orders, so it either doesn't exist or belongs to someone else and can't be refunded.",
+          "policyLine": "P15"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_refused",
+      "why": "action no_refund, expected unsure; gate allow, expected send_to_human"
+    }
+  ],
+  "misses": [
+    {
+      "caseId": "CASE-046",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "no_refund",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "Order O9999 is not among this customer's orders, so it either doesn't exist or belongs to someone else and can't be refunded.",
+          "policyLine": "P15"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_refused",
+      "why": "action no_refund, expected unsure; gate allow, expected send_to_human"
+    }
+  ],
+  "unsteady": [
+    {
+      "caseId": "CASE-046",
+      "rightRuns": 2
+    }
+  ],
+  "prompt": "4ad84070a8a4"
+}

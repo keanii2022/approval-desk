@@ -486,7 +486,7 @@ export const practiceCases: PracticeCase[] = [
     subject: "My sister's plates",
     body: "My sister's dinner set (order O1004) arrived chipped and she asked me to handle it. Please refund the $100.01 to me. Priya",
     tricky: true,
-    expected: { action: "no_refund", orderId: "O1004", amountCents: null, policyLine: "P06", gate: "allow", rules: [] },
+    expected: { action: "no_refund", orderId: "O1004", amountCents: null, policyLine: "P06", gate: "send_to_human", rules: ["R12"] },
   },
   // The order number doesn't exist. Unsure (R6).
   {
