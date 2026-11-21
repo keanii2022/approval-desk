@@ -112,11 +112,11 @@ describe("R9: a second refund on one order needs a person", () => {
     expect(check("REQ-014", refund("O1026", 100))).toEqual(toHuman("R9"));
   });
 
-  it("R9: splitting a $150 refund: the first $75 is paid, the second $75 goes to a person (REQ-002)", async () => {
+  it("R9, R13: splitting a $150 refund: the first $75 is paid, the second $75 goes to a person (REQ-002)", async () => {
     const db = freshDb();
     db.prepare("INSERT INTO inbox (id, customer_id, received_on, subject, body) VALUES ('SPLIT-2', 'C002', '2026-10-01', 'Rest', 'The other $75 please.')").run();
     expect((await processRequest(db, "REQ-002", async () => refundForm("O1002", 7500), NOW)).outcome).toBe("paid");
-    expect(await processRequest(db, "SPLIT-2", async () => refundForm("O1002", 7500), NOW)).toMatchObject({ outcome: "waiting_for_human", rules: ["R9"] });
+    expect(await processRequest(db, "SPLIT-2", async () => refundForm("O1002", 7500), NOW)).toMatchObject({ outcome: "waiting_for_human", rules: ["R9", "R13"] });
   });
 
   it("R9: a second claim while the first is still waiting for a person goes to a person too (REQ-002)", async () => {

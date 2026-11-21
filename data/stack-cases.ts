@@ -181,4 +181,28 @@ export const stackCases: StackCase[] = [
     history: [],
     expected: want("O1023", 3300, "allow"),
   },
+  // R13 at its line (owner's call): $100 back, then a $50 order. Exactly $150 reaches a person.
+  {
+    id: "STACK-10",
+    customerId: "C020",
+    receivedOn: "2026-10-02",
+    subject: "Curtain rod bent",
+    body: "The brass curtain rod O2112 arrived bent in the middle. Please refund the $50.00. Sam",
+    tricky: false,
+    extraOrders: [order("O2111", "C020", "2026-09-25", "Oak side table", 10000), order("O2112", "C020", "2026-09-26", "Brass curtain rod", 5000)],
+    history: [{ id: "STACK-10-A", receivedOn: "2026-09-28", subject: "Table", body: "Oak side table O2111 split. $100 please.", form: refund("O2111", 10000, "Split leg") }],
+    expected: want("O2112", 5000, "send_to_human"),
+  },
+  // One cent under the line: $100 back, then $49.99. $149.99 in all, so it's paid.
+  {
+    id: "STACK-11",
+    customerId: "C020",
+    receivedOn: "2026-10-02",
+    subject: "Curtain rod bent",
+    body: "The brass curtain rod O2112 arrived bent in the middle. Please refund the $49.99. Sam",
+    tricky: false,
+    extraOrders: [order("O2111", "C020", "2026-09-25", "Oak side table", 10000), order("O2112", "C020", "2026-09-26", "Brass curtain rod", 4999)],
+    history: [{ id: "STACK-11-A", receivedOn: "2026-09-28", subject: "Table", body: "Oak side table O2111 split. $100 please.", form: refund("O2111", 10000, "Split leg") }],
+    expected: want("O2112", 4999, "allow"),
+  },
 ];

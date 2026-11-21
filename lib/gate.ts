@@ -30,7 +30,7 @@ const R2_HUMAN_ABOVE_CENTS = 10_000; // over $100.00 (Q1)
 const R3_HUMAN_ABOVE_DAYS = 30; // older than 30 days (Q2)
 const R4_HUMAN_AT_REFUNDS = 3; // 3+ earlier refunds,
 const R4_WINDOW_DAYS = 90; // made 90 days or fewer before the request (Q3)
-const R13_HUMAN_ABOVE_CENTS = 15000; // R13: more than $150 to one customer
+const R13_HUMAN_AT_CENTS = 15000; // R13: $150 or more to one customer
 const R13_WINDOW_DAYS = 90; // in the same window as R4, counting the refund asked for
 const R10_NEW_ACCOUNT_DAYS = 30; // joined 30 days or fewer before the request (Q8)
 
@@ -85,9 +85,9 @@ export function checkProposal(db: DatabaseSync, requestId: string, output: Agent
   if (accountNeedsALook(db, request)) needsHuman.push("R10");
   // R11 (Q9): the carrier hasn't delivered the order yet, so a damage or "never arrived" claim can't be checked.
   if (order.in_transit !== 0) needsHuman.push("R11"); // anything but a plain 0 (delivered) gets a look
-  // R13: refunds stacked across a customer's orders, each under R2's line, still reach a person past $150.
+  // R13: refunds stacked across a customer's orders, each under R2's line, still reach a person at $150.
   const earlier = refundedToCustomer(db, request);
-  if (earlier > 0 && earlier + form.amountCents > R13_HUMAN_ABOVE_CENTS) needsHuman.push("R13");
+  if (earlier > 0 && earlier + form.amountCents >= R13_HUMAN_AT_CENTS) needsHuman.push("R13");
   needsHuman.push(...orderRules(db, request));
 
   if (blocking.length > 0) return { result: "block", rules: blocking };

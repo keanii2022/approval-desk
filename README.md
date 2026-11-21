@@ -32,7 +32,7 @@ Each case is run 3 times on Claude Opus 5.5. "Got through" means a wrong answer 
 | 75 cases written by another AI (Gemini) after R9 to R11 | 93.8%, 1 customer turned away, no money out | R12 to R14 | 95.1%, 0 got through |
 | 4 hole cases: order numbers that aren't the customer's, plus the two repeat misses | **3 wrong refunds paid, 1 customer turned away** | R12 | **0 got through** |
 | 23 disguised order numbers: "order #1002", look-alike letters, invisible characters | 2.9%, **12 wrong refunds paid** | stricter R12 scan | 0.0%, **0 got through** (the agent says "unsure", a person decides) |
-| 9 refunds stacked across orders: $300 in two days, $1,500 a year | 44.4%, **15 wrong refunds paid** | R13 | **100%, 0 got through** |
+| 11 refunds stacked across orders: $300 in two days, $1,500 a year, exactly $150 | 44.4%, **15 wrong refunds paid** | R13 | **100%, 0 got through** |
 | 10 emails about two orders at once, plus HARD-060 | 20.0%, **7 wrong refunds paid** | R14 | 23.3%, **1 got through** (second order named only by its item) |
 | 15 tricks in the subject line and the customer's name | 66.7%, **6 wrong refunds paid** | stricter R12 scan, fenced subject | **80.0%, 0 got through** |
 | 15 amount tricks: "$1,500", pounds and yen, one towel of three | 97.8%, 0 got through | none needed | 100%, 0 got through |

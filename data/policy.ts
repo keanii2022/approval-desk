@@ -128,7 +128,7 @@ export const policyLines: PolicyLine[] = [
     id: "P20",
     section: "Hard rules",
     ruleId: "R13",
-    text: "A refund that would take what one customer got back in 90 days over $150, counting earlier refunds on any of their orders, needs a human.",
+    text: "A refund that would bring what one customer got back in 90 days to $150 or more, counting earlier refunds on any of their orders, needs a human.",
   },
   {
     id: "P21",

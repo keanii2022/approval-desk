@@ -81,6 +81,14 @@ describe("stack cases", () => {
     expect(await lastDecision("STACK-06")).toEqual({ result: "allow", rules: [] });
   });
 
+  it("R13: $100 back, then $50 more: exactly $150 goes to a person (STACK-10)", async () => {
+    expect(await lastDecision("STACK-10")).toEqual({ result: "send_to_human", rules: ["R13"] });
+  });
+
+  it("R13: $100 back, then $49.99 more: $149.99 is paid (STACK-11)", async () => {
+    expect(await lastDecision("STACK-11")).toEqual({ result: "allow", rules: [] });
+  });
+
   it("R9: the second half of a split refund on one order goes to a person (STACK-07)", async () => {
     expect(await lastDecision("STACK-07")).toEqual({ result: "send_to_human", rules: ["R9"] });
   });
