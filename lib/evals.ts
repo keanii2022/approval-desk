@@ -46,6 +46,9 @@ export type Scorecard = {
   gotThrough: Answer[]; // wrong_paid and wrong_refused: the dangerous ones
   misses: Answer[]; // every wrong answer, got through or not
   unsteady: { caseId: string; rightRuns: number }[]; // cases right in some runs and wrong in others
+  // Every answer's outcome, right ones included, so the desk load per rule can be counted
+  // (from Nov 21 on; older scorecards only kept the wrong answers).
+  decisions?: { caseId: string; run: number; verdict: Verdict; result: GateDecision["result"]; rules: GateDecision["rules"] }[];
 };
 
 // A fresh shop with the practice cases in its Inbox. Kept apart from the app's database.
@@ -53,7 +56,8 @@ export function practiceDb(cases: PracticeCase[] = practiceCases): DatabaseSync 
   const db = openDatabase(":memory:");
   seed(db);
   const insert = db.prepare("INSERT INTO inbox (id, customer_id, received_on, subject, body) VALUES (?, ?, ?, ?, ?)");
-  for (const c of cases) insert.run(c.id, c.customerId, c.receivedOn, c.subject, c.body);
+  // A case that brings its own customers can only join the Inbox in its own shop (shopWithHistory).
+  for (const c of cases) if (!(c as CaseWithHistory).extraCustomers) insert.run(c.id, c.customerId, c.receivedOn, c.subject, c.body);
   return db;
 }
 
@@ -90,19 +94,24 @@ type Earlier = { id: string; receivedOn: string; subject: string; body: string; 
 type ExtraOrder = { id: string; customerId: string; placedOn: string; item: string; amountPaidCents: number };
 type ExtraRefund = { id: string; orderId: string; refundedOn: string; amountCents: number; reason: string };
 // extraOrders and earlierRefunds: invented rows a case adds to the shop before its history
-// runs (data/stack-cases.ts needs customers with more orders than the seed has).
-type CaseWithHistory = PracticeCase & { history?: Earlier[]; extraOrders?: ExtraOrder[]; earlierRefunds?: ExtraRefund[] };
+// runs (data/stack-cases.ts needs customers with more orders than the seed has;
+// data/field-cases.ts brings customers and items whose names carry the trick).
+type ExtraCustomer = { id: string; name: string; email: string };
+type CaseWithHistory = PracticeCase & { history?: Earlier[]; extraCustomers?: ExtraCustomer[]; extraOrders?: ExtraOrder[]; earlierRefunds?: ExtraRefund[] };
 
 const HISTORY_NOW = "2026-10-01T09:00:00Z";
 
 // A shop for one run of one case: its earlier requests have already happened.
 async function shopWithHistory(c: CaseWithHistory): Promise<DatabaseSync> {
-  const db = practiceDb([c]);
+  const db = practiceDb([]);
+  const customer = db.prepare("INSERT INTO customers (id, name, email) VALUES (?, ?, ?)");
+  for (const p of c.extraCustomers ?? []) customer.run(p.id, p.name, p.email);
   const order = db.prepare("INSERT INTO orders (id, customer_id, placed_on, item, amount_paid_cents, in_transit) VALUES (?, ?, ?, ?, ?, 0)");
   for (const o of c.extraOrders ?? []) order.run(o.id, o.customerId, o.placedOn, o.item, o.amountPaidCents);
   const refund = db.prepare("INSERT INTO refunds (id, order_id, refunded_on, amount_cents, reason) VALUES (?, ?, ?, ?, ?)");
   for (const r of c.earlierRefunds ?? []) refund.run(r.id, r.orderId, r.refundedOn, r.amountCents, r.reason);
   const insert = db.prepare("INSERT INTO inbox (id, customer_id, received_on, subject, body) VALUES (?, ?, ?, ?, ?)");
+  insert.run(c.id, c.customerId, c.receivedOn, c.subject, c.body);
   for (const h of c.history ?? []) {
     insert.run(h.id, c.customerId, h.receivedOn, h.subject, h.body);
     await processRequest(db, h.id, async () => h.form, HISTORY_NOW);
@@ -135,7 +144,7 @@ export async function runEvals(askModel: AskModel, options: EvalOptions): Promis
   const worker = async () => {
     while (next < jobs.length) {
       const { c, run } = jobs[next++];
-      const own = (c as CaseWithHistory).history || (c as CaseWithHistory).extraOrders ? await shopWithHistory(c as CaseWithHistory) : null;
+      const own = (c as CaseWithHistory).history || (c as CaseWithHistory).extraOrders || (c as CaseWithHistory).extraCustomers ? await shopWithHistory(c as CaseWithHistory) : null;
       const shop = own ?? db;
       // A case without a written gate result (data/hard2-cases.ts) gets it from the real gate,
       // checking its right answer in the same shop the agent sees.
@@ -184,6 +193,7 @@ function summarize(answers: Answer[], meta: { set: string; model: string; runs: 
     counts,
     gotThrough: answers.filter((a) => a.verdict === "wrong_paid" || a.verdict === "wrong_refused"),
     misses: answers.filter((a) => a.verdict !== "right"),
+    decisions: answers.map((a) => ({ caseId: a.caseId, run: a.run, verdict: a.verdict, result: a.decision.result, rules: a.decision.rules })),
     unsteady: [...rightRuns]
       .filter(([, n]) => n > 0 && n < meta.runs)
       .map(([caseId, n]) => ({ caseId, rightRuns: n })),
