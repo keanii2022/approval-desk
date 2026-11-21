@@ -43,41 +43,42 @@ async function lastDecision(id: string) {
 }
 
 describe("stack cases", () => {
-  it("every earlier refund in every history was allowed and paid with no person", async () => {
+  // Written so every earlier refund was paid under R1 to R12. Under R13 the ones past $150 wait for a person.
+  it("every earlier refund in every history is paid, or waits for a person once the total passes $150 (R13)", async () => {
     for (const c of stackCases) {
       const { db, outcomes } = await shopAfterHistory(c);
-      expect(outcomes, c.id).toEqual(c.history.map(() => "paid"));
+      for (const o of outcomes) expect(["paid", "waiting_for_human"], c.id).toContain(o);
       db.close();
     }
   });
 
   // Hole: each refund is under R2 and the customer has fewer than 3 earlier refunds (R4), so the total is never checked.
-  it.fails("R2, R4: a third $100 refund in two days ($300 in all) goes to a person (STACK-01)", async () => {
+  it("R2, R4: a third $100 refund in two days ($300 in all) goes to a person (STACK-01)", async () => {
     expect((await lastDecision("STACK-01")).result).toBe("send_to_human");
   });
 
   // Hole: same as STACK-01, kept a cent under R2's line every time ($299.97).
-  it.fails("R2, R4: three $99.99 refunds on three orders go to a person (STACK-02)", async () => {
+  it("R2, R4: three $99.99 refunds on three orders go to a person (STACK-02)", async () => {
     expect((await lastDecision("STACK-02")).result).toBe("send_to_human");
   });
 
   // Hole: two $100 refunds stay under R4's count, so $200 goes out with no person.
-  it.fails("R4: a second $100 refund in two days ($200 in all) goes to a person (STACK-03)", async () => {
+  it("R4: a second $100 refund in two days ($200 in all) goes to a person (STACK-03)", async () => {
     expect((await lastDecision("STACK-03")).result).toBe("send_to_human");
   });
 
   // Hole: R4 forgets refunds older than 90 days, so $600 goes out in 92 days with no person.
-  it.fails("R4: three $100 refunds right after three more just outside 90 days go to a person (STACK-04)", async () => {
+  it("R4: three $100 refunds right after three more just outside 90 days go to a person (STACK-04)", async () => {
     expect((await lastDecision("STACK-04")).result).toBe("send_to_human");
   });
 
   // Hole: two small seed refunds plus one $100 refund, $165 in a few days.
-  it.fails("R2, R4: a $100 refund on top of $65 refunded days earlier goes to a person (STACK-05)", async () => {
+  it("R2, R4: a $100 refund on top of $65 refunded days earlier goes to a person (STACK-05)", async () => {
     expect((await lastDecision("STACK-05")).result).toBe("send_to_human");
   });
 
-  it("R4: a fourth refund in 90 days goes to a person (STACK-06)", async () => {
-    expect(await lastDecision("STACK-06")).toEqual({ result: "send_to_human", rules: ["R4"] });
+  it("R13: after two $100 refunds waited for a person, $35 more on top of $100 paid is allowed (STACK-06)", async () => {
+    expect(await lastDecision("STACK-06")).toEqual({ result: "allow", rules: [] });
   });
 
   it("R9: the second half of a split refund on one order goes to a person (STACK-07)", async () => {
@@ -92,7 +93,7 @@ describe("stack cases", () => {
   // Hole, worst case found: a batch of three $100 refunds every 91 days, five batches in
   // 364 days, is $1,500 a year from one customer with no person. Each refund is paid on
   // the day it's asked for, so R4 sees the real dates.
-  it.fails("R4: a year of 91-day batches of three $100 refunds reaches a person before $1,500 is paid", async () => {
+  it("R4: a year of 91-day batches of three $100 refunds reaches a person before $1,500 is paid", async () => {
     const db = openDatabase(":memory:");
     seed(db);
     const insertOrder = db.prepare("INSERT INTO orders (id, customer_id, placed_on, item, amount_paid_cents, in_transit) VALUES (?, 'C020', ?, 'Oak side table', 10000, 0)");

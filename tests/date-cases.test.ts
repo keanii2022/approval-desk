@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { dateCases } from "../data/date-cases.ts";
 import { openDatabase } from "../lib/db.ts";
 import { checkProposal } from "../lib/gate.ts";
@@ -9,9 +9,15 @@ import { seed } from "../lib/seed.ts";
 // Step 28: date oddities. Each case's right answer goes to the real gate, on a fresh
 // seeded shop with odd rows inserted straight into it where needed. No AI calls.
 
+// The inbox, orders, refunds and customers tables now refuse a date that isn't a real
+// YYYY-MM-DD (lib/seed.ts). Tests of odd shapes switch that check off (unguarded) to show
+// the gate's own handling: an unreadable date sends the request to a person.
+let unguarded = false;
+
 function freshShop(): DatabaseSync {
   const db = openDatabase(":memory:");
   seed(db);
+  if (unguarded) db.exec("PRAGMA ignore_check_constraints = ON");
   return db;
 }
 
@@ -52,12 +58,12 @@ describe("date cases the agent sees", () => {
   });
 
   // Hole: the order's age is negative, and R3 only looks for more than 30, so a refund on an order placed after the request is paid.
-  it.fails("R3: a request received before its order was placed goes to a person (DATE-05)", () => {
+  it("R3: a request received before its order was placed goes to a person (DATE-05)", () => {
     expect(caseDecision("DATE-05").result).toBe("send_to_human");
   });
 
   // Hole: R10 counts only 0 to 30 days, so an account opened after the request looks long-standing.
-  it.fails("R3, R10: a request received before the account was opened goes to a person (DATE-06)", () => {
+  it("R3, R10: a request received before the account was opened goes to a person (DATE-06)", () => {
     expect(caseDecision("DATE-06").result).toBe("send_to_human");
   });
 });
@@ -92,30 +98,45 @@ describe("leap days and month ends", () => {
   });
 });
 
-// No code path writes these today: the pipeline, evals and the try page all store
-// YYYY-MM-DD. The inbox column is plain TEXT with no check, so a row inserted any
-// other way reaches the gate as it is.
+// No code path writes these: the pipeline, evals and the try page all store YYYY-MM-DD,
+// and the inbox table now refuses anything else. With that check off, the gate still
+// sends every one of them to a person.
 describe("received_on in another shape", () => {
+  beforeAll(() => {
+    unguarded = true;
+  });
+  afterAll(() => {
+    unguarded = false;
+  });
+
+  it("the inbox table refuses a date that isn't a real YYYY-MM-DD", () => {
+    unguarded = false;
+    const db = freshShop();
+    for (const bad of ["2026-13-01", "", "next tuesday", "10/02/2026", "2026-10-01T12:00:00Z", "2026-02-30"]) {
+      expect(() => addRequest(db, `BAD-${bad}`, "C001", bad), bad).toThrow(/constraint failed/);
+    }
+    unguarded = true;
+  });
   // Hole: a month 13 parses to NaN, NaN > 30 is false, and a 66-day-old order is paid.
-  it.fails("R3: an impossible date on an old order goes to a person", () => {
+  it("R3: an impossible date on an old order goes to a person", () => {
     const db = freshShop();
     expect(decideOn(db, "C005", "2026-13-01", "O1005", 4200).result).toBe("send_to_human");
   });
 
   // Hole: an empty date is NaN too, so none of C008's three recent refunds count.
-  it.fails("R4: an empty date for a customer with 3 recent refunds goes to a person", () => {
+  it("R4: an empty date for a customer with 3 recent refunds goes to a person", () => {
     const db = freshShop();
     expect(decideOn(db, "C008", "", "O1011", 4600).result).toBe("send_to_human");
   });
 
   // Hole: a word for a date is NaN, so a 5-day-old account doesn't count as new.
-  it.fails("R10: a garbage date for a brand-new account goes to a person", () => {
+  it("R10: a garbage date for a brand-new account goes to a person", () => {
     const db = freshShop();
     expect(decideOn(db, "C024", "next tuesday", "O1037", 3200).result).toBe("send_to_human");
   });
 
   // Hole: a time of day adds half a day, so a calendar 30-day-old account counts as 30.5 days and isn't new.
-  it.fails("R10: an account opened 30 days before a request stamped at noon UTC goes to a person", () => {
+  it("R10: an account opened 30 days before a request stamped at noon UTC goes to a person", () => {
     const db = freshShop();
     db.prepare("INSERT INTO customers (id, name, email, joined_on, flagged) VALUES ('C901', 'Ada Fenwick', 'ada.fenwick@example.com', '2026-09-01', 0)").run();
     addOrder(db, "O5101", "C901", "2026-09-15");
@@ -123,7 +144,7 @@ describe("received_on in another shape", () => {
   });
 
   // Hole: same half day, so a refund made exactly 90 days earlier drops out of R4's count.
-  it.fails("R4: a refund made 90 days before a request stamped at noon UTC still counts", () => {
+  it("R4: a refund made 90 days before a request stamped at noon UTC still counts", () => {
     const db = freshShop();
     addOrder(db, "O5201", "C012", "2026-06-25");
     addOrder(db, "O5202", "C012", "2026-08-01");
@@ -135,22 +156,24 @@ describe("received_on in another shape", () => {
     expect(decideOn(db, "C012", "2026-10-01T12:00:00Z", "O1024", 4500).result).toBe("send_to_human");
   });
 
-  it("R3: a time of day past midnight UTC pushes a 30-day-old order over the line", () => {
+  // A date with a time of day isn't a plain day, so its age can't be counted: a person decides,
+  // even for a 30-day-old order that would pass on the plain date.
+  it("R3: a request stamped with a time of day goes to a person, whatever the time", () => {
     const db = freshShop();
-    expect(decideOn(db, "C006", "2026-10-01T00:00:00Z", "O1006", 3500).result).toBe("allow");
-    expect(decideOn(db, "C006", "2026-10-01T00:00:01Z", "O1006", 3500)).toEqual({ result: "send_to_human", rules: ["R3"] });
+    expect(decideOn(db, "C006", "2026-10-01T00:00:00Z", "O1006", 3500).rules).toContain("R3");
+    expect(decideOn(db, "C006", "2026-10-01T00:00:01Z", "O1006", 3500).rules).toContain("R3");
   });
 
-  it("R3: a request written with a US date or a time zone still sends a 31-day-old order to a person", () => {
+  it("R3: a request written with a US date or a time zone goes to a person", () => {
     const db = freshShop();
-    expect(decideOn(db, "C006", "10/02/2026", "O1006", 3500)).toEqual({ result: "send_to_human", rules: ["R3"] });
-    expect(decideOn(db, "C006", "2026-10-02T23:59:59-08:00", "O1006", 3500)).toEqual({ result: "send_to_human", rules: ["R3"] });
+    expect(decideOn(db, "C006", "10/02/2026", "O1006", 3500).rules).toContain("R3");
+    expect(decideOn(db, "C006", "2026-10-02T23:59:59-08:00", "O1006", 3500).rules).toContain("R3");
   });
 });
 
 describe("join dates and refund dates after the request", () => {
   // Hole: joined 9 days after the request, so the day count is -9 and R10's 0-to-30 check misses it.
-  it.fails("R10: an account opened after its request arrived goes to a person", () => {
+  it("R10: an account opened after its request arrived goes to a person", () => {
     const db = freshShop();
     db.prepare("INSERT INTO customers (id, name, email, joined_on, flagged) VALUES ('C902', 'Bo Lindgren', 'bo.lindgren@example.com', '2026-10-11', 0)").run();
     addOrder(db, "O5301", "C902", "2026-09-30");
@@ -175,7 +198,7 @@ describe("join dates and refund dates after the request", () => {
   });
 
   // Hole: paid the next morning, the three earlier refunds are dated after the request (-1 day) and R4 skips them.
-  it.fails("R4: the same four requests worked through the next morning: the fourth still goes to a person", async () => {
+  it("R4: the same four requests worked through the next morning: the fourth still goes to a person", async () => {
     expect(await fourRequests("2026-10-03T09:00:00Z")).toEqual(["paid", "paid", "paid", "waiting_for_human"]);
   });
 });

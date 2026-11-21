@@ -17,24 +17,24 @@ const SCHEMA = `
     id    TEXT PRIMARY KEY,
     name  TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
-    joined_on TEXT NOT NULL DEFAULT '2025-01-01',
-    flagged INTEGER NOT NULL DEFAULT 0
+    joined_on TEXT NOT NULL DEFAULT '2025-01-01' CHECK (date(joined_on) IS joined_on),
+    flagged INTEGER NOT NULL DEFAULT 0 CHECK (flagged IN (0, 1))
   );
 
   CREATE TABLE orders (
     id                TEXT PRIMARY KEY,
     customer_id       TEXT NOT NULL REFERENCES customers(id),
-    placed_on         TEXT NOT NULL,
+    placed_on         TEXT NOT NULL CHECK (date(placed_on) IS placed_on),
     item              TEXT NOT NULL,
-    amount_paid_cents INTEGER NOT NULL CHECK (amount_paid_cents > 0),
-    in_transit        INTEGER NOT NULL DEFAULT 0
+    amount_paid_cents INTEGER NOT NULL CHECK (typeof(amount_paid_cents) = 'integer' AND amount_paid_cents > 0),
+    in_transit        INTEGER NOT NULL DEFAULT 0 CHECK (in_transit IN (0, 1))
   );
 
   CREATE TABLE refunds (
     id           TEXT PRIMARY KEY,
     order_id     TEXT NOT NULL REFERENCES orders(id),
-    refunded_on  TEXT NOT NULL,
-    amount_cents INTEGER NOT NULL CHECK (amount_cents > 0),
+    refunded_on  TEXT NOT NULL CHECK (date(refunded_on) IS refunded_on),
+    amount_cents INTEGER NOT NULL CHECK (typeof(amount_cents) = 'integer' AND amount_cents > 0),
     reason       TEXT NOT NULL
   );
 
@@ -48,7 +48,7 @@ const SCHEMA = `
   CREATE TABLE inbox (
     id          TEXT PRIMARY KEY,
     customer_id TEXT NOT NULL REFERENCES customers(id),
-    received_on TEXT NOT NULL,
+    received_on TEXT NOT NULL CHECK (date(received_on) IS received_on),
     subject     TEXT NOT NULL,
     body        TEXT NOT NULL
   );

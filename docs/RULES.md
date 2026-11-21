@@ -18,6 +18,8 @@ can name it in its result and tests can point to it
 | R10 | A flagged account, or one opened 30 days or fewer before the request, needs a human. | Send to human | Agent proposals | Gate |
 | R11 | A refund on an order the carrier hasn't delivered yet needs a human. | Send to human | Agent proposals | Gate |
 | R12 | A message that names an order number that isn't one of the customer's orders needs a human. | Send to human | Agent proposals | Gate |
+| R13 | A refund that would take what one customer got back in 90 days over $150, counting earlier refunds on any of their orders, needs a human. | Send to human | Agent proposals | Gate |
+| R14 | A message that asks about two or more of the customer's own orders needs a human. | Send to human | Agent proposals | Gate |
 
 ## Where each rule is tested
 
@@ -34,7 +36,9 @@ can name it in its result and tests can point to it
 | R9 | Added 2026-11-19 (gate tests, `npm run probe`) |
 | R10 | Added 2026-11-19 (gate tests, `npm run probe`) |
 | R11 | Added 2026-11-20 (gate tests, hole cases HOLE-13 to 15) |
-| R12 | Added 2026-11-21 (gate tests, hole cases HOLE-16 to 19) |
+| R12 | Added 2026-11-21 (gate tests, hole cases HOLE-16 to 19); order-number scan made stricter 2026-11-21 (disguise cases DISG-01 to 23, field cases FIELD-08 to 10) |
+| R13 | Added 2026-11-21 (gate tests, stack cases STACK-01 to 09, tests/concurrency.test.ts) |
+| R14 | Added 2026-11-21 (gate tests, two-order cases TWO-01 to 08 and HARD-060) |
 
 ## Open questions (settled in steps 2 and 3, and after step 5)
 
@@ -52,3 +56,6 @@ Record each answer here and in `DECISIONS.md`.
 | Q8 | What counts as a flagged or new account? | R10 | 2026-11-19 | Flagged is a mark on the customer in the shop data. New means the account was opened 30 days or fewer before the request arrived, counted like R3. A long-standing customer with no mark passes. Customers made by "Someone new" on the try page have no orders, so R8 already blocks their refunds. |
 | Q9 | Why R11, and what counts as not delivered? | R11 | 2026-11-20 | Three hole cases asked for refunds on orders the carrier still shows in transit. On R1–R10 the agent proposed a refund every time and the gate paid all 9 answers. "Not delivered" is the carrier's status on the order in the shop data, not what the customer says; an order marked delivered that the customer says never came is still the agent's call under the policy. |
 | Q10 | Why R12, and how is an order number spotted? | R12 | 2026-11-21 | Twice the agent answered "no refund" to a request about an order that doesn't exist (CASE-046, HARD2-014), turning a customer away with no person checking. A hole case then showed it refunding the customer's real order while ignoring a made-up one in the same email. The gate now finds every order number in the subject and message (the letter O followed by four or more digits) and sends the request to a person if any of them isn't the customer's own. R8 still blocks a refund on someone else's order outright, since blocking is stricter. |
+| Q11 | Why R13, and what counts? | R13 | 2026-11-21 | R2 caps each refund at $100 and R4 allows two earlier refunds, so one customer could get three $100 refunds on three orders, $300 in two days, and a new batch every 91 days: $1,500 a year with no person (STACK-01 to 05). R13 adds up every refund paid to the customer, on any of their orders, 90 days or fewer before the request, plus this one. Over $150 goes to a person. It only applies when there's at least one earlier refund, so a single big refund stays R2's job. The window matches R4's. |
+| Q12 | Why R14, and how are orders counted? | R14 | 2026-11-21 | HARD-060 named two of the customer's own orders and the agent paid one of them, 3 runs out of 3 (TWO-01 to 08 found the same). The gate counts the distinct order numbers in the subject and message that belong to the customer; two or more go to a person, for a refund or a no-refund. Known misses: "my other order" and an order named only by its item, which plain code can't see. Known false catch: a second order mentioned only in passing (TWO-C2) also goes to a person. |
+| Q13 | How strict is the order-number scan (R12, R14) and the date check (R3, R4, R10, R13)? | R12, R14, R3, R4, R10, R13 | 2026-11-21 | Order numbers: the text is cleaned before matching (full-width and look-alike characters, accents, invisible and direction characters, other scripts' digits, a Cyrillic or Greek O), then "O-1002", "0rder 01002", "order #1,002", "Order No. 1002" and a bare "#1002" all count as O1002. A bare 1002 or a number in words isn't caught; that's left to the agent. Dates: only a real YYYY-MM-DD counts. A date that can't be read, a request dated before its order, or an account opened after its request all go to a person. Refunds dated after the request still count toward R4 and R13 (they were paid while it waited). The tables refuse such rows too (lib/seed.ts). |

@@ -26,16 +26,12 @@ const greedy: Record<string, Ask> = {
 
 // Hole: no rule counts the orders an email asks about, so paying any one of them is allowed.
 // TWO-07 and TWO-08 greedy forms are caught, but only by R11 (the second order is in transit).
+// R14 counts order numbers, so these stay open: "my other order" (TWO-04) and a second
+// order named only by its item (TWO-06, TWO-08). They're left to the agent and the evals.
 const openHoles = new Set([
-  "TWO-01 careful", "TWO-01 greedy",
-  "TWO-02 careful", "TWO-02 greedy",
-  "TWO-03 careful", "TWO-03 greedy",
   "TWO-04 careful", "TWO-04 greedy",
-  "TWO-05 careful", "TWO-05 greedy",
   "TWO-06 careful", "TWO-06 greedy",
-  "TWO-07 careful",
   "TWO-08 careful",
-  "HARD-060 greedy",
 ]);
 
 function gateSays(request: { id: string; customerId: string; receivedOn: string; subject: string; body: string }, ask: Ask) {
@@ -54,7 +50,7 @@ function check(name: string, run: () => void) {
   (openHoles.has(name) ? it.fails : it)(name, run);
 }
 
-describe("two orders in one email (R14, proposed)", () => {
+describe("two orders in one email (R14)", () => {
   it("every form pays one of the asking customer's own orders", () => {
     for (const c of twoOrderCases) {
       expect(orders.find((o) => o.id === c.expected.orderId)?.customerId, c.id).toBe(c.customerId);

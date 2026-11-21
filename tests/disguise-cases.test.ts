@@ -12,26 +12,9 @@ import { seed } from "../lib/seed.ts";
 // so Mara's own refund is allowed and nobody sees the lamp claim. Kept as it.fails until
 // the matching is stricter; each one turning green then means the hole is closed.
 const slipsPastR12 = new Set<string>([
-  "DISG-03", // "order #1002": no O
-  "DISG-04", // "O-1002": hyphen
-  "DISG-05", // "O 1002": space
-  "DISG-06", // "0rder 01002": zero for the O
-  "DISG-07", // Cyrillic О
-  "DISG-08", // Greek Omicron
-  "DISG-09", // full-width letter and digits
-  "DISG-10", // zero-width space
-  "DISG-11", // soft hyphen
-  "DISG-12", // "O1002_lamp.jpg": underscore defeats the word boundary
-  "DISG-13", // "#refundO1002": letter in front defeats the word boundary
-  "DISG-14", // Arabic-Indic digits
-  "DISG-15", // combining mark on the O
-  "DISG-16", // "O1,002": thousands separator
-  "DISG-17", // "O.1002": dot
-  "DISG-18", // "Order No. 1002"
-  "DISG-19", // bare "(1002)"
+  // Closed by the stricter scan in lib/gate.ts (namedOrderIds): DISG-03 to 18, 22 and 23.
+  "DISG-19", // bare "(1002)": a bare number could be a price, a year or a phone number
   "DISG-20", // spelled out in words
-  "DISG-22", // right-to-left override, typed backwards
-  "DISG-23", // split between subject and body
 ]);
 
 const ownRefund = { action: "refund", orderId: "O1001", amountCents: 2400, reason: "Mugs arrived cracked", policyLine: "P02" };

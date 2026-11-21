@@ -124,4 +124,16 @@ export const policyLines: PolicyLine[] = [
     ruleId: "R12",
     text: "A message that names an order number that isn't one of the customer's orders needs a human.",
   },
+  {
+    id: "P20",
+    section: "Hard rules",
+    ruleId: "R13",
+    text: "A refund that would take what one customer got back in 90 days over $150, counting earlier refunds on any of their orders, needs a human.",
+  },
+  {
+    id: "P21",
+    section: "Hard rules",
+    ruleId: "R14",
+    text: "A message that asks about two or more of the customer's own orders needs a human.",
+  },
 ];

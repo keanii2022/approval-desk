@@ -115,8 +115,8 @@ export const twoOrderCases: HoleCase[] = [
     history: [],
     expected: want("O1030", 2700, "allow"),
   },
-  // Control: the second order is context only, no money asked on it, so it should pay.
-  // An ID-counting R14 would send this to a person: its known false positive.
+  // The second order is context only, no money asked on it. It was a control that paid; under
+  // R14 it goes to a person, R14's known false positive: safe, but a needless look.
   {
     id: "TWO-C2",
     customerId: "C018",
@@ -125,6 +125,6 @@ export const twoOrderCases: HoleCase[] = [
     body: "My glass carafe (O1030) arrived cracked. The serving tray from O1031 came fine and I love it, so only the carafe please: $27.00. Arjun",
     tricky: true,
     history: [],
-    expected: want("O1030", 2700, "allow"),
+    expected: want("O1030", 2700, "send_to_human"),
   },
 ];

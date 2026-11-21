@@ -71,6 +71,8 @@ const RULE_WORDS: Record<RuleId, string> = {
   R10: "The account is flagged or new",
   R11: "The order hasn't been delivered yet",
   R12: "The message names an order that isn't theirs",
+  R13: "Refunds to this customer pass $150 in 90 days",
+  R14: "The message asks about two of their orders",
 };
 
 // Why the executor refused, in plain words. Only some refusals can ever be fixed by trying again.

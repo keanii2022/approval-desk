@@ -229,12 +229,10 @@ describe("A person's approval racing an automatic payout on one order", () => {
   });
 });
 
-describe("Not covered on this branch: stacking past $150 across orders (R13)", () => {
-  // R13 (any customer total over $150 in 90 days with earlier refunds goes to a person)
-  // is being added on the main branch. Today two $90 refunds on different clean orders
-  // are both paid with no person, at once or one after the other; this pins that down
-  // so the R13 merge has a test to flip.
-  it("two $90 refunds on different orders at once: both paid today (R13 not here yet)", async () => {
+describe("stacking past $150 across orders at the same moment (R13)", () => {
+  // Before R13 both $90 refunds were paid with no person. The executor re-runs the gate
+  // inside its own write lock, so the second one sees the first and R13 sends it to a person.
+  it("R13: two $90 refunds on different orders at once: one is paid, the other waits", async () => {
     const [first, second] = twoConnections();
     first.prepare("INSERT INTO customers (id, name, email) VALUES ('C901', 'Ines Barrowfield', 'ines.barrowfield@example.com')").run();
     const order = first.prepare("INSERT INTO orders (id, customer_id, placed_on, item, amount_paid_cents) VALUES (?, 'C901', '2026-09-25', 'Lamp', 9000)");
@@ -245,6 +243,6 @@ describe("Not covered on this branch: stacking past $150 across orders (R13)", (
       processRequest(first, "REQ-Z1", after(2, refundForm("O9011", 9000)), NOW),
       processRequest(second, "REQ-Z2", after(2, refundForm("O9012", 9000)), NOW),
     ]);
-    expect(count(results, "paid")).toBe(2);
+    expect(count(results, "paid")).toBe(1);
   });
 });

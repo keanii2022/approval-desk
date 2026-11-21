@@ -115,7 +115,8 @@ function addNewCustomer(db: DatabaseSync, name: string): string {
     n: number | null;
   };
   const id = `N-${String((row.n ?? 0) + 1).padStart(3, "0")}`;
-  db.prepare("INSERT INTO customers (id, name, email) VALUES (?, ?, ?)").run(id, name, `${id.toLowerCase()}@example.com`);
+  // Joined today, so R10 sees a brand-new account (it used to take the 2025 default).
+  db.prepare("INSERT INTO customers (id, name, email, joined_on) VALUES (?, ?, ?, ?)").run(id, name, `${id.toLowerCase()}@example.com`, shopToday(db));
   return id;
 }
 

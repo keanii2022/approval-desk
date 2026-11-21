@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { openDatabase } from "../lib/db.ts";
 import { checkProposal } from "../lib/gate.ts";
 import { processRequest } from "../lib/pipeline.ts";
@@ -8,9 +8,12 @@ import { seed } from "../lib/seed.ts";
 // straight into a fresh seeded shop, then a fixed form goes through the real gate
 // (and, for the holes, the whole pipeline). No AI calls.
 //
-// it.fails marks a HOLE: bad data lets money out without a person, or more than
-// was paid. Each stays it.fails until the guard in docs/DATA-TRUST.md is in, then
-// flips to a plain it. See docs/DATA-TRUST.md for which rule trusts which column.
+// The holes found here (bad data letting money out without a person, or more than was
+// paid) are now refused twice: the tables' CHECKs in lib/seed.ts turn the row away, and
+// the gate's own guards cover a row that got in anyway. The hole tests switch the CHECKs
+// off (unguarded) to test the gate's guards alone. See docs/DATA-TRUST.md.
+
+let unguarded = false;
 
 const ORDER = "O9001";
 const REQUEST = "Q9001";
@@ -21,6 +24,7 @@ const PAID = 2400;
 function shop(order: { placedOn?: string; amount?: unknown; inTransit?: unknown } = {}) {
   const db = openDatabase(":memory:");
   seed(db);
+  if (unguarded) db.exec("PRAGMA ignore_check_constraints = ON");
   db.prepare("INSERT INTO orders (id, customer_id, placed_on, item, amount_paid_cents, in_transit) VALUES (?, 'C001', ?, 'Oak serving board', ?, ?)").run(
     ORDER,
     order.placedOn ?? "2026-10-01",
@@ -122,12 +126,32 @@ describe("bad shop data: safe outcomes", () => {
   });
 });
 
-describe("bad shop data: holes (money out with no person, or more than was paid)", () => {
+describe("bad shop data: the tables refuse the rows behind every hole below", () => {
+  it("text amounts, odd flags and unreadable dates are turned away on write", () => {
+    rejects(() => shop({ amount: "abc" }));
+    rejects(() => shop({ inTransit: 2 }));
+    rejects(() => shop({ inTransit: "yes" }));
+    rejects(() => shop({ placedOn: "2026-13-45" }));
+    rejects(() => addRefund(shop(), "-500x"));
+    rejects(() => addRefund(shop(), "abc"));
+    rejects(() => addRefund(shop(), 100, "2027-02-30"));
+    rejects(() => shop().prepare("UPDATE customers SET flagged = 2 WHERE id = 'C001'").run());
+    rejects(() => shop().prepare("UPDATE customers SET joined_on = 'recently' WHERE id = 'C001'").run());
+  });
+});
+
+describe("bad shop data: holes (money out with no person, or more than was paid), with the tables' checks off", () => {
+  beforeAll(() => {
+    unguarded = true;
+  });
+  afterAll(() => {
+    unguarded = false;
+  });
   // HOLE, R1 and R9: the CHECK (amount_cents > 0) compares text as bigger than any
   // number, so '-500x' is stored. SUM reads it as -500, so "what's left" is
   // 2400 - (-500) = 2900, and alreadyRefunded isn't > 0, so R9 misses it too.
   // Guard: CHECK (typeof(amount_cents) = 'integer' AND amount_cents > 0).
-  it.fails("R1: a text refund amount like '-500x' can't raise what's left above what was paid", async () => {
+  it("R1: a text refund amount like '-500x' can't raise what's left above what was paid", async () => {
     const db = shop();
     addRefund(db, "-500x");
     const result = await processRequest(db, REQUEST, async () => refundForm(PAID + 500), "2026-10-05T09:00:00Z");
@@ -137,7 +161,7 @@ describe("bad shop data: holes (money out with no person, or more than was paid)
   // HOLE, R1: a text order amount passes the CHECK the same way. In the gate,
   // "abc" - 0 is NaN and amount > NaN is false, so R1 never blocks.
   // Guard: CHECK (typeof(amount_paid_cents) = 'integer' AND amount_paid_cents > 0).
-  it.fails("R1: an order whose amount isn't a number can't be refunded without a person", async () => {
+  it("R1: an order whose amount isn't a number can't be refunded without a person", async () => {
     const db = shop({ amount: "abc" });
     const result = await processRequest(db, REQUEST, async () => refundForm(9_900), "2026-10-05T09:00:00Z");
     expect(result.outcome).not.toBe("paid");
@@ -145,7 +169,7 @@ describe("bad shop data: holes (money out with no person, or more than was paid)
 
   // HOLE, R9: a text refund amount like 'abc' sums to 0, so the earlier refund is
   // invisible: R9 doesn't fire and R1 lets the full amount out a second time.
-  it.fails("R9: an earlier refund with an unreadable amount still makes the next one a person's call", () => {
+  it("R9: an earlier refund with an unreadable amount still makes the next one a person's call", () => {
     const db = shop();
     addRefund(db, "abc");
     expect(gate(db, PAID).result).not.toBe("allow");
@@ -153,13 +177,13 @@ describe("bad shop data: holes (money out with no person, or more than was paid)
 
   // HOLE, R11: the gate checks in_transit === 1, so 2 or 'yes' reads as delivered.
   // Guard: CHECK (in_transit IN (0, 1)).
-  it.fails("R11: a carrier status of 2 or 'yes' still sends it to a person", () => {
+  it("R11: a carrier status of 2 or 'yes' still sends it to a person", () => {
     for (const inTransit of [2, "yes"]) expect(gate(shop({ inTransit }), 100).result, String(inTransit)).toBe("send_to_human");
   });
 
   // HOLE, R10: the gate checks flagged === 1, so 'true' or 2 reads as not flagged.
   // Guard: CHECK (flagged IN (0, 1)).
-  it.fails("R10: a flag stored as 'true' or 2 still sends it to a person", () => {
+  it("R10: a flag stored as 'true' or 2 still sends it to a person", () => {
     for (const flagged of ["true", 2]) {
       const db = shop();
       db.prepare("UPDATE customers SET flagged = ? WHERE id = 'C001'").run(flagged);
@@ -171,7 +195,7 @@ describe("bad shop data: holes (money out with no person, or more than was paid)
   // false, so an unreadable or future placed_on skips R3. A future date gives a
   // negative age, which also passes. Guard: CHECK (placed_on GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'
   // AND date(placed_on) = placed_on), and in the gate: an age that isn't 0 or more → person.
-  it.fails("R3: an order date the gate can't read, or one after the request, sends it to a person", () => {
+  it("R3: an order date the gate can't read, or one after the request, sends it to a person", () => {
     for (const placedOn of ["soon", "2026-13-45", "2027-01-01"]) {
       expect(gate(shop({ placedOn }), 100).result, placedOn).toBe("send_to_human");
     }
@@ -179,7 +203,7 @@ describe("bad shop data: holes (money out with no person, or more than was paid)
 
   // HOLE, R4: an earlier refund dated in the future (or unreadable) falls outside
   // the 0-90 day window, so it isn't counted. Same date guard on refunded_on.
-  it.fails("R4: three earlier refunds still reach a person when one has a bad date", () => {
+  it("R4: three earlier refunds still reach a person when one has a bad date", () => {
     const db = shop();
     const insert = db.prepare("INSERT INTO orders VALUES (?, 'C001', '2026-09-01', 'x', 1000, 0)");
     const refund = db.prepare("INSERT INTO refunds VALUES (?, ?, ?, 100, 'earlier')");
@@ -191,7 +215,7 @@ describe("bad shop data: holes (money out with no person, or more than was paid)
   });
 
   // HOLE, R10: an unreadable joined_on gives NaN days, so a new account looks old.
-  it.fails("R10: a customer whose join date can't be read is treated as new", () => {
+  it("R10: a customer whose join date can't be read is treated as new", () => {
     const db = shop();
     db.prepare("UPDATE customers SET joined_on = 'recently' WHERE id = 'C001'").run();
     expect(gate(db, 100).result).toBe("send_to_human");
@@ -201,7 +225,7 @@ describe("bad shop data: holes (money out with no person, or more than was paid)
   // which leaves them off): a request and order filed under a customer who doesn't
   // exist pass R8, and accountNeedsALook returns false for a missing customer.
   // Guard in the gate: no customer row → person.
-  it.fails("R10: a request from a customer who doesn't exist goes to a person", () => {
+  it("R10: a request from a customer who doesn't exist goes to a person", () => {
     const db = shop();
     db.exec("PRAGMA foreign_keys = OFF");
     db.prepare("UPDATE orders SET customer_id = 'C999' WHERE id = ?").run(ORDER);

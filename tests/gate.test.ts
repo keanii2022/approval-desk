@@ -342,6 +342,21 @@ describe("1,000 bad proposals", () => {
     (`${p.request.subject} ${p.request.body}`.toUpperCase().match(/\bO\d{4,}\b/g) ?? []).some((id) => orders.find((o) => o.id === id)?.customerId !== p.request.customerId),
   );
 
+  // R13 and R14 need shapes the seed doesn't have, so two invented customers join this shop.
+  // C990: $80 already refunded on one $100 order, two more $100 orders; any refund over $70
+  // on those takes the 90-day total past $150. C991: two orders, one request naming both.
+  db.exec(`
+    INSERT INTO customers (id, name, email) VALUES ('C990', 'Pell Okafor', 'pell.okafor@example.com'), ('C991', 'Rue Tamsin', 'rue.tamsin@example.com');
+    INSERT INTO orders (id, customer_id, placed_on, item, amount_paid_cents) VALUES
+      ('O9901', 'C990', '2026-09-15', 'Desk lamp', 10000), ('O9902', 'C990', '2026-09-16', 'Bookend pair', 10000),
+      ('O9903', 'C990', '2026-09-17', 'Wall clock', 10000), ('O9911', 'C991', '2026-09-20', 'Bath mat', 4000),
+      ('O9912', 'C991', '2026-09-21', 'Soap dish', 3000);
+    INSERT INTO refunds (id, order_id, refunded_on, amount_cents, reason) VALUES ('RF9901', 'O9901', '2026-09-20', 8000, 'Dented');
+    INSERT INTO inbox (id, customer_id, received_on, subject, body) VALUES
+      ('GATE-R13', 'C990', '2026-10-01', 'Another one broken', 'The bookends and the clock both came cracked.'),
+      ('GATE-R14', 'C991', '2026-10-01', 'Two orders', 'The bath mat from O9911 is torn and the soap dish from O9912 is chipped.');
+  `);
+
   // Values that are wrong for each field of a refund form.
   const junk: Record<string, unknown[]> = {
     action: ["approve", "REFUND", "", null, 1, "no_refund"],
@@ -414,6 +429,11 @@ describe("1,000 bad proposals", () => {
       const { request, orderId } = pick(namesSomeoneElses);
       return { requestId: request.id, output: refund(orderId, fairAmount(orderId)) };
     },
+    R13: () => ({ requestId: "GATE-R13", output: refund(pick(["O9902", "O9903"]), between(7_001, 10_000)) }),
+    R14: () => {
+      const orderId = pick(["O9911", "O9912"]);
+      return { requestId: "GATE-R14", output: refund(orderId, between(1, orderId === "O9911" ? 4_000 : 3_000)) };
+    },
   };
 
   const rules = Object.keys(makers) as RuleId[];
@@ -422,7 +442,7 @@ describe("1,000 bad proposals", () => {
     return { breaks, ...makers[breaks]() };
   });
 
-  it("R1 to R6 and R8 to R12: none is allowed", () => {
+  it("R1 to R6 and R8 to R14: none is allowed", () => {
     expect(proposals).toHaveLength(1000);
 
     for (const p of proposals) {

@@ -126,7 +126,9 @@ export const stackCases: StackCase[] = [
     ],
     expected: want("O2041", 10000, "send_to_human"),
   },
-  // The fourth refund in the window: R4 does catch it, so 3 per 90 days is today's ceiling.
+  // The fourth refund in the window. Before R13, R4 caught it (3 per 90 days was the ceiling).
+  // Under R13 the second and third $100 wait for a person, so only $100 was paid and $35 more
+  // stays under $150: allowed, with two requests at the desk.
   {
     id: "STACK-06",
     customerId: "C020",
@@ -144,7 +146,7 @@ export const stackCases: StackCase[] = [
       { id: "STACK-06-B", receivedOn: "2026-09-28", subject: "Curtains", body: "Curtains O2002 torn. $100 please.", form: refund("O2002", 10000, "Torn") },
       { id: "STACK-06-C", receivedOn: "2026-09-29", subject: "Rug", body: "Rug O2003 stained. $100 please.", form: refund("O2003", 10000, "Stained") },
     ],
-    expected: want("O1033", 3500, "send_to_human"),
+    expected: want("O1033", 3500, "allow"),
   },
   // Partial refunds on one order: $60 of a $120 footstool, then the other $60. R9 catches the second.
   {
