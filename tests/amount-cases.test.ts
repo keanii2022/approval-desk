@@ -37,7 +37,7 @@ describe("amount tricks: wording", () => {
 
   for (const c of amountCases) {
     it(`${c.id}: ${c.expected.rules.join(", ") || "R1, R2"}: the right amount gets the expected result`, () => {
-      expect(gateFor(c, c.expected.amountCents)).toEqual({ result: c.expected.gate, rules: c.expected.rules });
+      expect(gateFor(c, c.expected.amountCents!)).toEqual({ result: c.expected.gate, rules: c.expected.rules });
     });
 
     for (const m of c.misreads) {
