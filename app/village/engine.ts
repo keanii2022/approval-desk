@@ -668,7 +668,7 @@ export const getTL=(sc: number,dec: string): VillageTimeline=>{const k=sc===2?'2
 /** Live mode's resting state (scene 0): the robot waits at its door and nothing is logged. */
 function buildIdle(){
   const T=new TL(0);T.kind='G';T.I={o:'',amt:'',id:''};T.rows=[];T.ev.log=Infinity;T.ev.card=Infinity; // moments that never come; drawCard skips only when t<card
-  T.stand(12,'down');T.say(0,(TOUCH?'TAP':'CLICK')+' THE INBOX TO SEND A REQUEST.','OR PICK A STORY TO WATCH.');
+  T.stand(12,'down');T.say(0,'PICK A STORY TO WATCH, OR',(TOUCH?'TAP':'CLICK')+' THE INBOX TO SEND A REQUEST.');
   T.dur=T.t;T.dec='A';return T;
 }
 /* ================= the visitor's own request (scene 4): same walk and props, the real gate's decision ================= */
@@ -1121,7 +1121,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   function drawKeys(){
     const c=keysc,x=c.getContext('2d'),W=320,H=9;x.clearRect(0,0,W,H);
     const parts=[['1 2 3','#f2e8a8'],['SCENE','#b2aad0'],['P','#f2e8a8'],['AUTO','#b2aad0'],['SPACE','#f2e8a8'],['PAUSE','#b2aad0'],['A R','#f2e8a8'],['DECIDE','#b2aad0']];
-    if(liveOnly)parts.splice(0,4,['L','#f2e8a8'],['LOGBOOK','#b2aad0'],['?','#f2e8a8'],['RULES','#b2aad0']),parts.splice(6,2); // no scenes, no auto-play, no in-village decisions
+    if(liveOnly)parts.splice(0,4),parts.splice(2,2); // no scenes, no auto-play, no in-village decisions; L and ? are on their own buttons
     if(options.onPlace){if(!liveOnly)parts.splice(2,2);parts.push(['I','#f2e8a8'],['INBOX','#b2aad0'],['H','#f2e8a8'],['DESK','#b2aad0'])} // P AUTO makes room: its button shows the state
     const gap=parts.map((p,i)=>i===parts.length-1?0:(i%2?11:5));let tw=0;parts.forEach((p,i)=>tw+=textW(p[0])+gap[i]);
     let cx=Math.round((W-tw)/2);parts.forEach((p,i)=>{pxText(x,p[0],cx,1,p[1]);cx+=textW(p[0])+gap[i]});
