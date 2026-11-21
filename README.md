@@ -1,6 +1,6 @@
 # Approval Desk
 
-A refund agent where the AI can only suggest. Plain code enforces 11 hard limits, a person decides the risky ones, and across 405 graded answers from Claude Opus no wrong refund was paid.
+A refund agent where the AI can only suggest. Plain code enforces 12 hard limits, a person decides the risky ones, and across more than 650 graded answers from Claude Opus no wrong refund was paid.
 
 All shop data, customers and messages are invented.
 
@@ -26,6 +26,9 @@ Each case is run 3 times on Claude Opus 5.5. "Got through" means a wrong answer 
 |---|---|---|---|
 | 12 hole cases: follow-ups, repeats, flagged and new accounts | 8.3%, **21 wrong refunds paid** | R9, R10 | **75.0%, 0 got through** |
 | 3 hole cases: orders not delivered yet | 0.0%, **9 wrong refunds paid** | R11 | **100%, 0 got through** |
+| 12 edge cases: each rule's exact boundary, both sides | 100%, 0 got through | none needed | |
+| 75 cases written by another AI (Gemini) after R9 to R11 | 93.8%, 1 customer turned away, no money out | R12 | 94.7%, 0 got through |
+| 4 hole cases: order numbers that aren't the customer's, plus the two repeat misses | **3 wrong refunds paid, 1 customer turned away** | R12 | **0 got through** |
 | 60 practice cases | 98.3%, 0 got through | R9, R10 | 97.8%, 1 customer turned away, no money out |
 | 60 hard cases, written by a different AI to break it | 95.0%, 0 got through | R9, R10 | 95.6%, 0 got through |
 
@@ -35,9 +38,10 @@ The practice and hard cases score one request at a time, so they can't see a ref
 
 **Cost:** about 1 cent per request on Claude Opus 5.5. Every call's tokens, time and cost are written down, and `npm run trace` adds them up.
 
-- The code checks let through **0 of 1,000** random bad proposals, across all 11 rules.
+- The code checks let through **0 of 1,000** random bad proposals, across all 12 rules.
+- Rule text is part of what the agent reads, so it gets scored too. R12's first wording ("a person checks before anything is paid") made the agent guess more freely, and the original hard set showed 6 wrong refunds. Plain wording fixed one of the two cases; the other, an email about two orders at once, is the next rule to write.
 - Prompt changes are scored before they ship, with a guess written down first ([EVALS.md](EVALS.md)). Two changes took practice to 100%, but the hard set, which wasn't used for tuning, showed them letting 3 wrong refunds through, so the original prompt stayed.
-- 309 automated tests and 24 browser tests pass. None of them call the AI.
+- 329 automated tests and 27 browser tests pass. None of them call the AI.
 - Every scorecard is dated and saved in [evals/](evals/).
 
 ## How it works
@@ -50,6 +54,8 @@ customer email → agent (AI) → form → gate (plain code) → paid / sent to 
 - The gate is plain code, with no AI inside it. It enforces the rules in [docs/RULES.md](docs/RULES.md), like "over $100 goes to a person" and "never more than was paid."
 - Every step is written to a logbook before it happens. If the logbook can't write, nothing happens (R7).
 - If the AI is down or unsure, the request goes to a person instead (R6). It fails toward a human, never toward paying.
+
+The owner's [dashboard](https://approval-desk-g3lz.onrender.com/dashboard) shows the shop, the Inbox, the human desk, the logbook and every scorecard. It opens from the shop house in the village.
 
 More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · decisions along the way: [DECISIONS.md](DECISIONS.md)
 

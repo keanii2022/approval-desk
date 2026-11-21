@@ -325,3 +325,26 @@ Template:
 **Decided:** back to the baseline prompt. The changes fixed safe misses (a person saw them first) and caused unsafe ones (money out). Next time, a change is scored on all three sets before it's kept.
 **Note:** the first baseline attempt hit an API outage, with nearly every call unanswered. Those scorecards measured the outage, not the prompt, so they were moved to the Trash and the run was repeated.
 
+## Step 12: the dashboard (2026-11-20)
+
+**Built:** `/dashboard`, opened from the shop house in the village or the "Dashboard" link at the top. It shows the shop (totals, customers with flagged and new accounts, orders with delivery status), the Inbox with where each request stands, the human desk (the same cards as `/approvals`, the only part that changes anything), the newest 40 logbook lines in plain words, and every scorecard in evals/. Read-only queries live in `lib/dashboard.ts`. Like every page, it reads the visitor's own copy of the shop.
+**Decided:** "latest scorecard" means the newest run on the prompt that ships. Runs on prompts that were tried and rejected are marked "tried, not kept", so the overfit 100% from step 14 can't pass for the live score.
+
+## Edge cases (2026-11-21)
+
+**Built:** 12 edge cases (`data/edge-cases.ts`, `npm run evals -- --set edges`), one on each side of every numeric boundary: $100.00 vs $100.01 (R2), 30 vs 31 days (R3), both limits at once, exactly what's left vs a cent more (R1), a refund exactly 90 vs 91 days old (R4), and an account exactly 30 vs 31 days old (R10). A test checks each against the gate.
+**Measured:** the gate gets all 12 right, and the real agent scored 100% with 0 got through. No new rule needed.
+**Noticed, not changed:** R4 allows 3 refunds in 90 days on different orders before a person looks, and R2 only caps each one at $100, so one customer could get up to $300 in 90 days with no person involved. Whether that needs a rule is the owner's call.
+
+## A second hard set, written by Gemini (2026-11-21)
+
+**Built:** 75 cases written by Gemini from the policy and the shop data alone, after R9 to R11: 30 single requests, 15 with a history, and 30 on rule boundaries (`data/hard2-cases.ts`, `npm run evals -- --set hard2`). They don't carry a gate result: the eval runner works it out from each right answer, in the same shop the agent sees, so cases with a history are graded against what really happened first.
+**Reviewed:** two of Gemini's right answers were wrong and were fixed before the run. HARD2-018 (euros asked for a dollar order) is a $48 refund, not "unsure", matching CASE-054. HARD2-034 (the same $45 claim twice) is "no refund", since the first $45 emptied the order. Gemini's working notes were cut from the comments.
+**Measured:** 93.8% (211 of 225), no wrong refund paid. 13 misses were "unsure" where a refund was right, so a person sees them first. 1 got through: HARD2-014, a request about an order that doesn't exist, answered "no refund" in 1 of 3 runs, so a customer was turned away. It's the same weakness as CASE-046 in the practice set.
+
+
+## R12: order numbers that aren't the customer's (2026-11-21)
+
+**Measured first:** four hole cases (HOLE-16 to 19) plus the two repeat misses (CASE-046, HARD2-014), on R1–R11. 3 wrong refunds got through (HOLE-18: one real order and one made-up order in the same email; the agent refunded the real one and ignored the other), and CASE-046 turned a customer away again.
+**Decided (owner):** R12. If the subject or message names an order number (O followed by four or more digits) that isn't one of the asking customer's orders, a person decides, whether the answer is a refund or a "no refund". R8 still blocks a refund on someone else's order outright. Retest on the same six cases: 0 got through.
+**Changed:** CASE-045 (a "no refund" on someone else's order) and HOLE-19 now go to a person. The policy gained P19, which changes the prompt's fingerprint, so EVALS.md has an entry for it. The village's rules window now lists all 12 rules, one line each.
