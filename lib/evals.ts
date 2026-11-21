@@ -102,6 +102,11 @@ async function shopWithHistory(c: CaseWithHistory): Promise<DatabaseSync> {
   return db;
 }
 
+function expectedGate(shop: DatabaseSync, c: PracticeCase): GateDecision["result"] {
+  const form = { action: c.expected.action, orderId: c.expected.orderId, amountCents: c.expected.amountCents, reason: "expected answer", policyLine: c.expected.policyLine };
+  return checkProposal(shop, c.id, { status: "answered", form }).result;
+}
+
 export type EvalOptions = {
   model: string;
   set?: string;
@@ -124,10 +129,13 @@ export async function runEvals(askModel: AskModel, options: EvalOptions): Promis
       const { c, run } = jobs[next++];
       const own = (c as CaseWithHistory).history ? await shopWithHistory(c as CaseWithHistory) : null;
       const shop = own ?? db;
+      // A case without a written gate result (data/hard2-cases.ts) gets it from the real gate,
+      // checking its right answer in the same shop the agent sees.
+      const scored = c.expected.gate ? c : { ...c, expected: { ...c.expected, gate: expectedGate(shop, c) } };
       const output = await runAgent(shop, c.id, askModel);
       const decision = checkProposal(shop, c.id, output);
       own?.close();
-      const answer = { caseId: c.id, tricky: c.tricky, run, output, decision, ...scoreAnswer(c, output, decision) };
+      const answer = { caseId: c.id, tricky: c.tricky, run, output, decision, ...scoreAnswer(scored, output, decision) };
       answers.push(answer);
       options.onAnswer?.(answer, answers.length, jobs.length);
     }
