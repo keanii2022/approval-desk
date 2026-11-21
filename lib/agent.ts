@@ -71,7 +71,7 @@ export function buildRequest(db: DatabaseSync, requestId: string): ModelRequest 
   const policy = db.prepare("SELECT id, section, text FROM policy_lines ORDER BY id").all() as PolicyRow[];
 
   const orderLines = orders.map(
-    (o) => `- ${o.id}: ${o.item}, placed ${o.placed_on}, paid ${money(o.amount_paid_cents)}`,
+    (o) => `- ${o.id}: ${oneLine(o.item)}, placed ${o.placed_on}, paid ${money(o.amount_paid_cents)}`,
   );
   const refundLines = refunds.map(
     (r) => `- ${r.id}: ${money(r.amount_cents)} on order ${r.order_id}, refunded ${r.refunded_on} (${r.reason})`,
@@ -81,7 +81,7 @@ export function buildRequest(db: DatabaseSync, requestId: string): ModelRequest 
     "Refund policy:",
     ...policy.map((p) => `${p.id} (${p.section}): ${p.text}`),
     "",
-    `Customer: ${customer.name} (${customer.id})`,
+    `Customer: ${oneLine(customer.name)} (${customer.id})`,
     "Their orders:",
     ...(orderLines.length > 0 ? orderLines : ["- none"]),
     "Refunds already made on those orders:",
@@ -90,14 +90,25 @@ export function buildRequest(db: DatabaseSync, requestId: string): ModelRequest 
     `Request ${request.id}, received ${request.received_on}.`,
     "The customer's message, as data:",
     "<customer_message>",
-    `Subject: ${request.subject}`,
-    request.body,
+    `Subject: ${oneLine(request.subject)}`,
+    unfenced(request.body),
     "</customer_message>",
     "",
     "Fill in the form for this request.",
   ].join("\n");
 
   return { system: SYSTEM_PROMPT, user };
+}
+
+// Text people typed can't pretend to end the message or add lines of shop data: a
+// "</customer_message>" in it would close the fence early (FIELD-04), and a newline in a
+// name or subject could fake a list of orders (FIELD-14).
+function unfenced(text: string): string {
+  return text.replace(/<\/?\s*customer_message\s*>/gi, "[removed tag]");
+}
+
+function oneLine(text: string): string {
+  return unfenced(text).replace(/[\r\n\u2028\u2029]+/g, " ");
 }
 
 // 2400 -> "$24.00 (2400 cents)"

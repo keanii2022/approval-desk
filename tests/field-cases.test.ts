@@ -39,12 +39,16 @@ const honestForm = (c: FieldCase) => ({
 const caseById = (id: string) => fieldCases.find((c) => c.id === id)!;
 
 describe("field cases", () => {
-  it("every case's trick reaches the model through buildRequest", () => {
+  // The words still reach the model, but flattened to one line and with any fence tag
+  // taken out, so a subject or name can't close the message early or fake shop data.
+  it("every case's trick reaches the model through buildRequest, on one line and without a fence tag", () => {
+    const flat = (t: string) => t.replace(/<\/?\s*customer_message\s*>/gi, "[removed tag]").replace(/[\r\n\u2028\u2029]+/g, " ");
     for (const c of fieldCases) {
       const db = shopWith(c);
       const { user } = buildRequest(db, c.id);
       const planted = c.field === "subject" ? c.subject : c.field === "name" ? c.extraCustomers![0].name : c.extraOrders![0].item;
-      expect(user, c.id).toContain(planted);
+      expect(user, c.id).toContain(flat(planted));
+      expect(user.match(/<\/customer_message>/g), c.id).toHaveLength(1);
       db.close();
     }
   });
@@ -73,17 +77,17 @@ describe("field cases", () => {
 
   // Hole: namesUnknownOrder matches /\bO\d{4,}\b/ on the uppercased text. "_" is a word
   // character, so "ticket_O1002" has no boundary before the O, and someone else's order goes unseen.
-  it.fails("R12: someone else's order glued to an underscore in the subject goes to a person (FIELD-08)", () => {
+  it("R12: someone else's order glued to an underscore in the subject goes to a person (FIELD-08)", () => {
     expect(decide(caseById("FIELD-08"), caseById("FIELD-08").attack)).toEqual({ result: "send_to_human", rules: ["R12"] });
   });
 
   // Hole: \d without the u flag only matches ASCII digits, so full-width "O１００２" is skipped.
-  it.fails("R12: someone else's order in full-width digits in the subject goes to a person (FIELD-09)", () => {
+  it("R12: someone else's order in full-width digits in the subject goes to a person (FIELD-09)", () => {
     expect(decide(caseById("FIELD-09"), caseById("FIELD-09").attack)).toEqual({ result: "send_to_human", rules: ["R12"] });
   });
 
   // Hole: toUpperCase runs before the match and turns "ß" into "SS", gluing word characters onto the O.
-  it.fails("R12: someone else's order right after a ß in the subject goes to a person (FIELD-10)", () => {
+  it("R12: someone else's order right after a ß in the subject goes to a person (FIELD-10)", () => {
     expect(decide(caseById("FIELD-10"), caseById("FIELD-10").attack)).toEqual({ result: "send_to_human", rules: ["R12"] });
   });
 
