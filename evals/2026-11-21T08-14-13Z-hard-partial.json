@@ -1,0 +1,152 @@
+{
+  "set": "hard",
+  "ranAt": "2026-11-21T08:14:13Z",
+  "model": "claude-opus-5-5",
+  "runsPerCase": 3,
+  "cases": 1,
+  "answers": 3,
+  "right": 0,
+  "accuracy": 0,
+  "plainAccuracy": 0,
+  "trickyAccuracy": 0,
+  "counts": {
+    "right": 0,
+    "wrong_paid": 3,
+    "wrong_refused": 0,
+    "caught_by_person": 0,
+    "blocked": 0,
+    "ai_down": 0
+  },
+  "gotThrough": [
+    {
+      "caseId": "HARD-060",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The carafe arrived damaged so its $27 is refundable on O1030, but the tray's $38 cannot be attached to O1030 and needs its own refund on O1031.",
+          "policyLine": "P08"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "action refund, expected unsure; gate allow, expected send_to_human"
+    },
+    {
+      "caseId": "HARD-060",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The damaged carafe on O1030 qualifies for a full $27 refund, but the $38 tray refund belongs on O1031 and cannot be added to O1030 because that would exceed what was paid for it.",
+          "policyLine": "P08"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "action refund, expected unsure; gate allow, expected send_to_human"
+    },
+    {
+      "caseId": "HARD-060",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The carafe arrived damaged so its $27 is refundable on O1030, but the tray's $38 can't be attached to O1030 and needs its own refund on O1031.",
+          "policyLine": "P08"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "action refund, expected unsure; gate allow, expected send_to_human"
+    }
+  ],
+  "misses": [
+    {
+      "caseId": "HARD-060",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The carafe arrived damaged so its $27 is refundable on O1030, but the tray's $38 cannot be attached to O1030 and needs its own refund on O1031.",
+          "policyLine": "P08"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "action refund, expected unsure; gate allow, expected send_to_human"
+    },
+    {
+      "caseId": "HARD-060",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The damaged carafe on O1030 qualifies for a full $27 refund, but the $38 tray refund belongs on O1031 and cannot be added to O1030 because that would exceed what was paid for it.",
+          "policyLine": "P08"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "action refund, expected unsure; gate allow, expected send_to_human"
+    },
+    {
+      "caseId": "HARD-060",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The carafe arrived damaged so its $27 is refundable on O1030, but the tray's $38 can't be attached to O1030 and needs its own refund on O1031.",
+          "policyLine": "P08"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "action refund, expected unsure; gate allow, expected send_to_human"
+    }
+  ],
+  "unsteady": [],
+  "prompt": "443a94d09fb1"
+}
