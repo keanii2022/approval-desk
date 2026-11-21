@@ -32,6 +32,7 @@ export type Answer = {
 
 export type Scorecard = {
   set: string; // which practice set: "practice" (the original 60) or "hard"
+  prompt?: string; // the prompt version it ran on (lib/prompt.ts promptVersion), from Nov 20 on
   ranAt: string; // UTC, like 2026-11-15T23:10:04Z
   model: string;
   runsPerCase: number;
@@ -196,7 +197,7 @@ export function scorecardMarkdown(card: Scorecard): string {
   const lines = [
     `# Scorecard ${card.ranAt.slice(0, 10)}${card.set === "practice" ? "" : ` (${card.set} set)`}`,
     "",
-    `Ran ${card.ranAt} on \`${card.model}\`: ${card.cases} ${card.set} cases, ${card.runsPerCase} runs each, ${card.answers} answers.`,
+    `Ran ${card.ranAt} on \`${card.model}\`${card.prompt ? ` with prompt \`${card.prompt}\`` : ""}: ${card.cases} ${card.set} cases, ${card.runsPerCase} runs each, ${card.answers} answers.`,
     "",
     "| | |",
     "|---|---|",

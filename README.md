@@ -36,7 +36,8 @@ The practice and hard cases score one request at a time, so they can't see a ref
 **Cost:** about 1 cent per request on Claude Opus 5.5. Every call's tokens, time and cost are written down, and `npm run trace` adds them up.
 
 - The code checks let through **0 of 1,000** random bad proposals, across all 11 rules.
-- 307 automated tests and 24 browser tests pass. None of them call the AI.
+- Prompt changes are scored before they ship, with a guess written down first ([EVALS.md](EVALS.md)). Two changes took practice to 100%, but the hard set, which wasn't used for tuning, showed them letting 3 wrong refunds through, so the original prompt stayed.
+- 309 automated tests and 24 browser tests pass. None of them call the AI.
 - Every scorecard is dated and saved in [evals/](evals/).
 
 ## How it works

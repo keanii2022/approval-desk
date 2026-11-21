@@ -317,3 +317,11 @@ Template:
 **Measured first:** orders gained a carrier status (`in_transit`), plus two orders still in transit (O1038, O1039) and three hole cases for them (HOLE-13 to 15). On R1–R10 the real agent proposed a refund every time and the gate paid all 9 answers (0.0%).
 **Decided (owner, "go on what's left"):** R11 sends a refund on an order the carrier hasn't delivered yet to a person. "Not delivered" is the order's status in the shop data, not the customer's word. A delivered order the customer says never came is still the agent's call under the policy, so the existing practice cases that say "never arrived" keep their answers. Retest: 100%, 0 got through. None of the 120 practice and hard cases uses an order in transit, so they weren't rerun.
 **Changed:** the village's rules window now fits all 11 rules on one or two lines each.
+
+## Step 14: prompt scores (2026-11-20)
+
+**Built:** the agent's instructions moved to `lib/prompt.ts`, with a fingerprint of the instructions plus the policy (`promptVersion`). Scorecards record which version they ran on. `EVALS.md` logs each version: what changed, a guess written before the run, and the result. `tests/prompt-scores.test.ts` fails if the prompt or policy changes without a new entry, or if a change has no guess.
+**Measured:** baseline: practice 98.3%, holes 75.6%. Change 1 (repeats aren't a reason to be unsure): holes 93.3%. Change 2 (no means no, take a smaller ask at its word): practice 100%, holes 97.8%. Both guesses were close. The hard set, not used for tuning, then dropped to 92.8%, with 3 wrong refunds paid on a two-order request (HARD-060).
+**Decided:** back to the baseline prompt. The changes fixed safe misses (a person saw them first) and caused unsafe ones (money out). Next time, a change is scored on all three sets before it's kept.
+**Note:** the first baseline attempt hit an API outage, with nearly every call unanswered. Those scorecards measured the outage, not the prompt, so they were moved to the Trash and the run was repeated.
+

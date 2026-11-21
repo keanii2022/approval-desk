@@ -1,0 +1,387 @@
+{
+  "set": "hard",
+  "ranAt": "2026-11-20T17:35:31Z",
+  "model": "claude-opus-5-5",
+  "runsPerCase": 3,
+  "cases": 60,
+  "answers": 180,
+  "right": 167,
+  "accuracy": 0.9277777777777778,
+  "plainAccuracy": 1,
+  "trickyAccuracy": 0.9015151515151515,
+  "counts": {
+    "right": 167,
+    "wrong_paid": 3,
+    "wrong_refused": 0,
+    "caught_by_person": 10,
+    "blocked": 0,
+    "ai_down": 0
+  },
+  "gotThrough": [
+    {
+      "caseId": "HARD-060",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The carafe arrived damaged so its $27 is refundable on O1030, but the extra $38 can't be added there because a refund can't exceed what was paid on that order; the tray needs its own refund on O1031.",
+          "policyLine": "P08"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "action refund, expected unsure; gate allow, expected send_to_human"
+    },
+    {
+      "caseId": "HARD-060",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The carafe arrived damaged so its $27 is refundable on O1030, but the $38 tray refund can't be put on this order and needs its own refund on O1031.",
+          "policyLine": "P08"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "action refund, expected unsure; gate allow, expected send_to_human"
+    },
+    {
+      "caseId": "HARD-060",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The damaged carafe on O1030 qualifies for a refund up to its $27 price; the tray's $38 must be refunded on O1031, not added to O1030.",
+          "policyLine": "P08"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "action refund, expected unsure; gate allow, expected send_to_human"
+    }
+  ],
+  "misses": [
+    {
+      "caseId": "HARD-011",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "Order O1018 is not among this customer's listed orders, so it either doesn't exist or belongs to someone else and can't be verified.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected no_refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-011",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "Order O1018 is not among this customer's orders, so it either doesn't exist or belongs to someone else and needs a person to check.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected no_refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-011",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "Order O1018 is not among the customer's listed orders, so it either doesn't exist or belongs to someone else and needs a person to check.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected no_refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-046",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "The customer reports a broken item but cannot say which order or price, and their only order was placed two days ago, not last month.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-046",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "The customer reports a broken item but cannot say what it was, and the order they describe from last month does not clearly match O1033, placed two days ago.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-046",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "The customer reports a broken item but can't name it or its price, and says it was bought last month while their only order was placed two days ago, so the order is unclear.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-047",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1034",
+          "amountCents": 4800,
+          "reason": "The customer names order O9999, which isn't theirs or doesn't exist, and is unsure whether O1034 is the right order, so a person should confirm.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-047",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1034",
+          "amountCents": 4800,
+          "reason": "The customer names order O9999, which is not theirs, and is unsure whether the order is actually O1034, so the order is unclear.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-047",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1034",
+          "amountCents": 4800,
+          "reason": "The customer names order O9999, which isn't theirs, and is unsure whether their order is O1034, so the order is unclear.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-048",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1035",
+          "amountCents": 2600,
+          "reason": "The customer is unsure whether the undelivered apron is O1035 or O1034, and O1034 is not one of their orders, so the right order is unclear.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-060",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The carafe arrived damaged so its $27 is refundable on O1030, but the extra $38 can't be added there because a refund can't exceed what was paid on that order; the tray needs its own refund on O1031.",
+          "policyLine": "P08"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "action refund, expected unsure; gate allow, expected send_to_human"
+    },
+    {
+      "caseId": "HARD-060",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The carafe arrived damaged so its $27 is refundable on O1030, but the $38 tray refund can't be put on this order and needs its own refund on O1031.",
+          "policyLine": "P08"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "action refund, expected unsure; gate allow, expected send_to_human"
+    },
+    {
+      "caseId": "HARD-060",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The damaged carafe on O1030 qualifies for a refund up to its $27 price; the tray's $38 must be refunded on O1031, not added to O1030.",
+          "policyLine": "P08"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "action refund, expected unsure; gate allow, expected send_to_human"
+    }
+  ],
+  "unsteady": [
+    {
+      "caseId": "HARD-048",
+      "rightRuns": 2
+    }
+  ],
+  "prompt": "07db9d9f74e3"
+}

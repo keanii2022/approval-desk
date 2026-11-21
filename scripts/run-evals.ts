@@ -12,6 +12,7 @@ import { hardCases } from "../data/hard-cases.ts";
 import { holeCases } from "../data/hole-cases.ts";
 import { agentModel, askClaude } from "../lib/claude.ts";
 import { runEvals, scorecardMarkdown } from "../lib/evals.ts";
+import { promptVersion } from "../lib/prompt.ts";
 
 const SETS = { practice: practiceCases, hard: hardCases, holes: holeCases };
 
@@ -37,6 +38,7 @@ const card = await runEvals(askClaude, {
   },
 });
 
+card.prompt = promptVersion();
 const stem = `evals/${card.ranAt.replace(/:/g, "-")}${set === "practice" ? "" : `-${set}`}${cases.length < all.length ? "-partial" : ""}`;
 mkdirSync("evals", { recursive: true });
 writeFileSync(`${stem}.md`, scorecardMarkdown(card));

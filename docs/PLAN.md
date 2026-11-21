@@ -55,7 +55,7 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
   - **Goal:** One app where the owner can see everything: the shop (customers, orders, refunds), the Inbox, the human queue (reusing the step 7 screen), the logbook, and the dated eval scorecards from step 9. Read-only apart from the step 7 actions. Invented data only.
   - **Done when:** every section loads from the real data; Playwright tests open each section; the latest scorecard is shown with its date.
 
-- [ ] **Step 14: Prompt scores** (builds on step 9)
+- [x] **Step 14: Prompt scores** (builds on step 9)
   - **Goal:** Change the agent's prompt twice, each time writing down a guess of what will change before running the evals. Record all three scores (baseline and two changes) in `EVALS.md`, with the guess next to each result.
   - **Done when:** `EVALS.md` holds three dated scorecards with a written guess for each prompt change; a test fails if the prompt file changed but `EVALS.md` did not.
 
