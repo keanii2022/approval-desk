@@ -376,3 +376,9 @@ Template:
 - `npm run drift` and a weekly GitHub Action (step 30), capped at $1 a run. It runs once the owner adds the ANTHROPIC_API_KEY repository secret.
 
 **Still open:** "my other order" and a second order named only by its item (TWO-04, 06, 08), a bare order number or one in words (DISG-19, 20). Plain code can't see these; the agent and the evals cover them. In a two-process race, the losing request is refused rather than queued for a person.
+
+## R13 at $150 or more (2026-11-21)
+
+**Decided (owner):** a first refund up to $100 pays on its own (R2 above that); after that, a person sees anything that brings the 90-day total to $150 or more. So $100 and then $50 reaches a person. R2 stays its own rule: a single $120 refund never nears $150 but still needs a person.
+**Measured:** 0 wrong decisions got through in 828 answers on the new prompt (EVALS.md). STACK-10 and STACK-11 sit on the line.
+**Cost note:** meant as a quarter-size check (about $3); a shell quoting slip ran most sets in full, about $9. The spending cap stopped it at $21.82 of $22, before the field and amount sets.

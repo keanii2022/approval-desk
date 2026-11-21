@@ -67,3 +67,23 @@ The policy gained P20 (R13: over $150 to one customer in 90 days) and P21 (R14: 
 None of the misses on these five sets involve R13 or R14; they're the same kind as before (mostly "unsure" where a refund was right, so a person sees them first). The hard and hole sets moved a few points either way, within what earlier reruns of one prompt have shown.
 
 - Scorecards: [practice](evals/2026-11-21T08-47-03Z.md), [hard](evals/2026-11-21T08-48-39Z-hard.md), [Gemini set](evals/2026-11-21T08-50-38Z-hard2.md), [holes](evals/2026-11-21T08-45-12Z-holes.md), [edges](evals/2026-11-21T08-45-34Z-edges.md), and the new sets: [disguise](evals/2026-11-21T08-43-05Z-disguise.md), [stack](evals/2026-11-21T08-43-18Z-stack.md), [two](evals/2026-11-21T08-43-34Z-two.md), [field](evals/2026-11-21T08-44-02Z-field.md), [amount](evals/2026-11-21T08-44-28Z-amount.md), [date](evals/2026-11-21T08-44-39Z-date.md)
+
+## R13 moved to "$150 or more", prompt `1bd60654db61` (2026-11-21)
+
+Policy line P20 changed from "over $150" to "$150 or more" (the owner's call: $100 back and then $50 should reach a person), which changes the fingerprint. Two cases were added at the line: STACK-10 ($100, then $50: a person) and STACK-11 ($100, then $49.99: paid).
+
+Meant as a quarter-size check; a shell quoting slip ran most sets in full. The spending cap stopped it before the field and amount sets. **0 wrong decisions got through** in 828 answers.
+
+| Set | Prompt `649353ffa475` | Prompt `1bd60654db61` |
+|---|---|---|
+| practice | 98.3% | 98.3% |
+| hard | 93.3% | 93.3% |
+| Gemini's 75 | 95.1% | 94.7% |
+| holes | 71.9% | 70.2% |
+| edges | 100% | 100% |
+| disguise | 0.0% | 14.5% |
+| stack (now 11 cases) | 100% | 100% |
+| two | 23.3%, 1 got through | 26.7%, 0 got through |
+| date | 66.7% | 66.7% |
+
+- Scorecards: [practice](evals/2026-11-21T09-24-19Z.md), [hard](evals/2026-11-21T09-25-59Z-hard.md), [Gemini set](evals/2026-11-21T09-28-02Z-hard2.md), [holes](evals/2026-11-21T09-28-34Z-holes.md), [edges](evals/2026-11-21T09-28-56Z-edges.md), [disguise](evals/2026-11-21T09-29-45Z-disguise.md), [stack](evals/2026-11-21T09-30-10Z-stack.md), [two](evals/2026-11-21T09-30-30Z-two.md), [date](evals/2026-11-21T09-30-42Z-date.md)

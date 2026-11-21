@@ -184,6 +184,10 @@ Every item runs the same way as R9 to R12: write cases that should break it, run
 - **Goal:** What happens when the shop's own data is wrong: a carrier status that's out of date, a flag that should have been lifted, an order with no amount.
 - **Done when:** cases for each, and a note on which rules trust which data.
 
+## Owner to-do
+
+- [ ] **Turn on the weekly drift check (step 30).** On GitHub: the approval-desk repo → Settings → Secrets and variables → Actions → New repository secret. Name `ANTHROPIC_API_KEY`, value: a new API key made just for this (name it "drift" in the Claude Console so it can be revoked on its own). Then Actions → Drift check → Run workflow once to see it go green. Each run is capped at $1 in code; about 50 cents a week.
+
 ## Calls to review
 
 - **17:** Hourly limit message: "That's all your tries for this hour. Come back in a bit." Matches the plain tone of the daily one.
@@ -213,13 +217,13 @@ Every item runs the same way as R9 to R12: write cases that should break it, run
 - **15:** The summary reads: Trace summary for <path> (and N visitor copies), Calls, Tokens, Total cost (with any unpriced calls left out and noted), Average time, and By gate verdict: allow, send to a person, block, AI down.
 - **22:** Haiku's misses are shown as they are: mostly "unsure" when a rule applied, so a person decides. Counted as wrong, because the expected answer was a refund the gate would send on.
 - **23:** R12's scan cleans text before matching (look-alike letters, invisible characters, other scripts' digits) and reads "order #1002", "O-1002", "0rder 01002". A bare "1002" and numbers in words are left to the agent: matching every 4-digit number would catch prices, years and phone numbers.
-- **24:** R13 is over $150 to one customer in 90 days, only when there's an earlier refund (a single big refund stays R2's job). 90 days matches R4; a 30-day window still allowed about $1,200 a year.
+- **24:** R13 is $150 or more to one customer in 90 days (owner's call: first "over $150", changed so $100 then $50 reaches a person), only when there's an earlier refund (a single big refund stays R2's job). 90 days matches R4; a 30-day window still allowed about $1,200 a year.
 - **25:** R14 applies to "no refund" answers too, like R12. Its false catch (a second order mentioned in passing, TWO-C2) is accepted: safe, but a needless look.
 - **26:** Subjects and names are flattened to one line and any customer_message tag is removed before the agent sees them. The words still reach the agent; only their power to fake structure is gone.
 - **27:** No prompt change for amount misreads: the agent got 44 of 45 right and paid nothing wrong, and the last prompt tuning overfit.
 - **28:** A date with a time of day, or in any form but YYYY-MM-DD, goes to a person rather than being guessed at. Refunds paid after a request arrived still count toward R4 and R13.
 - **28:** DATE-03 was reworded (all three towels torn). It was meant to test a month-end date but asked for the full price on two of three towels, so it tested amounts instead.
 - **29:** No fix needed: the executor re-runs the gate inside its own write lock. The loser of a two-process race is refused rather than queued for a person; nothing is paid, but that request needs resending. Logged, not fixed.
-- **30:** The weekly check runs on GitHub Actions, Mondays 09:00 UTC, with a $1 cap per run. It only runs once the owner adds the ANTHROPIC_API_KEY repository secret.
+- **30:** The weekly check runs on GitHub Actions, Mondays 09:00 UTC, with a $1 cap per run. It only runs once the owner adds the ANTHROPIC_API_KEY repository secret: see "Owner to-do" above.
 - **31:** "Tired reviewer" is split by verdict: right answers a rule sent to a person only needed a look; wrong ones a person had to catch. A reviewer who approves everything would pay the wrong ones.
 - **32:** Bad rows are refused twice: CHECKs in the tables (whole-number amounts, 0/1 flags, real dates) and guards in the gate (unknown amounts block, any non-zero flag or transit status gets a look, a missing customer goes to a person). Try-page customers now join "today", so R10 sees them as new.
