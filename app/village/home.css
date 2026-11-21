@@ -23,6 +23,7 @@ body:has(.village-home) { margin: 0; background: #24283f; }
 }
 
 /* pixel buttons: the two ways in under the village, and the stories inside the Inbox */
+#vh-start-title { text-align: center; margin-top: 4px; }
 .vh-start { max-width: 34rem; margin: 6px auto 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .vh-left { color: var(--cream); }
 .vh-test-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -114,5 +115,7 @@ body:has(.village-home) { margin: 0; background: #24283f; }
   .vh-side .vh-stories { text-align: left; margin: 0 0 14px; }
   .vh-side .vh-test-buttons { grid-template-columns: 1fr; }
   .vh-side .vh-test-buttons .vh-test { grid-template-columns: 1fr auto; text-align: left; align-items: center; }
+  .vh-side .vh-start .vh-test { text-align: left; justify-items: start; }
+  .vh-side #vh-start-title { text-align: left; margin: 0 0 8px; }
   .vh-side .vh-note { text-align: left; margin: 0; }
 }

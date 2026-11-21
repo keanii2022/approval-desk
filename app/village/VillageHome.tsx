@@ -251,20 +251,6 @@ export default function VillageHome({ customers, tries, waiting, triesLeft, prob
       <div className="vh-stage">
         <VillageCanvas onPlace={openPlace} onDecide={onDecide} decided={decided} play={play} story={story} live />
         <div className="vh-side">
-
-          <section className="vh-start" aria-label="Start here">
-            <button type="button" className="vh-test" onClick={() => openPlace("inbox")}>
-              <span className="vh-test-name">The Inbox</span>
-              <span className="vh-test-hint">Send the agent your own request</span>
-            </button>
-            <Link className="vh-test" href="/approvals">
-              <span className="vh-test-name">
-                Human desk{waiting.length > 0 ? <span className="vh-test-price"> ({waiting.length})</span> : null}
-              </span>
-              <span className="vh-test-hint">Decide the big refunds</span>
-            </Link>
-          </section>
-
           <section className="vh-stories" aria-labelledby="vh-stories-title">
             <h2 id="vh-stories-title" className="vh-sec">Watch a story</h2>
             <p className="vh-muted">Made-up requests, played by the village. No AI, so they always work.</p>
@@ -278,6 +264,20 @@ export default function VillageHome({ customers, tries, waiting, triesLeft, prob
                 </button>
               ))}
             </div>
+          </section>
+
+          <h2 id="vh-start-title" className="vh-sec">Your turn</h2>
+          <section className="vh-start" aria-labelledby="vh-start-title">
+            <button type="button" className="vh-test" onClick={() => openPlace("inbox")}>
+              <span className="vh-test-name">The Inbox</span>
+              <span className="vh-test-hint">Send the agent your own request</span>
+            </button>
+            <Link className="vh-test" href="/approvals">
+              <span className="vh-test-name">Human desk</span>
+              <span className="vh-test-hint">
+                {waiting.length > 0 ? `${waiting.length} big ${waiting.length === 1 ? "refund" : "refunds"} waiting for you` : "Decide the big refunds"}
+              </span>
+            </Link>
           </section>
 
           <p className="vh-note">When the agent runs on its own, big refunds pile up at the human desk until a person decides. Here, that person is you.</p>
