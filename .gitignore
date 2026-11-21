@@ -32,3 +32,6 @@ playwright-report/
 
 # Extra build folders, one per dev server (NEXT_DIST_DIR)
 .next-*/
+
+# Eval spending ledger (lib/spend.ts), local to this machine
+data/spend-ledger.json
