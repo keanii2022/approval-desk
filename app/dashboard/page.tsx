@@ -240,13 +240,13 @@ export default async function DashboardPage() {
         ) : (
           <p className="empty">No scorecards yet. Run npm run evals.</p>
         )}
-        <h3 id="desk-title">Sent to a person, per 100 requests</h3>
+        <h3 id="load-title">Sent to a person, per 100 requests</h3>
         {desk.sets.length === 0 ? (
           <p className="empty">Shows after the next eval run.</p>
         ) : (
           <>
             <div className="dash-scroll">
-              <table aria-labelledby="desk-title">
+              <table aria-labelledby="load-title">
                 <thead>
                   <tr>
                     <th>Rule</th>
@@ -267,7 +267,6 @@ export default async function DashboardPage() {
                   {desk.rules.map((rule) => (
                     <tr key={rule}>
                       <td>{rule === "R6" ? "Unsure (R6)" : rule}</td>
-                      {/* A rule added after RULE_WORDS (R13, R14 on their way) shows with an empty Why. */}
                       <td>{ruleInWords(rule as Parameters<typeof ruleInWords>[0]) ?? ""}</td>
                       {desk.sets.map((s) => (
                         <td key={s.set}>{per100(s.perRule[rule] ?? 0, s)}</td>

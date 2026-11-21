@@ -13,28 +13,17 @@
 //        npm run evals -- --set field / amount / date   (steps 26 to 28)
 //        npm run evals -- --runs 1 CASE-001     (just the ones you name)
 import { mkdirSync, writeFileSync } from "node:fs";
-import { type PracticeCase, practiceCases } from "../data/cases.ts";
-import { hardCases } from "../data/hard-cases.ts";
-import { hard2Cases } from "../data/hard2-cases.ts";
-import { edgeCases } from "../data/edge-cases.ts";
-import { holeCases } from "../data/hole-cases.ts";
-import { disguiseCases } from "../data/disguise-cases.ts";
-import { stackCases } from "../data/stack-cases.ts";
-import { twoOrderCases } from "../data/two-order-cases.ts";
-import { fieldCases } from "../data/field-cases.ts";
-import { amountCases } from "../data/amount-cases.ts";
-import { dateCases } from "../data/date-cases.ts";
+import { SETS } from "../data/sets.ts";
 import { agentModel, askClaude } from "../lib/claude.ts";
 import { runEvals, scorecardMarkdown } from "../lib/evals.ts";
 import { promptVersion } from "../lib/prompt.ts";
 import { capSpend, projectedUsd, readLedger } from "../lib/spend.ts";
 
-const SETS = { practice: practiceCases, hard: hardCases, hard2: hard2Cases as PracticeCase[], holes: holeCases, edges: edgeCases, disguise: disguiseCases, stack: stackCases, two: twoOrderCases, field: fieldCases, amount: amountCases, date: dateCases };
 
 const args = process.argv.slice(2);
 const option = (name: string) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
 const runs = Number(option("--runs") ?? 3);
-const set = (option("--set") ?? "practice") as keyof typeof SETS;
+const set = option("--set") ?? "practice";
 const all = SETS[set];
 if (!all) throw new Error(`No set called ${set}. Sets: ${Object.keys(SETS).join(", ")}`);
 const named = args.filter((a) => /^(CASE|HARD2?|HOLE|EDGE|DISG|STACK|TWO|FIELD|AMT|DATE)-(C?\d+)$/.test(a));
