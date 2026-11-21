@@ -51,7 +51,7 @@ Part numbers match `docs/ARCHITECTURE.md`. Rule IDs match `docs/RULES.md`.
   - **Goal:** The approval screen becomes a first-person stop in the village, in the look of the Figma Gate encounter: the village scene with place signs and a mini-map, a console on the right that shows each waiting request (the message, why a person must decide, what the agent said, the order with what was paid and what is left), and a dialogue bar at the bottom where the Human Desk speaks and the person decides. Same rules, same logic (`lib/approval.ts`), same tests. The village prototype runs inside the app at `/village` (ported as it is: scripted invented data, view only), and a person can switch between the two: at the human desk in the village, enter the robot-eye view; from the robot-eye view, go back to the village. Both by click and by keyboard.
   - **Done when:** the Step 7 browser tests still pass on the new screen; browser tests cover the switch both ways, by click and by keyboard; the village plays inside the app at `/village`.
 
-- [ ] **Step 12: Dashboard** (opened from the shop house; builds on steps 7 and 9)
+- [x] **Step 12: Dashboard** (opened from the shop house; builds on steps 7 and 9)
   - **Goal:** One app where the owner can see everything: the shop (customers, orders, refunds), the Inbox, the human queue (reusing the step 7 screen), the logbook, and the dated eval scorecards from step 9. Read-only apart from the step 7 actions. Invented data only.
   - **Done when:** every section loads from the real data; Playwright tests open each section; the latest scorecard is shown with its date.
 

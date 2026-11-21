@@ -144,3 +144,19 @@ main.approvals {
   display: inline-block; font-weight: 700; text-decoration: none; padding: 0.45rem 0.9rem;
   background: var(--good); color: var(--good-ink); border: 2px solid var(--deep); box-shadow: 0 3px 0 var(--deep);
 }
+
+/* the dashboard: same look as the desk, with a section bar and wide tables that scroll sideways */
+.approvals.dashboard { max-width: 64rem; }
+.approvals .dash-nav { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 0; position: sticky; top: 0; padding: 0.5rem 0; background: var(--bg); z-index: 1; }
+.approvals .dash-nav a {
+  font: 700 0.85rem ui-monospace, "SF Mono", Menlo, Consolas, monospace; text-decoration: none; padding: 0.35rem 0.7rem;
+  background: var(--card); color: var(--fg); border: 2px solid var(--deep); box-shadow: 0 3px 0 var(--deep);
+}
+.approvals .dash-nav a:hover { background: var(--card-hi); }
+.approvals .dash-stats { display: flex; flex-wrap: wrap; gap: 0.6rem; list-style: none; padding: 0; margin: 0.5rem 0 0; }
+.approvals .dash-stats li { background: var(--card); border: 2px solid var(--deep); padding: 0.5rem 0.8rem; color: var(--muted); }
+.approvals .dash-stats strong { color: var(--accent); font-size: 1.15rem; margin-right: 0.25rem; }
+.approvals .dash-scroll { overflow-x: auto; }
+.approvals .dash-wrap { white-space: normal; min-width: 16rem; }
+.approvals .dash-latest { background: var(--card); border: 2px solid var(--deep); padding: 0.6rem 0.8rem; }
+.approvals .dashboard section, .approvals.dashboard section { scroll-margin-top: 3.5rem; }

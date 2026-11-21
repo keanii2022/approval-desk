@@ -132,6 +132,10 @@ export default function VillageHome({ customers, tries, waiting, triesLeft, prob
         router.push("/approvals"); // the human desk is the approval screen
         return true;
       }
+      if (place === "shop") {
+        router.push("/dashboard");
+        return true;
+      }
       returnFocus.current = document.activeElement;
       setPanel(place);
       return true;
@@ -239,7 +243,7 @@ export default function VillageHome({ customers, tries, waiting, triesLeft, prob
         <p className="vh-name">Approval Desk</p>
         <p className="vh-what">
           A Claude refund agent for an invented shop. The AI suggests, plain code decides, a person signs off on the big ones.{" "}
-          <a href={GITHUB}>Code on GitHub</a>
+          <a href={GITHUB}>Code on GitHub</a> · <Link href="/dashboard">Dashboard</Link>
         </p>
       </header>
 

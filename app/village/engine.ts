@@ -86,7 +86,7 @@ export interface VisitorRequest {
 }
 
 /** The places a page can open its own window for. */
-export type VillagePlace = "inbox" | "desk";
+export type VillagePlace = "inbox" | "desk" | "shop";
 
 export interface VillageHandle {
   /** Stops the animation and the sound and removes every listener the engine added. */
@@ -790,7 +790,7 @@ const WIN={x:56,y:12,w:208,h:144};
 const BTN={A:{x:WIN.x+8,y:WIN.y+102,w:92,h:21},R:{x:WIN.x+108,y:WIN.y+102,w:92,h:21}};
 const fly=(x0,y0,x1,y1,u)=>[x0+(x1-x0)*u,y0+(y1-y0)*u-14*4*u*(1-u)];
 const HOT=[
- {id:'shop',x:106,y:38,w:92,h:82,m:['THE SHOP IS THE HUB.','THE DASHBOARD WILL OPEN FROM HERE LATER.']},
+ {id:'shop',x:106,y:38,w:92,h:82,m:['THE SHOP: EVERY ORDER, REFUND AND','SCORECARD. OPEN IT FOR THE DASHBOARD.']},
  {id:'h1',x:248,y:31,w:50,h:50,m:['FOR SALE! NOBODY LIVES HERE YET.','THE NEXT AGENT MOVES IN HERE SOMEDAY.']},
  {id:'h2',x:248,y:82,w:50,h:50,m:['FOR SALE! NOBODY LIVES HERE YET.','THE NEXT AGENT MOVES IN HERE SOMEDAY.']},
  {id:'inbox',x:28,y:44,w:62,h:42,m:['THE INBOX STAND.','NEW REFUND REQUESTS ARRIVE HERE.']},
@@ -1169,7 +1169,7 @@ export function mountVillage(els: VillageElements, options: VillageOptions = {})
   on(scr,'click',ev=>{const[x,y]=toLogical(ev);
     if(app.logOpen||app.rulesOpen){app.logOpen=false;app.rulesOpen=false;return}
     if(winOpenNow()){for(const k of['A','R'])if(inR(BTN[k],x,y)){decide(k);return}return}
-    const h=HOT.find(q=>inR(q,x,y));if(h&&(h.id==='inbox'||h.id==='desk')&&openPlace(h.id))return;
+    const h=HOT.find(q=>inR(q,x,y));if(h&&(h.id==='inbox'||h.id==='desk'||h.id==='shop')&&openPlace(h.id))return;
     if(h){if(h.id==='log'){app.logOpen=true;sfx('click')}else if(h.id==='gate'){app.rulesOpen=true;sfx('click')}else app.info={m:h.m,t0:performance.now(),until:performance.now()+9000}}});
   // live mode has one demo button: it plays the three made-up stories in a row, or stops them
   b1.onclick=()=>setScene(1);b2.onclick=()=>setScene(2);b3.onclick=()=>setScene(3);
