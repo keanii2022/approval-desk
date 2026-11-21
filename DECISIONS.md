@@ -348,3 +348,31 @@ Template:
 **Measured first:** four hole cases (HOLE-16 to 19) plus the two repeat misses (CASE-046, HARD2-014), on R1–R11. 3 wrong refunds got through (HOLE-18: one real order and one made-up order in the same email; the agent refunded the real one and ignored the other), and CASE-046 turned a customer away again.
 **Decided (owner):** R12. If the subject or message names an order number (O followed by four or more digits) that isn't one of the asking customer's orders, a person decides, whether the answer is a refund or a "no refund". R8 still blocks a refund on someone else's order outright. Retest on the same six cases: 0 got through.
 **Changed:** CASE-045 (a "no refund" on someone else's order) and HOLE-19 now go to a person. The policy gained P19, which changes the prompt's fingerprint, so EVALS.md has an entry for it. The village's rules window now lists all 12 rules, one line each.
+
+## Testing backlog, steps 22 to 32: a breaker agent, R13, R14 (2026-11-21)
+
+**How it ran:** a breaker agent ("Crash", `.claude/agents/crash.md`) wrote attack cases for each step and checked them against the real gate for free. The main thread ran every paid test under a new spending cap (`lib/spend.ts`, $22 across all runs, so the account stays above $50). Each step had a first test on R1 to R12, then the fixes, then one full retest on R1 to R14.
+
+**Step 22, Haiku on every set:** right 50 to 63% of the time, but only 1 of 678 answers got through. Its mistakes were mostly "unsure" where a rule applied, so a person decided. 26 cents for all five sets.
+
+**What broke (first test, Opus, R1 to R12):**
+- Disguised order numbers (23 cases): 12 of 69 answers paid the customer's own order while a stranger's order sat in the email as "order #1002", "O1002_lamp.jpg" and the like. The agent caught most of them itself by answering "unsure"; R12's scan caught 3 of 23.
+- Stacking (9 cases): 15 of 27 paid. Three $100 refunds on three orders, $300 in two days, or $1,500 a year in 91-day batches, with no person.
+- Two orders in one email (10 cases plus HARD-060): 7 of 30 paid, and HARD-060 3 of 3.
+- Tricks in the subject and name (15 cases): 6 of 45 paid, all through gaps in R12's scan (an underscore, a "ß" before the O).
+- Amounts (15 cases): 0 paid wrong, 44 of 45 right. Dates (6 cases): none paid wrong.
+- Two requests at once (step 29): nothing got through; the executor re-checks the gate inside its write lock.
+- Bad data (step 32): text stored in a number column could raise "what's left" above what was paid, and flags stored as 2 or "true" read as off. Unreadable dates (step 28) skipped R3, R4 and R10.
+
+**Changed:**
+- R13 (owner's go-ahead for new rules in this run): over $150 refunded to one customer in 90 days, counting this refund, goes to a person when there's an earlier refund. Policy line P20.
+- R14: an email naming two or more of the customer's own orders goes to a person, for a refund or a no-refund. Policy line P21.
+- R12's scan cleans the text first and reads disguised numbers. A bare "1002" and numbers in words are left to the agent.
+- Dates must be real YYYY-MM-DD; anything else, a request before its order, or an account opened after its request goes to a person. Refunds paid after a request arrived count toward R4 and R13.
+- The tables refuse text amounts, flags other than 0 or 1, and unreadable dates. The gate also guards against such a row: an unknown amount blocks (R1), any non-zero flag or transit status gets a look, a missing customer goes to a person.
+- The agent's request flattens subjects and names to one line and removes any customer_message tag.
+- Try-page customers join "today", so R10 treats them as new.
+- Scorecards now keep every answer's decision, so the dashboard shows how many requests reach a person, per rule (step 31).
+- `npm run drift` and a weekly GitHub Action (step 30), capped at $1 a run. It runs once the owner adds the ANTHROPIC_API_KEY repository secret.
+
+**Still open:** "my other order" and a second order named only by its item (TWO-04, 06, 08), a bare order number or one in words (DISG-19, 20). Plain code can't see these; the agent and the evals cover them. In a two-process race, the losing request is refused rather than queued for a person.
