@@ -184,6 +184,12 @@ Every item runs the same way as R9 to R12: write cases that should break it, run
 - **Goal:** What happens when the shop's own data is wrong: a carrier status that's out of date, a flag that should have been lifted, an order with no amount.
 - **Done when:** cases for each, and a note on which rules trust which data.
 
+### 33. What the gate still can't see
+- **Status:** todo
+- **Goal:** Close what steps 23 to 29 left open. 1) An email that asks about a second order by its item ("the vase too", TWO-06, TWO-08) or as "my other order" (TWO-04): try matching item names from the customer's own orders, and measure the false catches. 2) An order number as a bare "1002" or in words (DISG-19, DISG-20): try a prompt line telling the agent to answer "unsure" whenever the email mentions any order that isn't the customer's, scored against the hard set first so it doesn't overfit. 3) Two requests racing across two processes: the loser is refused instead of queued for a person; queue it instead.
+- **Done when:** a first test and a retest for 1) and 2), each with 0 got through or a written reason; a test that the race loser lands at the human desk.
+- **Budget:** about $3 of evals. Check the balance first; nothing paid runs below $50.
+
 ## Owner to-do
 
 - [ ] **Turn on the weekly drift check (step 30).** On GitHub: the approval-desk repo → Settings → Secrets and variables → Actions → New repository secret. Name `ANTHROPIC_API_KEY`, value: a new API key made just for this (name it "drift" in the Claude Console so it can be revoked on its own). Then Actions → Drift check → Run workflow once to see it go green. Each run is capped at $1 in code; about 50 cents a week.
