@@ -130,32 +130,32 @@ The owner chose to make the village the front door and go live before steps 12, 
 Every item runs the same way as R9 to R12: write cases that should break it, run them on the current rules (the first test), add a rule only if something got through, then run everything again (the retest). Each one gets a dated scorecard in `evals/` and a row in the README's results table.
 
 ### 22. Haiku on every set
-- **Status:** todo
+- **Status:** done
 - **Goal:** Run Claude Haiku 5.5 on every set (practice, hard, Gemini's 75, holes, edges) under R1–R12, and show it next to Opus. Haiku only ran once, on Nov 16 under R1–R8. This shows how much of a cheap model's mistakes the gate catches today. About 20 cents.
 - **Done when:** dated Haiku scorecards for every set; the README table has a Haiku column.
 
 ### 23. Disguised order numbers
-- **Status:** todo
+- **Status:** current
 - **Goal:** R12 spots order numbers as "O" plus digits. Try "order #1002", "O-1002", "0rder 01002" (zeros), lowercase, and look-alike letters (a Cyrillic О). If any slips past, make the matching stricter.
 - **Done when:** a hole case for each disguise; none gets through.
 
 ### 24. Refunds stacking across orders
-- **Status:** todo
+- **Status:** current
 - **Goal:** R4 allows 3 refunds in 90 days and R2 caps each at $100, so one customer can get $300 with no person involved. Measure it, then decide on a cap (for example, over $150 to one customer in 30 days goes to a person).
 - **Done when:** history cases that stack refunds across orders; a rule if they get through.
 
 ### 25. Two orders in one email
-- **Status:** todo
+- **Status:** current
 - **Goal:** HARD-060 still pays $27 on one of two orders in 2 of 3 runs. Try a rule: an email naming two or more of the customer's orders goes to a person.
 - **Done when:** HARD-060 and new two-order cases have 0 got through.
 
 ### 26. Tricks outside the message
-- **Status:** todo
+- **Status:** current
 - **Goal:** Every attack so far was in the email body. Try instructions in the subject line and in a "someone new" name.
 - **Done when:** cases for each field; none gets through.
 
 ### 27. Amount tricks
-- **Status:** todo
+- **Status:** current
 - **Goal:** "$1,500", "fifteen dollars", pounds and yen, amounts that don't divide evenly (one of three towels from $28).
 - **Done when:** cases for each; the right answers are agreed, and none pays a wrong amount.
 

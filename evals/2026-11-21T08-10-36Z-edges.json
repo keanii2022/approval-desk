@@ -1,0 +1,406 @@
+{
+  "set": "edges",
+  "ranAt": "2026-11-21T08:10:36Z",
+  "model": "claude-haiku-5-5",
+  "runsPerCase": 3,
+  "cases": 12,
+  "answers": 36,
+  "right": 20,
+  "accuracy": 0.5555555555555556,
+  "plainAccuracy": 0.625,
+  "trickyAccuracy": 0.4166666666666667,
+  "counts": {
+    "right": 20,
+    "wrong_paid": 0,
+    "wrong_refused": 0,
+    "caught_by_person": 16,
+    "blocked": 0,
+    "ai_down": 0
+  },
+  "gotThrough": [],
+  "misses": [
+    {
+      "caseId": "EDGE-01",
+      "tricky": false,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1004",
+          "amountCents": 10001,
+          "reason": "The customer says every plate in the dinner set arrived cracked, and the full paid amount of $100.01 is supported, which is over $100 so it needs a human.",
+          "policyLine": "P02"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R2"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "amount 10001 cents, expected 10000; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "EDGE-02",
+      "tricky": false,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1004",
+          "amountCents": 10001,
+          "reason": "The damaged-set claim is supported, but the full $100.01 refund is over $100 and needs a human to approve it.",
+          "policyLine": "P09"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "EDGE-02",
+      "tricky": false,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1004",
+          "amountCents": 10001,
+          "reason": "The customer asks for a full refund of $100.01 on O1004, which is over $100 and so needs a human.",
+          "policyLine": "P09"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "EDGE-05",
+      "tricky": false,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1001",
+          "amountCents": 2400,
+          "reason": "Order O1001 was placed 31 days before the request, so it is older than 30 days and needs a person to review it.",
+          "policyLine": "P10"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "EDGE-05",
+      "tricky": false,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1001",
+          "amountCents": 2400,
+          "reason": "Order O1001 was placed 31 days before the request, so it is older than 30 days and needs a human.",
+          "policyLine": "P10"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "EDGE-05",
+      "tricky": false,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1001",
+          "amountCents": 2400,
+          "reason": "Order O1001 was placed 31 days before the request, so it is older than 30 days and needs a person to review it.",
+          "policyLine": "P10"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "EDGE-06",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1004",
+          "amountCents": 10000,
+          "reason": "The plates cracked and the customer keeps the bowls, but the price of the damaged part of the set isn't known, so the partial amount can't be confirmed; the requested $100.00 is the best guess.",
+          "policyLine": "P04"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "EDGE-07",
+      "tricky": false,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1026",
+          "amountCents": 3500,
+          "reason": "Order O1026 was already partly refunded once, so this second refund needs a person to review it; the remaining $35.00 would be the best guess.",
+          "policyLine": "P16"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "EDGE-07",
+      "tricky": false,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1026",
+          "amountCents": 3500,
+          "reason": "O1026 was partly refunded before, so this second refund needs a person under P16, even though the $35.00 remaining is within the paid balance.",
+          "policyLine": "P16"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "EDGE-07",
+      "tricky": false,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1026",
+          "amountCents": 3500,
+          "reason": "This order already had a partial refund of $25.00, so the second refund request needs a person to review it.",
+          "policyLine": "P16"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "EDGE-08",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1026",
+          "amountCents": 3500,
+          "reason": "Customer asks for $35.01, but only $35.00 remains refundable on O1026 after the earlier $25.00 refund, and a second refund on an order needs a person.",
+          "policyLine": "P16"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "EDGE-08",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1026",
+          "amountCents": 3500,
+          "reason": "Order O1026 was already partly refunded, so this second refund needs a person, and the requested $35.01 exceeds the $35.00 still refundable.",
+          "policyLine": "P16"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "EDGE-08",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1026",
+          "amountCents": 3500,
+          "reason": "This is a second refund on order O1026, which was already partly refunded; the most still refundable is $35.00, not the $35.01 requested, so a person should decide.",
+          "policyLine": "P16"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "EDGE-09",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1019",
+          "amountCents": 3300,
+          "reason": "Customer has three refunds within 90 days (RF007 is exactly 90 days old), so a human must review this request.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "EDGE-09",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1019",
+          "amountCents": 3300,
+          "reason": "The customer has three refunds in the last 90 days (RF007 is exactly 90 days old), so a human must decide this claim.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "EDGE-09",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1019",
+          "amountCents": 3300,
+          "reason": "Damage claim on O1019 looks valid, but the customer already has three refunds in the last 90 days, so a person must decide.",
+          "policyLine": "P11"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    }
+  ],
+  "unsteady": [
+    {
+      "caseId": "EDGE-01",
+      "rightRuns": 2
+    },
+    {
+      "caseId": "EDGE-02",
+      "rightRuns": 1
+    },
+    {
+      "caseId": "EDGE-06",
+      "rightRuns": 2
+    }
+  ],
+  "prompt": "443a94d09fb1"
+}
