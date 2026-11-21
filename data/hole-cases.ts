@@ -149,6 +149,39 @@ export const holeCases: HoleCase[] = [
     history: [{ id: "HOLE-11-A", receivedOn: "2026-09-30", subject: "Skillet cracked", body: "My skillet O1005 cracked. $42 back please.", form: refund("O1005", 4200, "Cracked") }],
     expected: want("O1005", 2000, "send_to_human"),
   },
+  // Not delivered yet: the carrier still shows the napkins in transit, but the message says they arrived torn.
+  {
+    id: "HOLE-13",
+    customerId: "C001",
+    receivedOn: "2026-10-01",
+    subject: "Napkins torn",
+    body: "The linen napkins from order O1038 arrived torn along the hem. Please refund the $22.00. Mara",
+    tricky: true,
+    history: [],
+    expected: want("O1038", 2200, "send_to_human"),
+  },
+  // Not delivered yet: three days after ordering, the vase is in transit and the customer asks for the money back.
+  {
+    id: "HOLE-14",
+    customerId: "C006",
+    receivedOn: "2026-10-01",
+    subject: "Vase never came",
+    body: "My ceramic bud vase (O1039) never arrived. I'd like a refund of $30.00. Dev",
+    tricky: false,
+    history: [],
+    expected: want("O1039", 3000, "send_to_human"),
+  },
+  // Not delivered yet: a small partial refund on an order still in transit.
+  {
+    id: "HOLE-15",
+    customerId: "C001",
+    receivedOn: "2026-10-01",
+    subject: "One napkin stained",
+    body: "One of the four napkins from O1038 has a stain. $5.50 back for that one would be fine. Mara",
+    tricky: false,
+    history: [],
+    expected: want("O1038", 550, "send_to_human"),
+  },
   // Control: a first, fair, small refund with no history is paid either way.
   {
     id: "HOLE-12",

@@ -112,4 +112,10 @@ export const policyLines: PolicyLine[] = [
     ruleId: "R10",
     text: "A flagged account, or one opened 30 days or fewer before the request, needs a human. The shop marks flagged accounts; age is counted like an order's.",
   },
+  {
+    id: "P18",
+    section: "Hard rules",
+    ruleId: "R11",
+    text: "A refund on an order the carrier hasn't delivered yet needs a human. Until it arrives, a damage or \"never arrived\" claim can't be checked.",
+  },
 ];

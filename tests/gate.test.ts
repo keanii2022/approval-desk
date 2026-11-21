@@ -137,6 +137,16 @@ describe("R10: a flagged or new account needs a person", () => {
   });
 });
 
+describe("R11: an order that hasn't been delivered yet needs a person", () => {
+  it("R11: a fair $22 refund on napkins still in transit goes to a person (REQ-001, Mara, O1038)", () => {
+    expect(check("REQ-001", refund("O1038", 2200))).toEqual(toHuman("R11"));
+  });
+
+  it("R11: the same customer's delivered order is still paid as before (REQ-001, O1001)", () => {
+    expect(check("REQ-001", refund("O1001", 2400))).toEqual(allowed);
+  });
+});
+
 describe("R2: a refund over $100 needs a human", () => {
   it("R2: $150.00 goes to a human (REQ-002)", () => {
     expect(check("REQ-002", refund("O1002", 15000))).toEqual(toHuman("R2"));
@@ -313,6 +323,7 @@ describe("1,000 bad proposals", () => {
     const days = daysBetween(c.joinedOn ?? "2025-01-01", p.request.receivedOn);
     return c.flagged === true || (days >= 0 && days <= 30);
   });
+  const undelivered = pairs.filter((p) => orders.find((o) => o.id === p.orderId)!.inTransit === true);
 
   // Values that are wrong for each field of a refund form.
   const junk: Record<string, unknown[]> = {
@@ -378,6 +389,10 @@ describe("1,000 bad proposals", () => {
       const { request, orderId } = pick(lookAtAccount);
       return { requestId: request.id, output: refund(orderId, fairAmount(orderId)) };
     },
+    R11: () => {
+      const { request, orderId } = pick(undelivered);
+      return { requestId: request.id, output: refund(orderId, fairAmount(orderId)) };
+    },
   };
 
   const rules = Object.keys(makers) as RuleId[];
@@ -386,7 +401,7 @@ describe("1,000 bad proposals", () => {
     return { breaks, ...makers[breaks]() };
   });
 
-  it("R1 to R6 and R8 to R10: none is allowed", () => {
+  it("R1 to R6 and R8 to R11: none is allowed", () => {
     expect(proposals).toHaveLength(1000);
 
     for (const p of proposals) {

@@ -311,3 +311,9 @@ Template:
 **Changed:** tries are also limited per network address: 10 an hour by default (`TRY_NETWORK_HOURLY_LIMIT`), so clearing cookies can't use up the day. The address is kept only as a short one-way hash.
 **Fixed (from a code review):** a reason for a changed amount is capped at 1,000 characters like a reject note, and the village is told the amount the executor actually paid. The village's label for R8 said "logbook failed"; it now says "not their order".
 **Known:** there's no API spend cap on the account. The backstop is the prepaid credit with auto-reload off, plus the daily, hourly and network limits. Orders still have no delivery status, so a refund on an order in transit can't be caught.
+
+## R11: orders not delivered yet (2026-11-20)
+
+**Measured first:** orders gained a carrier status (`in_transit`), plus two orders still in transit (O1038, O1039) and three hole cases for them (HOLE-13 to 15). On R1–R10 the real agent proposed a refund every time and the gate paid all 9 answers (0.0%).
+**Decided (owner, "go on what's left"):** R11 sends a refund on an order the carrier hasn't delivered yet to a person. "Not delivered" is the order's status in the shop data, not the customer's word. A delivered order the customer says never came is still the agent's call under the policy, so the existing practice cases that say "never arrived" keep their answers. Retest: 100%, 0 got through. None of the 120 practice and hard cases uses an order in transit, so they weren't rerun.
+**Changed:** the village's rules window now fits all 11 rules on one or two lines each.

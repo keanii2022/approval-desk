@@ -2,9 +2,9 @@ import type { DatabaseSync } from "node:sqlite";
 
 // The gate: plain code, no AI. It checks the agent's answer to one Inbox request
 // against the hard rules in docs/RULES.md and returns one result, naming the
-// rules behind it. It checks R1 to R6 and R8 to R10; R7 belongs to the logbook and executor.
+// rules behind it. It checks R1 to R6 and R8 to R11; R7 belongs to the logbook and executor.
 
-export type RuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R8" | "R9" | "R10";
+export type RuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R8" | "R9" | "R10" | "R11";
 
 export type GateDecision = {
   result: "allow" | "send_to_human" | "block";
@@ -33,7 +33,7 @@ const R4_WINDOW_DAYS = 90; // made 90 days or fewer before the request (Q3)
 const R10_NEW_ACCOUNT_DAYS = 30; // joined 30 days or fewer before the request (Q8)
 
 type Request = { customer_id: string; received_on: string };
-type Order = { customer_id: string; placed_on: string; amount_paid_cents: number };
+type Order = { customer_id: string; placed_on: string; amount_paid_cents: number; in_transit: number };
 
 // When several rules apply, the strictest result wins (block, then send to
 // human, then allow), and every rule behind that result is named (Q4).
@@ -58,7 +58,7 @@ export function checkProposal(db: DatabaseSync, requestId: string, output: Agent
 
   // R5: a refund on an order that doesn't exist can't be checked or carried out.
   const order = db
-    .prepare("SELECT customer_id, placed_on, amount_paid_cents FROM orders WHERE id = ?")
+    .prepare("SELECT customer_id, placed_on, amount_paid_cents, in_transit FROM orders WHERE id = ?")
     .get(form.orderId) as Order | undefined;
   if (!order) return { result: "block", rules: ["R5"] };
 
@@ -74,6 +74,8 @@ export function checkProposal(db: DatabaseSync, requestId: string, output: Agent
   // R9 (Q7): a second refund on one order, so splitting a big refund into small ones or sending the same claim twice reaches a person.
   if (alreadyRefunded > 0 || waitingOnOrder(db, form.orderId)) needsHuman.push("R9");
   if (accountNeedsALook(db, request)) needsHuman.push("R10");
+  // R11 (Q9): the carrier hasn't delivered the order yet, so a damage or "never arrived" claim can't be checked.
+  if (order.in_transit === 1) needsHuman.push("R11");
 
   if (blocking.length > 0) return { result: "block", rules: blocking };
   if (needsHuman.length > 0) return { result: "send_to_human", rules: needsHuman };

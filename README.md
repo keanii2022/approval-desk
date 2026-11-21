@@ -1,6 +1,6 @@
 # Approval Desk
 
-A refund agent where the AI can only suggest. Plain code enforces 10 hard limits, a person decides the risky ones, and across 396 graded answers from Claude Opus no wrong refund was paid.
+A refund agent where the AI can only suggest. Plain code enforces 11 hard limits, a person decides the risky ones, and across 405 graded answers from Claude Opus no wrong refund was paid.
 
 All shop data, customers and messages are invented.
 
@@ -22,20 +22,21 @@ A person then approves (and can lower the amount) or rejects with a note. Nobody
 
 Each case is run 3 times on Claude Opus 5.5. "Got through" means a wrong answer the code checks still let happen.
 
-| Test set | First test (rules R1–R8) | Retest (R9 and R10 added) |
-|---|---|---|
-| 12 hole cases: follow-ups, repeats, flagged and new accounts | 8.3%, **21 wrong refunds paid** | **75.0%, 0 got through** |
-| 60 practice cases | 98.3%, 0 got through | 97.8%, 1 customer turned away, no money out |
-| 60 hard cases, written by a different AI to break it | 95.0%, 0 got through | 95.6%, 0 got through |
+| Test set | First test | Rules added | Retest |
+|---|---|---|---|
+| 12 hole cases: follow-ups, repeats, flagged and new accounts | 8.3%, **21 wrong refunds paid** | R9, R10 | **75.0%, 0 got through** |
+| 3 hole cases: orders not delivered yet | 0.0%, **9 wrong refunds paid** | R11 | **100%, 0 got through** |
+| 60 practice cases | 98.3%, 0 got through | R9, R10 | 97.8%, 1 customer turned away, no money out |
+| 60 hard cases, written by a different AI to break it | 95.0%, 0 got through | R9, R10 | 95.6%, 0 got through |
 
-The practice and hard cases score one request at a time, so they can't see a refund asked for in pieces. The hole cases replay what already happened to an order or account, like half a refund paid or a claim still waiting, before the agent answers. On the old rules, splits and refunds for flagged or brand-new accounts went through with no person involved. R9 and R10 now send them to a person. What the hole cases still miss is the agent answering "unsure" on repeat claims, and a person reviews those first.
+The practice and hard cases score one request at a time, so they can't see a refund asked for in pieces. The hole cases replay what already happened to an order or account, like half a refund paid or a claim still waiting, before the agent answers. On the old rules, splits, refunds for flagged or brand-new accounts, and refunds on orders still in transit went through with no person involved. R9 to R11 now send them to a person. None of the 120 practice and hard cases has an order in transit, so R11 didn't change their answers. What the hole cases still miss is the agent answering "unsure" on repeat claims, and a person reviews those first.
 
 **Why a gate and not just the AI:** on the practice set the cheaper model, Haiku, got 43 answers wrong (Nov 16, R1–R8). The gate caught 39 of them and sent them to a person.
 
 **Cost:** about 1 cent per request on Claude Opus 5.5. Every call's tokens, time and cost are written down, and `npm run trace` adds them up.
 
-- The code checks let through **0 of 1,000** random bad proposals, across all 10 rules.
-- 304 automated tests and 24 browser tests pass. None of them call the AI.
+- The code checks let through **0 of 1,000** random bad proposals, across all 11 rules.
+- 307 automated tests and 24 browser tests pass. None of them call the AI.
 - Every scorecard is dated and saved in [evals/](evals/).
 
 ## How it works

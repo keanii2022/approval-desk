@@ -5,12 +5,14 @@
 /** joinedOn defaults to 2025-01-01 (a long-standing customer); flagged defaults to false (R10). */
 export type Customer = { id: string; name: string; email: string; joinedOn?: string; flagged?: boolean };
 
+/** inTransit: the carrier hasn't delivered it yet (R11). Defaults to false: delivered. */
 export type Order = {
   id: string;
   customerId: string;
   placedOn: string;
   item: string;
   amountPaidCents: number;
+  inTransit?: boolean;
 };
 
 export type Refund = {
@@ -94,6 +96,8 @@ export const orders: Order[] = [
   { id: "O1035", customerId: "C022", placedOn: "2026-09-20", item: "Linen apron", amountPaidCents: 2600 },
   { id: "O1036", customerId: "C023", placedOn: "2026-09-20", item: "Wool throw pillow", amountPaidCents: 4500 },
   { id: "O1037", customerId: "C024", placedOn: "2026-09-29", item: "Ceramic serving bowl", amountPaidCents: 3200 },
+  { id: "O1038", customerId: "C001", placedOn: "2026-09-29", item: "Linen napkins (4)", amountPaidCents: 2200, inTransit: true }, // R11
+  { id: "O1039", customerId: "C006", placedOn: "2026-09-28", item: "Ceramic bud vase", amountPaidCents: 3000, inTransit: true }, // R11
 ];
 
 export const refunds: Refund[] = [

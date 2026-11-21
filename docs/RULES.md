@@ -16,6 +16,7 @@ can name it in its result and tests can point to it
 | R8 | A refund must be on an order that belongs to the customer who asked. | Block | Agent proposals **and** the human approver | Gate, approval screen, executor |
 | R9 | A second refund on one order needs a human: the order was refunded before, or another request on it is waiting for a person. | Send to human | Agent proposals | Gate |
 | R10 | A flagged account, or one opened 30 days or fewer before the request, needs a human. | Send to human | Agent proposals | Gate |
+| R11 | A refund on an order the carrier hasn't delivered yet needs a human. | Send to human | Agent proposals | Gate |
 
 ## Where each rule is tested
 
@@ -31,6 +32,7 @@ can name it in its result and tests can point to it
 | R8 | 3 (gate), 4 (executor), 7 (approval screen) |
 | R9 | Added 2026-11-19 (gate tests, `npm run probe`) |
 | R10 | Added 2026-11-19 (gate tests, `npm run probe`) |
+| R11 | Added 2026-11-20 (gate tests, hole cases HOLE-13 to 15) |
 
 ## Open questions (settled in steps 2 and 3, and after step 5)
 
@@ -46,3 +48,4 @@ Record each answer here and in `DECISIONS.md`.
 | Q6 | Does a refund on someone else's order block or go to a human? | R8 | After step 5 | Block. It is stricter than sending it to a person, and the person can't override it: the order a person picks must also be the asking customer's own (R8 applies to the approval screen and the executor too). An "unsure" form isn't checked, because nothing on it is carried out. |
 | Q7 | Why R9? | R9 | 2026-11-19 | R2 looks at one request at a time, so a $150 refund asked for as two $75 requests was paid with no person involved, and the same claim sent twice was paid twice. A probe (`npm run probe`) showed both. Now any refund on an order that was refunded before, or that already has a request waiting for a person, goes to a person. R1 still blocks anything over what's left. |
 | Q8 | What counts as a flagged or new account? | R10 | 2026-11-19 | Flagged is a mark on the customer in the shop data. New means the account was opened 30 days or fewer before the request arrived, counted like R3. A long-standing customer with no mark passes. Customers made by "Someone new" on the try page have no orders, so R8 already blocks their refunds. |
+| Q9 | Why R11, and what counts as not delivered? | R11 | 2026-11-20 | Three hole cases asked for refunds on orders the carrier still shows in transit. On R1–R10 the agent proposed a refund every time and the gate paid all 9 answers. "Not delivered" is the carrier's status on the order in the shop data, not what the customer says; an order marked delivered that the customer says never came is still the agent's call under the policy. |

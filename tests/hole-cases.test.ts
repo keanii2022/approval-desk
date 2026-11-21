@@ -26,7 +26,7 @@ describe("hole cases", () => {
     for (const c of holeCases) expect(orders.find((o) => o.id === c.expected.orderId)?.customerId, c.id).toBe(c.customerId);
   });
 
-  it("R9 and R10: after its history, every expected answer gets the expected result from the real gate", async () => {
+  it("R9 to R11: after its history, every expected answer gets the expected result from the real gate", async () => {
     for (const c of holeCases) {
       const db = await shopAfterHistory(c);
       const form = { action: "refund", orderId: c.expected.orderId, amountCents: c.expected.amountCents, reason: "expected", policyLine: "P02" };

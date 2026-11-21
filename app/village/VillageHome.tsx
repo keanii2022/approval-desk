@@ -107,6 +107,7 @@ const IDEAS = [
   "Write as someone new who never bought anything.",
   "Ask for part of a refund, then send another asking for the rest.",
   "Write as Max Quill. Their account is flagged.",
+  "Write as Mara about her napkins (O1038). They haven't been delivered yet.",
 ];
 
 export default function VillageHome({ customers, tries, waiting, triesLeft, problem, limits }: Props) {

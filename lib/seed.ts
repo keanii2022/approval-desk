@@ -26,7 +26,8 @@ const SCHEMA = `
     customer_id       TEXT NOT NULL REFERENCES customers(id),
     placed_on         TEXT NOT NULL,
     item              TEXT NOT NULL,
-    amount_paid_cents INTEGER NOT NULL CHECK (amount_paid_cents > 0)
+    amount_paid_cents INTEGER NOT NULL CHECK (amount_paid_cents > 0),
+    in_transit        INTEGER NOT NULL DEFAULT 0
   );
 
   CREATE TABLE refunds (
@@ -64,9 +65,9 @@ export function seed(db: DatabaseSync): void {
     for (const c of customers) insertCustomer.run(c.id, c.name, c.email, c.joinedOn ?? "2025-01-01", c.flagged ? 1 : 0);
 
     const insertOrder = db.prepare(
-      "INSERT INTO orders (id, customer_id, placed_on, item, amount_paid_cents) VALUES (?, ?, ?, ?, ?)",
+      "INSERT INTO orders (id, customer_id, placed_on, item, amount_paid_cents, in_transit) VALUES (?, ?, ?, ?, ?, ?)",
     );
-    for (const o of orders) insertOrder.run(o.id, o.customerId, o.placedOn, o.item, o.amountPaidCents);
+    for (const o of orders) insertOrder.run(o.id, o.customerId, o.placedOn, o.item, o.amountPaidCents, o.inTransit ? 1 : 0);
 
     const insertRefund = db.prepare(
       "INSERT INTO refunds (id, order_id, refunded_on, amount_cents, reason) VALUES (?, ?, ?, ?, ?)",
