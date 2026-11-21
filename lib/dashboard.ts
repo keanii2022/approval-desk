@@ -11,7 +11,20 @@ export type CustomerRow = { id: string; name: string; orders: number; paidCents:
 export type OrderRow = { id: string; customer: string; item: string; placedOn: string; paidCents: number; refundedCents: number; inTransit: boolean };
 export type InboxRow = { id: string; customer: string; receivedOn: string; subject: string; status: string };
 export type LogLine = { id: number; loggedAt: string; requestId: string; what: string };
-export type ScorecardRow = { file: string; set: string; ranAt: string; model: string; accuracy: number; answers: number; gotThrough: number; prompt: string | null };
+export type DeskDecision = { verdict: string; result: string; rules: string[] };
+export type ScorecardRow = {
+  file: string;
+  set: string;
+  ranAt: string;
+  model: string;
+  accuracy: number;
+  answers: number;
+  gotThrough: number;
+  prompt: string | null;
+  decisions: DeskDecision[] | null; // every answer's gate result; null on scorecards from before Nov 21
+};
+export type DeskSet = { set: string; ranAt: string; answers: number; toPerson: number; perRule: Record<string, number> };
+export type DeskLoad = { sets: DeskSet[]; rules: string[]; atDesk: number; rightAtDesk: number; wrongAtDesk: number };
 
 const hasTable = (db: DatabaseSync, name: string) =>
   Boolean(db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(name));
@@ -133,7 +146,42 @@ export function scorecards(folder = join(process.cwd(), "evals")): ScorecardRow[
         answers: Number(c.answers),
         gotThrough: Array.isArray(c.gotThrough) ? c.gotThrough.length : 0,
         prompt: typeof c.prompt === "string" ? c.prompt : null,
+        decisions: Array.isArray(c.decisions) ? (c.decisions as DeskDecision[]) : null,
       };
     })
     .sort((a, b) => b.ranAt.localeCompare(a.ranAt));
+}
+
+// How many answers land at the human desk, per set and per rule, from the newest full
+// scorecard of each set on the given prompt. An answer sent for two rules counts for both.
+// At the desk, a "right" answer was correct and only needed a look; any other verdict is a
+// wrong form that a reviewer who approves everything would let through.
+export function deskLoad(cards: ScorecardRow[], prompt: string): DeskLoad {
+  const newest = new Map<string, ScorecardRow>();
+  for (const c of cards) {
+    if (c.prompt !== prompt || !c.decisions || c.set.endsWith("(some cases)")) continue;
+    const seen = newest.get(c.set);
+    if (!seen || c.ranAt > seen.ranAt) newest.set(c.set, c);
+  }
+  const rules = new Set<string>();
+  let rightAtDesk = 0;
+  let wrongAtDesk = 0;
+  const sets = [...newest.values()].map((c) => {
+    const decisions = c.decisions ?? [];
+    const perRule: Record<string, number> = {};
+    let toPerson = 0;
+    for (const d of decisions) {
+      if (d.result !== "send_to_human") continue;
+      toPerson++;
+      if (d.verdict === "right") rightAtDesk++;
+      else wrongAtDesk++;
+      for (const r of d.rules) {
+        perRule[r] = (perRule[r] ?? 0) + 1;
+        rules.add(r);
+      }
+    }
+    return { set: c.set, ranAt: c.ranAt, answers: decisions.length, toPerson, perRule };
+  });
+  const byNumber = (a: string, b: string) => Number(a.slice(1)) - Number(b.slice(1));
+  return { sets, rules: [...rules].sort(byNumber), atDesk: rightAtDesk + wrongAtDesk, rightAtDesk, wrongAtDesk };
 }
