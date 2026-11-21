@@ -87,13 +87,21 @@ export function scoreAnswer(c: PracticeCase, output: AgentOutput, decision: Gate
 }
 
 type Earlier = { id: string; receivedOn: string; subject: string; body: string; form: Record<string, unknown> };
-type CaseWithHistory = PracticeCase & { history?: Earlier[] };
+type ExtraOrder = { id: string; customerId: string; placedOn: string; item: string; amountPaidCents: number };
+type ExtraRefund = { id: string; orderId: string; refundedOn: string; amountCents: number; reason: string };
+// extraOrders and earlierRefunds: invented rows a case adds to the shop before its history
+// runs (data/stack-cases.ts needs customers with more orders than the seed has).
+type CaseWithHistory = PracticeCase & { history?: Earlier[]; extraOrders?: ExtraOrder[]; earlierRefunds?: ExtraRefund[] };
 
 const HISTORY_NOW = "2026-10-01T09:00:00Z";
 
 // A shop for one run of one case: its earlier requests have already happened.
 async function shopWithHistory(c: CaseWithHistory): Promise<DatabaseSync> {
   const db = practiceDb([c]);
+  const order = db.prepare("INSERT INTO orders (id, customer_id, placed_on, item, amount_paid_cents, in_transit) VALUES (?, ?, ?, ?, ?, 0)");
+  for (const o of c.extraOrders ?? []) order.run(o.id, o.customerId, o.placedOn, o.item, o.amountPaidCents);
+  const refund = db.prepare("INSERT INTO refunds (id, order_id, refunded_on, amount_cents, reason) VALUES (?, ?, ?, ?, ?)");
+  for (const r of c.earlierRefunds ?? []) refund.run(r.id, r.orderId, r.refundedOn, r.amountCents, r.reason);
   const insert = db.prepare("INSERT INTO inbox (id, customer_id, received_on, subject, body) VALUES (?, ?, ?, ?, ?)");
   for (const h of c.history ?? []) {
     insert.run(h.id, c.customerId, h.receivedOn, h.subject, h.body);
@@ -127,7 +135,7 @@ export async function runEvals(askModel: AskModel, options: EvalOptions): Promis
   const worker = async () => {
     while (next < jobs.length) {
       const { c, run } = jobs[next++];
-      const own = (c as CaseWithHistory).history ? await shopWithHistory(c as CaseWithHistory) : null;
+      const own = (c as CaseWithHistory).history || (c as CaseWithHistory).extraOrders ? await shopWithHistory(c as CaseWithHistory) : null;
       const shop = own ?? db;
       // A case without a written gate result (data/hard2-cases.ts) gets it from the real gate,
       // checking its right answer in the same shop the agent sees.

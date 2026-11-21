@@ -7,6 +7,9 @@
 //        npm run evals -- --set holes           (follow-up requests, repeats, flagged and new accounts)
 //        npm run evals -- --set hard2           (60 more written by Gemini after R9 to R11)
 //        npm run evals -- --set edges           (every rule's exact boundary, one case each side)
+//        npm run evals -- --set disguise        (order numbers in disguise, step 23)
+//        npm run evals -- --set stack           (refunds stacking across orders, step 24)
+//        npm run evals -- --set two             (two orders in one email, step 25)
 //        npm run evals -- --runs 1 CASE-001     (just the ones you name)
 import { mkdirSync, writeFileSync } from "node:fs";
 import { type PracticeCase, practiceCases } from "../data/cases.ts";
@@ -14,12 +17,15 @@ import { hardCases } from "../data/hard-cases.ts";
 import { hard2Cases } from "../data/hard2-cases.ts";
 import { edgeCases } from "../data/edge-cases.ts";
 import { holeCases } from "../data/hole-cases.ts";
+import { disguiseCases } from "../data/disguise-cases.ts";
+import { stackCases } from "../data/stack-cases.ts";
+import { twoOrderCases } from "../data/two-order-cases.ts";
 import { agentModel, askClaude } from "../lib/claude.ts";
 import { runEvals, scorecardMarkdown } from "../lib/evals.ts";
 import { promptVersion } from "../lib/prompt.ts";
 import { capSpend, projectedUsd, readLedger } from "../lib/spend.ts";
 
-const SETS = { practice: practiceCases, hard: hardCases, hard2: hard2Cases as PracticeCase[], holes: holeCases, edges: edgeCases };
+const SETS = { practice: practiceCases, hard: hardCases, hard2: hard2Cases as PracticeCase[], holes: holeCases, edges: edgeCases, disguise: disguiseCases, stack: stackCases, two: twoOrderCases };
 
 const args = process.argv.slice(2);
 const option = (name: string) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
@@ -27,7 +33,7 @@ const runs = Number(option("--runs") ?? 3);
 const set = (option("--set") ?? "practice") as keyof typeof SETS;
 const all = SETS[set];
 if (!all) throw new Error(`No set called ${set}. Sets: ${Object.keys(SETS).join(", ")}`);
-const named = args.filter((a) => /^(CASE|HARD2?|HOLE|EDGE)-\d+$/.test(a));
+const named = args.filter((a) => /^(CASE|HARD2?|HOLE|EDGE|DISG|STACK|TWO)-(C?\d+)$/.test(a));
 const cases = named.length > 0 ? all.filter((c) => named.includes(c.id)) : all;
 if (!Number.isInteger(runs) || runs < 1 || cases.length === 0) throw new Error("Nothing to run: check --runs and the case IDs");
 
