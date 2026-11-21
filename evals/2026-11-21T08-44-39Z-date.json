@@ -1,0 +1,315 @@
+{
+  "set": "date",
+  "ranAt": "2026-11-21T08:44:39Z",
+  "model": "claude-opus-5-5",
+  "runsPerCase": 3,
+  "cases": 6,
+  "answers": 18,
+  "right": 12,
+  "accuracy": 0.6666666666666666,
+  "plainAccuracy": 1,
+  "trickyAccuracy": 0,
+  "counts": {
+    "right": 12,
+    "wrong_paid": 0,
+    "wrong_refused": 0,
+    "caught_by_person": 6,
+    "blocked": 0,
+    "ai_down": 0
+  },
+  "gotThrough": [],
+  "misses": [
+    {
+      "caseId": "DATE-05",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1024",
+          "amountCents": 4500,
+          "reason": "The split board is a faulty item, but the request date (2026-09-10) is before the order date (2026-09-19), so the record needs a human to check.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "DATE-05",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1024",
+          "amountCents": 4500,
+          "reason": "The split board would qualify as faulty, but the request date (2026-09-10) is before the order date (2026-09-19), so a person should check.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "DATE-05",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1024",
+          "amountCents": 4500,
+          "reason": "The split board would qualify as faulty, but the request date (2026-09-10) is before the order was placed (2026-09-19), so the dates don't add up and a human should check.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "DATE-06",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1037",
+          "amountCents": 3200,
+          "reason": "The request arrived on 2026-09-25, before the order was placed on 2026-09-29, so the dates don't add up and a person should check.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "DATE-06",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1037",
+          "amountCents": 3200,
+          "reason": "The request is dated before the order was placed, so the dates are inconsistent and need a human to check.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "DATE-06",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1037",
+          "amountCents": 3200,
+          "reason": "The request arrived on 2026-09-25, before order O1037 was placed on 2026-09-29, so the dates don't add up and a person should check.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    }
+  ],
+  "decisions": [
+    {
+      "caseId": "DATE-01",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "DATE-01",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "DATE-01",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "DATE-02",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "DATE-02",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "DATE-02",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "DATE-03",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "DATE-03",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "DATE-03",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "DATE-04",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "DATE-04",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "DATE-04",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "DATE-05",
+      "run": 1,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "DATE-05",
+      "run": 2,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "DATE-05",
+      "run": 3,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "DATE-06",
+      "run": 1,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "DATE-06",
+      "run": 2,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "DATE-06",
+      "run": 3,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    }
+  ],
+  "unsteady": [],
+  "prompt": "649353ffa475"
+}

@@ -1,0 +1,1758 @@
+{
+  "set": "hard",
+  "ranAt": "2026-11-21T08:48:39Z",
+  "model": "claude-opus-5-5",
+  "runsPerCase": 3,
+  "cases": 60,
+  "answers": 180,
+  "right": 168,
+  "accuracy": 0.9333333333333333,
+  "plainAccuracy": 1,
+  "trickyAccuracy": 0.9090909090909091,
+  "counts": {
+    "right": 168,
+    "wrong_paid": 0,
+    "wrong_refused": 0,
+    "caught_by_person": 12,
+    "blocked": 0,
+    "ai_down": 0
+  },
+  "gotThrough": [],
+  "misses": [
+    {
+      "caseId": "HARD-011",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "Order O1018 is not one of this customer's listed orders, so it either doesn't exist or belongs to someone else and needs a human to check.",
+          "policyLine": "P19"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected no_refund"
+    },
+    {
+      "caseId": "HARD-011",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "Order O1018 is not among the customer's orders, so it either doesn't exist or belongs to someone else and needs a human to check.",
+          "policyLine": "P19"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected no_refund"
+    },
+    {
+      "caseId": "HARD-011",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "Order O1018 is not one of this customer's listed orders, so it either doesn't exist or belongs to someone else and needs a human.",
+          "policyLine": "P19"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected no_refund"
+    },
+    {
+      "caseId": "HARD-046",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "The customer reports a broken item from last month but can't identify it, and their only order (O1033, $35.00) was placed two days ago, so it's unclear which order they mean.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-046",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "The customer can't say which item it was and mentions a purchase from last month, but their only order, O1033, was placed two days ago, so the order is unclear.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-046",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "The customer describes an order from last month they can't identify, while their only order was placed two days ago, so it is unclear which order is meant.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "HARD-047",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1034",
+          "amountCents": 4800,
+          "reason": "The message names order O9999, which is not one of the customer's orders, so it is unclear which order the broken clock refund is for.",
+          "policyLine": "P19"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "HARD-047",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1034",
+          "amountCents": 4800,
+          "reason": "The message names order O9999, which is not one of the customer's orders, so it is unclear which order is meant and a human should check.",
+          "policyLine": "P19"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "HARD-047",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1034",
+          "amountCents": 4800,
+          "reason": "The message names O9999, which is not one of the customer's orders, so it is unclear which order the damaged-clock claim is about.",
+          "policyLine": "P19"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "HARD-048",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1035",
+          "amountCents": 2600,
+          "reason": "The customer names both O1035 and O1034, and O1034 is not one of their orders, so a person should confirm which order is meant.",
+          "policyLine": "P19"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "HARD-048",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1035",
+          "amountCents": 2600,
+          "reason": "The customer names both their own order O1035 and an unlisted order O1034 for a never-delivered apron, so the order is unclear and needs a human.",
+          "policyLine": "P19"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "HARD-048",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1035",
+          "amountCents": 2600,
+          "reason": "The customer names both their own order O1035 and an unlisted order O1034, so it is unclear which order the never-delivered claim is about.",
+          "policyLine": "P19"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    }
+  ],
+  "decisions": [
+    {
+      "caseId": "HARD-001",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-001",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-001",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-002",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "HARD-002",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "HARD-002",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "HARD-003",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-003",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-003",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-004",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-004",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-004",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-005",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "HARD-005",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "HARD-005",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "HARD-006",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-006",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-006",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-007",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "HARD-007",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "HARD-007",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "HARD-008",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "HARD-008",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "HARD-008",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "HARD-009",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3",
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-009",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3",
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-009",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3",
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-010",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-010",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-010",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-011",
+      "run": 1,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-011",
+      "run": 2,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-011",
+      "run": 3,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-012",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "HARD-012",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "HARD-012",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "HARD-013",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-013",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-013",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-014",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "HARD-014",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "HARD-014",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "HARD-015",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-015",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-015",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-016",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-016",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-016",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-017",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-017",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-017",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-018",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-018",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-018",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-019",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2",
+        "R3"
+      ]
+    },
+    {
+      "caseId": "HARD-019",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2",
+        "R3"
+      ]
+    },
+    {
+      "caseId": "HARD-019",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2",
+        "R3"
+      ]
+    },
+    {
+      "caseId": "HARD-020",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "HARD-020",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "HARD-020",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "HARD-021",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-021",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-021",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-022",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-022",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-022",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-023",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-023",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-023",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-024",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-024",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-024",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-025",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-025",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-025",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-026",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-026",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-026",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-027",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-027",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-027",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-028",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "HARD-028",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "HARD-028",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "HARD-029",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-029",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-029",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-030",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-030",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-030",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-031",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-031",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-031",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-032",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-032",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-032",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-033",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-033",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-033",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-034",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R12"
+      ]
+    },
+    {
+      "caseId": "HARD-034",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R12"
+      ]
+    },
+    {
+      "caseId": "HARD-034",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R12"
+      ]
+    },
+    {
+      "caseId": "HARD-035",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-035",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-035",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-036",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-036",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-036",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-037",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-037",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-037",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-038",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-038",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-038",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-039",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-039",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-039",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-040",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-040",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-040",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-041",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-041",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-041",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-042",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-042",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-042",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-043",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-043",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-043",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-044",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-044",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-044",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-045",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-045",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-045",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-046",
+      "run": 1,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-046",
+      "run": 2,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-046",
+      "run": 3,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-047",
+      "run": 1,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-047",
+      "run": 2,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-047",
+      "run": 3,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-048",
+      "run": 1,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-048",
+      "run": 2,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-048",
+      "run": 3,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-049",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R12"
+      ]
+    },
+    {
+      "caseId": "HARD-049",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R12"
+      ]
+    },
+    {
+      "caseId": "HARD-049",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R12"
+      ]
+    },
+    {
+      "caseId": "HARD-050",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-050",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-050",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-051",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "HARD-051",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "HARD-051",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "HARD-052",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2",
+        "R3"
+      ]
+    },
+    {
+      "caseId": "HARD-052",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2",
+        "R3"
+      ]
+    },
+    {
+      "caseId": "HARD-052",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2",
+        "R3"
+      ]
+    },
+    {
+      "caseId": "HARD-053",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-053",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-053",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-054",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R12"
+      ]
+    },
+    {
+      "caseId": "HARD-054",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R12"
+      ]
+    },
+    {
+      "caseId": "HARD-054",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R12"
+      ]
+    },
+    {
+      "caseId": "HARD-055",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-055",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-055",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "HARD-056",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-056",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-056",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-057",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-057",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-057",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-058",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-058",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-058",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "HARD-059",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "HARD-059",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "HARD-059",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "HARD-060",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-060",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "HARD-060",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    }
+  ],
+  "unsteady": [],
+  "prompt": "649353ffa475"
+}

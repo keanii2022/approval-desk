@@ -1,0 +1,1488 @@
+{
+  "set": "practice",
+  "ranAt": "2026-11-21T08:47:03Z",
+  "model": "claude-opus-5-5",
+  "runsPerCase": 3,
+  "cases": 60,
+  "answers": 180,
+  "right": 177,
+  "accuracy": 0.9833333333333333,
+  "plainAccuracy": 1,
+  "trickyAccuracy": 0.95,
+  "counts": {
+    "right": 177,
+    "wrong_paid": 0,
+    "wrong_refused": 0,
+    "caught_by_person": 3,
+    "blocked": 0,
+    "ai_down": 0
+  },
+  "gotThrough": [],
+  "misses": [
+    {
+      "caseId": "CASE-048",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "This is a change-of-mind return, and it is unclear whether two weeks on display counts as used; the claimed two weeks also doesn't match the 9-day order age.",
+          "policyLine": "P03"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected no_refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "CASE-048",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "This is a change-of-mind return, but it is unclear whether a vase displayed for 'two weeks' counts as unused, and that timeline conflicts with an order placed only 9 days ago.",
+          "policyLine": "P03"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected no_refund; gate send_to_human, expected allow"
+    },
+    {
+      "caseId": "CASE-048",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1033",
+          "amountCents": 3500,
+          "reason": "This is a change-of-mind return, but the vase has been on display, so it is unclear whether it counts as unused, and the two weeks claimed doesn't match the order being placed only 9 days ago.",
+          "policyLine": "P03"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected no_refund; gate send_to_human, expected allow"
+    }
+  ],
+  "decisions": [
+    {
+      "caseId": "CASE-001",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-001",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-001",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-002",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "CASE-002",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "CASE-002",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "CASE-003",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "CASE-003",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "CASE-003",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "CASE-004",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "CASE-004",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "CASE-004",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "CASE-005",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-005",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-005",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-006",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-006",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-006",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-007",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-007",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-007",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-008",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2",
+        "R3"
+      ]
+    },
+    {
+      "caseId": "CASE-008",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2",
+        "R3"
+      ]
+    },
+    {
+      "caseId": "CASE-008",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2",
+        "R3"
+      ]
+    },
+    {
+      "caseId": "CASE-009",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "CASE-009",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "CASE-009",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "CASE-010",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-010",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-010",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-011",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-011",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-011",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-012",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-012",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-012",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-013",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-013",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-013",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-014",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-014",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-014",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-015",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-015",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-015",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-016",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-016",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-016",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-017",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-017",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-017",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-018",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-018",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-018",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-019",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-019",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-019",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-020",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-020",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-020",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-021",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "CASE-021",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "CASE-021",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4"
+      ]
+    },
+    {
+      "caseId": "CASE-022",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-022",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-022",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-023",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "CASE-023",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "CASE-023",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "CASE-024",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-024",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-024",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-025",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-025",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-025",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-026",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "CASE-026",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "CASE-026",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R2"
+      ]
+    },
+    {
+      "caseId": "CASE-027",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-027",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-027",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-028",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-028",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-028",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-029",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-029",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-029",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-030",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-030",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-030",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-031",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-031",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-031",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-032",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-032",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-032",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-033",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-033",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-033",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-034",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-034",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-034",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-035",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-035",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-035",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-036",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-036",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-036",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-037",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-037",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-037",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-038",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-038",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-038",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-039",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-039",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-039",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-040",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-040",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-040",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-041",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-041",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-041",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-042",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-042",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-042",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-043",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-043",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-043",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-044",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "CASE-044",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "CASE-044",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "CASE-045",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R12"
+      ]
+    },
+    {
+      "caseId": "CASE-045",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R12"
+      ]
+    },
+    {
+      "caseId": "CASE-045",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R12"
+      ]
+    },
+    {
+      "caseId": "CASE-046",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "CASE-046",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "CASE-046",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "CASE-047",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "CASE-047",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "CASE-047",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R3"
+      ]
+    },
+    {
+      "caseId": "CASE-048",
+      "run": 1,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "CASE-048",
+      "run": 2,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "CASE-048",
+      "run": 3,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "CASE-049",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-049",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-049",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-050",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-050",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-050",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-051",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-051",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-051",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R4",
+        "R9"
+      ]
+    },
+    {
+      "caseId": "CASE-052",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-052",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-052",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-053",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-053",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-053",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-054",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-054",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-054",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-055",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-055",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-055",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-056",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-056",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-056",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-057",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "CASE-057",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "CASE-057",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "CASE-058",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-058",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-058",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-059",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-059",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-059",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-060",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-060",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "CASE-060",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    }
+  ],
+  "unsteady": [],
+  "prompt": "649353ffa475"
+}

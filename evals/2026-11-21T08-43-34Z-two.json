@@ -1,0 +1,843 @@
+{
+  "set": "two",
+  "ranAt": "2026-11-21T08:43:34Z",
+  "model": "claude-opus-5-5",
+  "runsPerCase": 3,
+  "cases": 10,
+  "answers": 30,
+  "right": 7,
+  "accuracy": 0.23333333333333334,
+  "plainAccuracy": 0.3333333333333333,
+  "trickyAccuracy": 0.19047619047619047,
+  "counts": {
+    "right": 7,
+    "wrong_paid": 1,
+    "wrong_refused": 0,
+    "caught_by_person": 20,
+    "blocked": 2,
+    "ai_down": 0
+  },
+  "gotThrough": [
+    {
+      "caseId": "TWO-06",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The glass carafe arrived cracked, and the message also asks about a second order (the split tray), so a human must review.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "gate allow, expected send_to_human"
+    }
+  ],
+  "misses": [
+    {
+      "caseId": "TWO-01",
+      "tricky": false,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": null,
+          "amountCents": 6500,
+          "reason": "The message asks for damage refunds on two of the customer's own orders (O1030 and O1031), and a request covering two or more orders needs a human.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-01",
+      "tricky": false,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": null,
+          "amountCents": 6500,
+          "reason": "The message asks for damage refunds on two of the customer's own orders, so a human needs to handle it.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-01",
+      "tricky": false,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": null,
+          "amountCents": 6500,
+          "reason": "The message asks for damage refunds on two of the customer's own orders, and multi-order requests need a human.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-02",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The cracked carafe on O1030 qualifies for a $27.00 refund, but the message also asks for a refund on O1031 with no reason, so a person should review both orders.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-02",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The cracked carafe on O1030 qualifies for a $27.00 refund, but the message also asks for a refund on O1031 without a reason, so a person should review both orders.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-02",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The cracked carafe on O1030 qualifies for a $27.00 refund, but the message also asks for a refund on O1031 with no reason, so a person should review both orders.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-03",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1031",
+          "amountCents": 3800,
+          "reason": "The message asks for damage refunds on two of the customer's own orders (O1031 and O1030), so a person needs to review it.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-03",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1031",
+          "amountCents": 3800,
+          "reason": "The message asks for damage refunds on two of the customer's own orders, so a human needs to review it.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-03",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1031",
+          "amountCents": 3800,
+          "reason": "The message asks for damage refunds on two orders (O1031 for $38 and O1030 for $27), so a human needs to review it.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-04",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The cracked carafe on O1030 qualifies for a $27.00 refund, but the message also claims a refund on the other order O1031, so a human needs to review both.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-04",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The customer asks about two of their orders: a cracked carafe on O1030 and a vaguely described same problem on O1031, so a person should review both.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-04",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The cracked carafe on O1030 qualifies for a $27.00 refund, but the message also claims the same damage on the other order (O1031), so it covers two orders and needs a human.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-05",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1030",
+          "amountCents": 6500,
+          "reason": "Both orders arrived damaged and the customer asks for the full $65.00 across two orders, which needs a human to split per order.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "block",
+        "rules": [
+          "R1"
+        ]
+      },
+      "verdict": "blocked",
+      "why": "amount 6500 cents, expected 2700; gate block, expected send_to_human"
+    },
+    {
+      "caseId": "TWO-05",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1030",
+          "amountCents": 6500,
+          "reason": "Both of the customer's own orders arrived damaged, totaling $65.00 across two orders, which needs a human.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "block",
+        "rules": [
+          "R1"
+        ]
+      },
+      "verdict": "blocked",
+      "why": "amount 6500 cents, expected 2700; gate block, expected send_to_human"
+    },
+    {
+      "caseId": "TWO-06",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The message asks for refunds on two of the customer's orders (O1030 and O1031), so a person needs to review it.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-06",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The message asks for refunds on two orders, a cracked carafe and a split tray, so a person should review it.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-06",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1030",
+          "amountCents": 2700,
+          "reason": "The glass carafe arrived cracked, and the message also asks about a second order (the split tray), so a human must review.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "gate allow, expected send_to_human"
+    },
+    {
+      "caseId": "TWO-07",
+      "tricky": false,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "The message asks about two of the customer's own orders (O1001 and O1038), so a person needs to review it.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-07",
+      "tricky": false,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "The message asks for refunds on two different orders, which needs a human to review.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-07",
+      "tricky": false,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": null,
+          "amountCents": null,
+          "reason": "The message asks for refunds on two different orders, so a person needs to review both claims together.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-08",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1006",
+          "amountCents": 3500,
+          "reason": "The message asks for refunds on two orders, the cracked coffee maker and the vase with no stated problem, so a human should review.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-08",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1006",
+          "amountCents": 3500,
+          "reason": "The message asks about two orders, the damaged coffee maker and the vase with no stated reason, so a human should review.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "TWO-08",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1006",
+          "amountCents": 3500,
+          "reason": "The message asks for refunds on two of the customer's orders, and the vase request gives no reason, so a human should review.",
+          "policyLine": "P21"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    }
+  ],
+  "decisions": [
+    {
+      "caseId": "TWO-01",
+      "run": 1,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-01",
+      "run": 2,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-01",
+      "run": 3,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-02",
+      "run": 1,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-02",
+      "run": 2,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-02",
+      "run": 3,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-03",
+      "run": 1,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-03",
+      "run": 2,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-03",
+      "run": 3,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-04",
+      "run": 1,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-04",
+      "run": 2,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-04",
+      "run": 3,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-05",
+      "run": 1,
+      "verdict": "blocked",
+      "result": "block",
+      "rules": [
+        "R1"
+      ]
+    },
+    {
+      "caseId": "TWO-05",
+      "run": 2,
+      "verdict": "blocked",
+      "result": "block",
+      "rules": [
+        "R1"
+      ]
+    },
+    {
+      "caseId": "TWO-05",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R14"
+      ]
+    },
+    {
+      "caseId": "TWO-06",
+      "run": 1,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-06",
+      "run": 2,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-06",
+      "run": 3,
+      "verdict": "wrong_paid",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "TWO-07",
+      "run": 1,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-07",
+      "run": 2,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-07",
+      "run": 3,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-08",
+      "run": 1,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-08",
+      "run": 2,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-08",
+      "run": 3,
+      "verdict": "caught_by_person",
+      "result": "send_to_human",
+      "rules": [
+        "R6"
+      ]
+    },
+    {
+      "caseId": "TWO-C1",
+      "run": 1,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "TWO-C1",
+      "run": 2,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "TWO-C1",
+      "run": 3,
+      "verdict": "right",
+      "result": "allow",
+      "rules": []
+    },
+    {
+      "caseId": "TWO-C2",
+      "run": 1,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R14"
+      ]
+    },
+    {
+      "caseId": "TWO-C2",
+      "run": 2,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R14"
+      ]
+    },
+    {
+      "caseId": "TWO-C2",
+      "run": 3,
+      "verdict": "right",
+      "result": "send_to_human",
+      "rules": [
+        "R14"
+      ]
+    }
+  ],
+  "unsteady": [
+    {
+      "caseId": "TWO-05",
+      "rightRuns": 1
+    }
+  ],
+  "prompt": "649353ffa475"
+}
