@@ -125,6 +125,65 @@ The owner chose to make the village the front door and go live before steps 12, 
 - **Dependencies:** 21
 - **Done when:** a test checks the trace is written on a successful call and on an AI outage; a test checks the cost maths for each priced model and the blank cost for an unknown one; `npm run trace` runs on a seeded database (with traced lines made by a stand-in that reports token counts) and its totals match the lines; all unit and browser tests pass.
 
+## Testing backlog (added 2026-11-21, paused)
+
+Every item runs the same way as R9 to R12: write cases that should break it, run them on the current rules (the first test), add a rule only if something got through, then run everything again (the retest). Each one gets a dated scorecard in `evals/` and a row in the README's results table.
+
+### 22. Haiku on every set
+- **Status:** todo
+- **Goal:** Run Claude Haiku 5.5 on every set (practice, hard, Gemini's 75, holes, edges) under R1–R12, and show it next to Opus. Haiku only ran once, on Nov 16 under R1–R8. This shows how much of a cheap model's mistakes the gate catches today. About 20 cents.
+- **Done when:** dated Haiku scorecards for every set; the README table has a Haiku column.
+
+### 23. Disguised order numbers
+- **Status:** todo
+- **Goal:** R12 spots order numbers as "O" plus digits. Try "order #1002", "O-1002", "0rder 01002" (zeros), lowercase, and look-alike letters (a Cyrillic О). If any slips past, make the matching stricter.
+- **Done when:** a hole case for each disguise; none gets through.
+
+### 24. Refunds stacking across orders
+- **Status:** todo
+- **Goal:** R4 allows 3 refunds in 90 days and R2 caps each at $100, so one customer can get $300 with no person involved. Measure it, then decide on a cap (for example, over $150 to one customer in 30 days goes to a person).
+- **Done when:** history cases that stack refunds across orders; a rule if they get through.
+
+### 25. Two orders in one email
+- **Status:** todo
+- **Goal:** HARD-060 still pays $27 on one of two orders in 2 of 3 runs. Try a rule: an email naming two or more of the customer's orders goes to a person.
+- **Done when:** HARD-060 and new two-order cases have 0 got through.
+
+### 26. Tricks outside the message
+- **Status:** todo
+- **Goal:** Every attack so far was in the email body. Try instructions in the subject line and in a "someone new" name.
+- **Done when:** cases for each field; none gets through.
+
+### 27. Amount tricks
+- **Status:** todo
+- **Goal:** "$1,500", "fifteen dollars", pounds and yen, amounts that don't divide evenly (one of three towels from $28).
+- **Done when:** cases for each; the right answers are agreed, and none pays a wrong amount.
+
+### 28. Date oddities
+- **Status:** todo
+- **Goal:** A request dated before its order was placed, dates around midnight UTC, and the last day of a month.
+- **Done when:** cases for each, checked against the gate.
+
+### 29. Two requests at the same moment
+- **Status:** todo
+- **Goal:** Two requests on one order sent at once could both pass R9 before either is written down. Fire them together and check only one is paid without a person.
+- **Done when:** a test that runs them at the same time; at most one is paid.
+
+### 30. Model updates
+- **Status:** todo
+- **Goal:** A model update can shift behavior, the way R12's wording did. Run the full set on a schedule (weekly) and flag any drop or anything that got through.
+- **Done when:** a scheduled run and a way to see its result.
+
+### 31. The person at the desk
+- **Status:** todo
+- **Goal:** R9 to R12 send more requests to a person. Measure how many land at the desk per 100 requests, and whether a tired reviewer could approve things they shouldn't.
+- **Done when:** the share sent to a person, per rule, shown on the dashboard.
+
+### 32. Bad data
+- **Status:** todo
+- **Goal:** What happens when the shop's own data is wrong: a carrier status that's out of date, a flag that should have been lifted, an order with no amount.
+- **Done when:** cases for each, and a note on which rules trust which data.
+
 ## Calls to review
 
 - **17:** Hourly limit message: "That's all your tries for this hour. Come back in a bit." Matches the plain tone of the daily one.

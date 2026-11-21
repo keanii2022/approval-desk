@@ -1,6 +1,6 @@
 # Approval Desk
 
-A refund agent where the AI can only suggest. Plain code enforces 12 hard limits, a person decides the risky ones, and across more than 650 graded answers from Claude Opus no wrong refund was paid.
+A refund agent where the AI can only suggest. Plain code enforces 12 hard limits, a person decides the risky ones, and every eval run is published, including the ones where it failed and what fixed them.
 
 All shop data, customers and messages are invented.
 
@@ -43,6 +43,28 @@ The practice and hard cases score one request at a time, so they can't see a ref
 - Prompt changes are scored before they ship, with a guess written down first ([EVALS.md](EVALS.md)). Two changes took practice to 100%, but the hard set, which wasn't used for tuning, showed them letting 3 wrong refunds through, so the original prompt stayed.
 - 329 automated tests and 27 browser tests pass. None of them call the AI.
 - Every scorecard is dated and saved in [evals/](evals/).
+
+## What's tested, and what's next
+
+Tested so far (every run is in [evals/](evals/)):
+- 60 practice cases, and 60 hard cases written by another AI (ChatGPT)
+- 75 more written by a different AI (Gemini) after the newer rules
+- 19 hole cases: follow-ups, repeats, flagged and new accounts, undelivered orders, order numbers that aren't the customer's
+- 12 edge cases on each rule's exact boundary
+- 1,000 random bad proposals against the gate, and 329 automated plus 27 browser tests with no AI
+
+Next ([full plan](docs/PLAN.md#testing-backlog-added-2026-11-21-paused)):
+1. Haiku on every set, next to Opus
+2. Disguised order numbers ("order #1002", look-alike letters)
+3. Refunds stacking across several orders
+4. Two orders in one email (HARD-060 still slips through)
+5. Tricks in the subject line and the customer's name
+6. Amount tricks: "$1,500", other currencies, uneven splits
+7. Odd dates: before the order, midnight, month ends
+8. Two requests on one order at the same moment
+9. Weekly runs to catch model updates
+10. How much lands on the person at the desk
+11. Wrong data: out-of-date delivery status or flags
 
 ## How it works
 
