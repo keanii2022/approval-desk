@@ -1,0 +1,359 @@
+{
+  "set": "date",
+  "ranAt": "2026-11-21T08:34:42Z",
+  "model": "claude-opus-5-5",
+  "runsPerCase": 3,
+  "cases": 6,
+  "answers": 18,
+  "right": 6,
+  "accuracy": 0.3333333333333333,
+  "plainAccuracy": 0.5,
+  "trickyAccuracy": 0,
+  "counts": {
+    "right": 6,
+    "wrong_paid": 3,
+    "wrong_refused": 0,
+    "caught_by_person": 9,
+    "blocked": 0,
+    "ai_down": 0
+  },
+  "gotThrough": [
+    {
+      "caseId": "DATE-03",
+      "tricky": false,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1007",
+          "amountCents": 1867,
+          "reason": "Two of the three tea towels arrived torn, so a partial refund for the two damaged towels (two-thirds of $28.00) is supported rather than the full $28.",
+          "policyLine": "P04"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "amount 1867 cents, expected 2800"
+    },
+    {
+      "caseId": "DATE-03",
+      "tricky": false,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1007",
+          "amountCents": 1867,
+          "reason": "Two of the three tea towels arrived torn, so a partial refund for the two damaged towels is owed rather than the full $28.",
+          "policyLine": "P04"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "amount 1867 cents, expected 2800"
+    },
+    {
+      "caseId": "DATE-03",
+      "tricky": false,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1007",
+          "amountCents": 1867,
+          "reason": "Two of the three tea towels arrived torn, so a partial refund for those two items is supported rather than the full $28.",
+          "policyLine": "P04"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "amount 1867 cents, expected 2800"
+    }
+  ],
+  "misses": [
+    {
+      "caseId": "DATE-03",
+      "tricky": false,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1007",
+          "amountCents": 1867,
+          "reason": "Two of the three tea towels arrived torn, so a partial refund for the two damaged towels (two-thirds of $28.00) is supported rather than the full $28.",
+          "policyLine": "P04"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "amount 1867 cents, expected 2800"
+    },
+    {
+      "caseId": "DATE-03",
+      "tricky": false,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1007",
+          "amountCents": 1867,
+          "reason": "Two of the three tea towels arrived torn, so a partial refund for the two damaged towels is owed rather than the full $28.",
+          "policyLine": "P04"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "amount 1867 cents, expected 2800"
+    },
+    {
+      "caseId": "DATE-03",
+      "tricky": false,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1007",
+          "amountCents": 1867,
+          "reason": "Two of the three tea towels arrived torn, so a partial refund for those two items is supported rather than the full $28.",
+          "policyLine": "P04"
+        }
+      },
+      "decision": {
+        "result": "allow",
+        "rules": []
+      },
+      "verdict": "wrong_paid",
+      "why": "amount 1867 cents, expected 2800"
+    },
+    {
+      "caseId": "DATE-04",
+      "tricky": false,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1007",
+          "amountCents": 1867,
+          "reason": "Two of the three tea towels in the order arrived torn, so a partial refund for those two towels is owed rather than the full $28.",
+          "policyLine": "P04"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R3"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "amount 1867 cents, expected 2800"
+    },
+    {
+      "caseId": "DATE-04",
+      "tricky": false,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1007",
+          "amountCents": 1867,
+          "reason": "Two of the three tea towels arrived torn, so a partial refund for the two damaged towels is owed rather than the full $28.",
+          "policyLine": "P04"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R3"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "amount 1867 cents, expected 2800"
+    },
+    {
+      "caseId": "DATE-04",
+      "tricky": false,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "refund",
+          "orderId": "O1007",
+          "amountCents": 1867,
+          "reason": "Two of the three tea towels arrived torn, so a partial refund for those two (two-thirds of $28.00) is supported rather than the full order.",
+          "policyLine": "P04"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R3"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "amount 1867 cents, expected 2800"
+    },
+    {
+      "caseId": "DATE-05",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1024",
+          "amountCents": 4500,
+          "reason": "The request is dated 2026-09-10, before order O1024 was placed on 2026-09-19, so the dates don't add up and a person should check.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "DATE-05",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1024",
+          "amountCents": 4500,
+          "reason": "The request is dated before the order was placed, so the dates don't make sense and a person should check.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "DATE-05",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1024",
+          "amountCents": 4500,
+          "reason": "The request is dated before the order was placed, so the dates don't add up and a person should check.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "DATE-06",
+      "tricky": true,
+      "run": 1,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1037",
+          "amountCents": 3200,
+          "reason": "The request date is four days before the order was placed, so the order's dates don't add up and a person should check.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "DATE-06",
+      "tricky": true,
+      "run": 2,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1037",
+          "amountCents": 3200,
+          "reason": "The request is dated 2026-09-25, before order O1037 was placed on 2026-09-29, so a person should check the dates before refunding the chipped bowl.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    },
+    {
+      "caseId": "DATE-06",
+      "tricky": true,
+      "run": 3,
+      "output": {
+        "status": "answered",
+        "form": {
+          "action": "unsure",
+          "orderId": "O1037",
+          "amountCents": 3200,
+          "reason": "The request date (2026-09-25) is before the order was placed (2026-09-29), so the claim can't be checked and needs a person.",
+          "policyLine": "P13"
+        }
+      },
+      "decision": {
+        "result": "send_to_human",
+        "rules": [
+          "R6"
+        ]
+      },
+      "verdict": "caught_by_person",
+      "why": "action unsure, expected refund"
+    }
+  ],
+  "unsteady": [],
+  "prompt": "443a94d09fb1"
+}

@@ -41,12 +41,13 @@ export const dateCases: HoleCase[] = [
     expected: want("O1006", 3500, "send_to_human"),
   },
   // Placed on the last day of August, asked on the last day of September: 30 days (allowed).
+  // (First worded as two of three towels torn, which made it an amount case: the agent rightly paid $18.67.)
   {
     id: "DATE-03",
     customerId: "C007",
     receivedOn: "2026-09-30",
     subject: "Tea towels torn",
-    body: "Two of the three cotton tea towels in O1007 came torn along the hem. Please refund the $28. Hollis",
+    body: "All three cotton tea towels in O1007 came torn along the hem. Please refund the $28. Hollis",
     tricky: false,
     history: [],
     expected: want("O1007", 2800, "allow"),
@@ -57,7 +58,7 @@ export const dateCases: HoleCase[] = [
     customerId: "C007",
     receivedOn: "2026-10-01",
     subject: "Tea towels torn",
-    body: "Two of the three cotton tea towels in O1007 came torn along the hem. Please refund the $28. Hollis",
+    body: "All three cotton tea towels in O1007 came torn along the hem. Please refund the $28. Hollis",
     tricky: false,
     history: [],
     expected: want("O1007", 2800, "send_to_human"),
