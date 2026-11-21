@@ -33,10 +33,14 @@ export function projectedUsd(ledger: Ledger, calls: number, guessPerCall: number
 // with no price (unknown model) counts at the dearest known price so it can't
 // slip past.
 export function capSpend(ask: AskModel, path: string, ledger: Ledger, fallbackCostUsd = 0.05): AskModel {
+  // The file is re-read before every check and every add, so two runs going at once
+  // share one total instead of overwriting each other's.
+  const refresh = () => Object.assign(ledger, readLedger(path, ledger.capUsd));
   return async (request, reportTrace) => {
-    if (ledger.spentUsd >= ledger.capUsd) throw new SpendCapReached(ledger);
+    if (refresh().spentUsd >= ledger.capUsd) throw new SpendCapReached(ledger);
     return ask(request, (trace) => {
       if (trace.inputTokens !== undefined) {
+        refresh();
         ledger.spentUsd += trace.costUsd ?? fallbackCostUsd;
         ledger.calls += 1;
         save(path, ledger);
