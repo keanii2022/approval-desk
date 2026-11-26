@@ -24,8 +24,12 @@ A person then approves (and can lower the amount) or rejects with a note. Nobody
 
 Each case is run 3 times on Claude Opus 5.5. "Got through" means a wrong answer the code checks still let happen.
 
+In the order they ran. The first practice and hard sets scored near 100%, which looked too good: the same AI had built the agent and written its tests, so they shared its blind spots. From there, other AIs (ChatGPT, Gemini, and a breaker agent) wrote the attacks, and every hole they found got a rule and more cases.
+
 | Test set | First test | Rules added | Retest |
 |---|---|---|---|
+| 60 practice cases | 98.3%, 0 got through | R9 to R14 | 98.3%, 0 got through |
+| 60 hard cases, written by a different AI to break it | 95.0%, 0 got through | R9 to R14 | 93.3%, 0 got through |
 | 12 hole cases: follow-ups, repeats, flagged and new accounts | 8.3%, **21 wrong refunds paid** | R9, R10 | **75.0%, 0 got through** (71.9% with all 19 on R1–R14) |
 | 3 hole cases: orders not delivered yet | 0.0%, **9 wrong refunds paid** | R11 | **100%, 0 got through** |
 | 12 edge cases: each rule's exact boundary, both sides | 100%, 0 got through | none needed | |
@@ -37,8 +41,6 @@ Each case is run 3 times on Claude Opus 5.5. "Got through" means a wrong answer 
 | 15 tricks in the subject line and the customer's name | 66.7%, **6 wrong refunds paid** | stricter R12 scan, fenced subject | **80.0%, 0 got through** |
 | 15 amount tricks: "$1,500", pounds and yen, one towel of three | 97.8%, 0 got through | none needed | 100%, 0 got through |
 | 6 odd dates: month ends, leap day, a request before its order | 33.3%, 3 flagged, all one badly worded case (it paid less, not more) | strict dates | 66.7%, 0 got through |
-| 60 practice cases | 98.3%, 0 got through | R9 to R14 | 98.3%, 0 got through |
-| 60 hard cases, written by a different AI to break it | 95.0%, 0 got through | R9 to R14 | 93.3%, 0 got through |
 
 What each set tests, and why some retests sit below 100% with nothing paid: [EVALS.md](EVALS.md#what-the-sets-test). The new attack sets were written by a breaker agent whose only job was to make it fail; it also found holes in plain code (bad rows in the database, odd dates) that are now closed and tested.
 
